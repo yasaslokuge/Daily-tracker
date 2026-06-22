@@ -387,11 +387,7 @@ body.light .auth-box::before{opacity:0.3}
 .wde-edit-btn:hover{border-color:var(--teal);color:var(--teal)}
 
 
-/* ── ANIMATED BACKGROUND ── */
-#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.22;will-change:auto}
-body.light #bgCanvas{opacity:0.1}
-@media(prefers-reduced-motion:reduce){#bgCanvas{display:none}}
-.app,#authWrap,#loader{position:relative;z-index:1}
+
 
 
 /* ── GALAXY FOLD (narrow 280px) ── */
@@ -417,7 +413,7 @@ body.light #bgCanvas{opacity:0.1}
 /* ── Desktop ── */
 @media(min-width:1024px){
   body{display:flex;justify-content:center;align-items:flex-start;background:#050A10}
-  #bgCanvas{position:fixed}
+  
   #app{box-shadow:0 0 60px rgba(0,0,0,0.5);min-height:100vh}
 }
 
@@ -425,7 +421,6 @@ body.light #bgCanvas{opacity:0.1}
 </head>
 <body>
 
-<canvas id="bgCanvas"></canvas>
 <div id="loader">
   <div class="ld-logo"><div class="spin-ring"></div><div class="ld-word">Work<b>Trace</b></div></div>
   <div class="ld-txt" id="ldTxt">connecting…</div>
@@ -901,78 +896,7 @@ function editDay(dateStr){
   window.scrollTo(0,0);
 }
 
-// ── ANIMATED BACKGROUND ──────────────────
-(function(){
-  const canvas=document.getElementById('bgCanvas');
-  const ctx=canvas.getContext('2d');
-  let W,H,nodes=[],RAF;
-  const N=18;
-
-  function resize(){
-    W=canvas.width=window.innerWidth;
-    H=canvas.height=window.innerHeight;
-  }
-
-  function init(){
-    resize();
-    nodes=[];
-    for(let i=0;i<N;i++){
-      nodes.push({
-        x:Math.random()*W,y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.22,vy:(Math.random()-0.5)*0.22,
-        r:Math.random()*2+1
-      });
-    }
-  }
-
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    const isLight=document.body.classList.contains('light');
-    const accent=getComputedStyle(document.documentElement).getPropertyValue('--teal').trim()||'#05D9B4';
-    const dotColor=isLight?'rgba(0,0,0,0.25)':'rgba(255,255,255,0.35)';
-
-    // Draw connections
-    for(let i=0;i<N;i++){
-      for(let j=i+1;j<N;j++){
-        const dx=nodes[i].x-nodes[j].x;
-        const dy=nodes[i].y-nodes[j].y;
-        const dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist<130){
-          const alpha=(1-dist/130)*0.15;
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x,nodes[i].y);
-          ctx.lineTo(nodes[j].x,nodes[j].y);
-          ctx.strokeStyle=isLight?`rgba(0,0,0,${alpha})`:`rgba(5,217,180,${alpha})`;
-          ctx.lineWidth=0.6;
-          ctx.stroke();
-        }
-      }
-    }
-
-    // Draw nodes
-    nodes.forEach(n=>{
-      ctx.beginPath();
-      ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
-      ctx.fillStyle=dotColor;
-      ctx.fill();
-      n.x+=n.vx; n.y+=n.vy;
-      if(n.x<0||n.x>W) n.vx*=-1;
-      if(n.y<0||n.y>H) n.vy*=-1;
-    });
-    RAF=isMobile?setTimeout(()=>requestAnimationFrame(draw),32):requestAnimationFrame(draw);
-  }
-
-  // Pause animation when tab is hidden to save battery/CPU
-  document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){cancelAnimationFrame(RAF);}
-    else{draw();}
-  });
-
-  window.addEventListener('resize',()=>{resize();},{ passive:true });
-  init();
-  draw();
-  }catch(e){console.warn('BG animation error:',e);}
-})();
+// Background animation removed
 
 // ── BOOT ──────────────────────────────────
 let booted = false;
