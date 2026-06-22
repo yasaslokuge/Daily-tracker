@@ -556,7 +556,8 @@ body.light #bgCanvas{opacity:0.1}
 
 <script>
 const SUPABASE_URL='https://vwoylscgfhuzmsnkjdlu.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3b3lsc2NnZmh1em1zbmtqZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDY0OTUsImV4cCI6MjA5NzcyMjQ5NX0.ci08mxviFw5le494yUUE70fTRnWi6TqqC1Rjk971k_s;
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3b3lsc2NnZmh1em1zbmtqZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDY0OTUsImV4cCI6MjA5NzcyMjQ5NX0.ci08mxviFw5le494yUUE70fTRnWi6TqqC1Rjk971k_s';
+const{createClient}=supabase;
 const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 const LOCS=[
@@ -973,9 +974,28 @@ function editDay(dateStr){
   draw();
 })();
 
+// Fallback: if Supabase doesn't respond in 5s, show auth screen anyway
+const loaderTimeout = setTimeout(()=>{
+  hideLoader();hideApp();showAuth();
+  document.getElementById('siErr').textContent='Connection slow — check your internet and try again.';
+  document.getElementById('siErr').style.display='block';
+},5000);
+
 sb.auth.onAuthStateChange(async(event,session)=>{
-  if(session?.user)await initApp(session.user);
-  else{hideLoader();hideApp();showAuth()}
+  clearTimeout(loaderTimeout);
+  if(session?.user) await initApp(session.user);
+  else{hideLoader();hideApp();showAuth();}
+});
+
+// Also try getting session immediately (faster than waiting for event)
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session?.user){clearTimeout(loaderTimeout);initApp(session.user);}
+  else{clearTimeout(loaderTimeout);hideLoader();hideApp();showAuth();}
+}).catch(err=>{
+  clearTimeout(loaderTimeout);
+  hideLoader();hideApp();showAuth();
+  document.getElementById('siErr').textContent='Could not connect to server. Check your internet.';
+  document.getElementById('siErr').style.display='block';
 });
 document.addEventListener('keydown',e=>{
   if(e.key!=='Enter')return;
