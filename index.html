@@ -1063,7 +1063,7 @@ loadSavedPrefs();
 // Roles: 'admin', 'employer', 'employee'
 const ROLES={
   // Add admin/employer emails below:
-   'yasaslokuge1438@gmail.com':'admin',
+  'yasaslokuge1438@gmail.com':'admin',
   // 'manager@example.com':'employer',
 };
 function getRole(email){
@@ -1260,8 +1260,9 @@ async function deletePersonSchedule(email){
 }
 
 // Close modal on overlay click
-document.getElementById('assignModal').addEventListener('click',function(e){
-  if(e.target===this)closeModal();
+document.addEventListener('DOMContentLoaded',function(){
+  const m=document.getElementById('assignModal');
+  if(m) m.addEventListener('click',function(e){if(e.target===this)closeModal();});
 });
 
 // ── EDIT FROM WEEK VIEW ──────────────────────
