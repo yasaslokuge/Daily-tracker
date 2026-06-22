@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
   <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
-  <meta http-equiv="X-Frame-Options" content="DENY"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -972,6 +971,7 @@ function editDay(dateStr){
   window.addEventListener('resize',()=>{resize();},{ passive:true });
   init();
   draw();
+  }catch(e){console.warn('BG animation error:',e);}
 })();
 
 // ── BOOT ──────────────────────────────────
