@@ -466,8 +466,8 @@ body.light .auth-box::before{opacity:0.3}
 .person-day-blocks::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
 /* Modal/overlay for assigning */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
-.modal-overlay.open{display:flex}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:900;display:none;align-items:flex-end;justify-content:center;-webkit-overflow-scrolling:touch}
+.modal-overlay.open{display:flex}.modal-sheet{position:relative;z-index:901}
 .modal-sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:20px}
 .modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
 .modal-title{font-size:16px;font-weight:700;margin-bottom:4px}
@@ -659,10 +659,15 @@ body.light .auth-box::before{opacity:0.3}
             </div>
           </div>
           <div class="divl" style="margin:0"></div>
-          <div class="tog-row">
+          <div class="tog-row" style="flex-direction:column;align-items:flex-start;gap:10px">
             <div>
-              <div class="tog-label">Role</div>
-              <div class="tog-sub" id="setRole">—</div>
+              <div class="tog-label">My role</div>
+              <div class="tog-sub" id="setRole" style="margin-bottom:8px">—</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button onclick="setMyRole('employee')" style="background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;color:var(--text2);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Employee</button>
+                <button onclick="setMyRole('employer')" style="background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;color:var(--text2);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Employer</button>
+                <button onclick="setMyRole('admin')" style="background:var(--teal-bg);border:1.5px solid rgba(5,217,180,0.3);border-radius:8px;color:var(--teal);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Admin</button>
+              </div>
             </div>
           </div>
           <div class="divl" style="margin:0"></div>
@@ -1059,20 +1064,35 @@ function loadSavedPrefs(){
 loadSavedPrefs();
 
 // ── ROLE SYSTEM ──────────────────────────
-// Set roles here — add emails as needed
-// Roles: 'admin', 'employer', 'employee'
-const ROLES={
-  // Add admin/employer emails below:
-  'yasaslokuge1438@gmail.com':'admin',
-  // 'manager@example.com':'employer',
-};
+// ── ROLE SYSTEM ──────────────────────────
+// Admins/employers: add their emails here
+// Everyone else is automatically 'employee'
+const MANAGER_EMAILS=[
+  // 'youremail@example.com',
+  // 'manager@example.com',
+];
+
 function getRole(email){
   if(!email) return 'employee';
   const e=email.toLowerCase().trim();
-  return ROLES[e]||'employee';
+  // Check hardcoded list
+  if(MANAGER_EMAILS.includes(e)) return 'admin';
+  // Check localStorage override (set from Settings)
+  const stored=localStorage.getItem('wt_role_'+e);
+  if(stored) return stored;
+  return 'employee';
 }
 function isManager(){
-  return ME&&(getRole(ME.email)==='admin'||getRole(ME.email)==='employer');
+  if(!ME) return false;
+  const r=getRole(ME.email);
+  return r==='admin'||r==='employer';
+}
+function setMyRole(role){
+  if(!ME) return;
+  localStorage.setItem('wt_role_'+ME.email.toLowerCase(),role);
+  const sr=document.getElementById('setRole');
+  if(sr) sr.textContent=role;
+  showToast('Role set to '+role);
 }
 
 // ── SCHEDULE ─────────────────────────────
@@ -1213,18 +1233,25 @@ async function navSch(dir){schOff+=dir;await renderSchedule();}
 
 // Modal
 function openModal(){
+  const overlay=document.getElementById('assignModal');
+  if(!overlay){console.error('Modal not found');return;}
   modalSelDays=new Set();
   modalSelLocs=new Set();
-  document.getElementById('assignEmail').value='';
-  // Render day buttons
+  const emailEl=document.getElementById('assignEmail');
+  if(emailEl) emailEl.value='';
   const dc=document.getElementById('modalDays');
-  dc.innerHTML=DAYS_ABB.map((d,i)=>`<button class="modal-day-btn" onclick="toggleModalDay(this,'${wkDates(schOff)[i]}')" data-d="${wkDates(schOff)[i]}"><span class="modal-day-abbr">${d}</span></button>`).join('');
-  // Render loc buttons
+  if(dc) dc.innerHTML=DAYS_ABB.map((d,i)=>{
+    const dt=wkDates(schOff)[i];
+    return `<button class="modal-day-btn" onclick="toggleModalDay(this,'${dt}')" data-d="${dt}"><span class="modal-day-abbr">${d}</span></button>`;
+  }).join('');
   const lc=document.getElementById('modalLocs');
-  lc.innerHTML=LOCS.map(l=>`<button class="modal-loc-btn" onclick="toggleModalLoc(this,'${l.id}')">${l.name}</button>`).join('');
-  document.getElementById('assignModal').classList.add('open');
+  if(lc) lc.innerHTML=LOCS.map(l=>`<button class="modal-loc-btn" onclick="toggleModalLoc(this,'${l.id}')">${l.name}</button>`).join('');
+  overlay.style.display='flex';
 }
-function closeModal(){document.getElementById('assignModal').classList.remove('open');}
+function closeModal(){
+  const m=document.getElementById('assignModal');
+  if(m){m.style.display='none';m.classList.remove('open');}
+}
 function toggleModalDay(btn,d){
   if(modalSelDays.has(d)){modalSelDays.delete(d);btn.classList.remove('sel');}
   else{modalSelDays.add(d);btn.classList.add('sel');}
@@ -1262,7 +1289,9 @@ async function deletePersonSchedule(email){
 // Close modal on overlay click
 document.addEventListener('DOMContentLoaded',function(){
   const m=document.getElementById('assignModal');
-  if(m) m.addEventListener('click',function(e){if(e.target===this)closeModal();});
+  if(m) m.addEventListener('click',function(e){
+    if(e.target===m) closeModal();
+  });
 });
 
 // ── EDIT FROM WEEK VIEW ──────────────────────
