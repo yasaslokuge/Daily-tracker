@@ -417,6 +417,88 @@ body.light .auth-box::before{opacity:0.3}
   #app{box-shadow:0 0 60px rgba(0,0,0,0.5);min-height:100vh}
 }
 
+
+/* ── TOGGLE SWITCH ── */
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+.tog-label{font-size:14px;font-weight:600;color:var(--text)}
+.tog-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.toggle{position:relative;width:48px;height:26px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tog-slider{position:absolute;inset:0;background:var(--card2);border-radius:26px;cursor:pointer;transition:background 0.3s;border:1.5px solid var(--border2)}
+.tog-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:var(--text3);border-radius:50%;transition:all 0.3s}
+.toggle input:checked + .tog-slider{background:var(--teal);border-color:var(--teal)}
+.toggle input:checked + .tog-slider::before{transform:translateX(22px);background:#fff}
+
+/* ── ACCENT DOTS ── */
+.accent-row{padding:4px 16px 16px;display:flex;gap:10px;align-items:center}
+
+/* ── SCHEDULE VIEW ── */
+.sch-wrap{padding:14px 16px 0}
+@media(min-width:390px){.sch-wrap{padding:16px 20px 0}}
+.sch-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sch-nav-title{font-size:15px;font-weight:700}
+.sch-nav-btn{background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--text2);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--t)}
+.sch-nav-btn:hover{border-color:var(--teal);color:var(--teal)}
+.sch-nav-btn svg{width:16px;height:16px}
+.sch-role-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--teal-bg);color:var(--teal);border:1px solid rgba(5,217,180,0.2)}
+.sch-role-badge.emp{background:var(--blue-bg);color:var(--blue);border-color:rgba(79,142,247,0.2)}
+.sch-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sch-head-title{font-size:13px;font-weight:700;color:var(--text)}
+.btn-add-assign{background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t)}
+.btn-add-assign:hover{background:#07EEC7}
+
+/* Person row in schedule */
+.person-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.person-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
+.person-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.person-name{font-size:13px;font-weight:700;color:var(--text)}
+.person-email{font-size:11px;color:var(--text3);margin-top:1px;font-family:'JetBrains Mono',monospace}
+.person-count{margin-left:auto;font-size:11px;font-weight:700;color:var(--teal);background:var(--teal-bg);border-radius:20px;padding:3px 9px}
+.person-locs{padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:5px}
+.person-day-block{background:var(--card2);border-radius:8px;padding:8px 10px;min-width:80px}
+.person-day-lbl{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px}
+.person-day-locs{display:flex;flex-direction:column;gap:3px}
+.person-loc-tag{font-size:10px;font-weight:600;color:var(--teal);background:var(--teal-bg);border-radius:4px;padding:2px 7px;display:inline-block}
+.person-loc-tag.empty{color:var(--text3);background:transparent}
+.person-day-blocks{padding:0 14px 12px;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:14px}
+.person-day-blocks::-webkit-scrollbar{height:3px}
+.person-day-blocks::-webkit-scrollbar-track{background:transparent}
+.person-day-blocks::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Modal/overlay for assigning */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:20px}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--text2);margin-bottom:18px}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:7px}
+.modal-input{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;outline:none;transition:border-color var(--t)}
+.modal-input:focus{border-color:var(--teal)}
+.modal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.modal-day-btn{background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:6px 2px;cursor:pointer;transition:all var(--t);text-align:center}
+.modal-day-btn.sel{border-color:var(--teal);background:var(--teal-bg)}
+.modal-day-abbr{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;display:block}
+.modal-day-btn.sel .modal-day-abbr{color:var(--teal)}
+.modal-locs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:16px}
+.modal-loc-btn{background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);transition:all var(--t);text-align:left}
+.modal-loc-btn.sel{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
+.modal-actions{display:flex;gap:8px}
+.btn-modal-save{flex:1;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:13px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--t)}
+.btn-modal-save:hover{background:#07EEC7}
+.btn-modal-cancel{background:none;border:1.5px solid var(--border2);border-radius:10px;color:var(--text2);padding:13px 16px;font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;transition:all var(--t)}
+.btn-modal-cancel:hover{border-color:var(--red);color:var(--red)}
+.sch-empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+.assign-del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:10px;padding:2px 6px;border-radius:4px;transition:color var(--t);font-family:'Inter',sans-serif}
+.assign-del-btn:hover{color:var(--red)}
+.my-sch-day{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:8px;padding:13px 14px}
+.my-sch-day.has{border-color:rgba(5,217,180,0.2)}
+.my-sch-dayname{font-size:13px;font-weight:700;margin-bottom:6px}
+.my-sch-date{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:8px}
+.my-sch-locs{display:flex;flex-wrap:wrap;gap:5px}
+.my-sch-empty{font-size:12px;color:var(--text3)}
+
 </style>
 </head>
 <body>
@@ -535,6 +617,90 @@ body.light .auth-box::before{opacity:0.3}
     </div>
     <div class="credit">created by <em>Y</em></div>
   </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="view" id="v-set">
+    <div class="set-wrap">
+      <div class="set-section">
+        <div class="set-sec-title">Appearance</div>
+        <div class="set-card">
+          <div class="tog-row">
+            <div>
+              <div class="tog-label">Light mode</div>
+              <div class="tog-sub">Switch between dark and light</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="themeToggle" onchange="setThemeToggle(this.checked)"/>
+              <span class="tog-slider"></span>
+            </label>
+          </div>
+          <div class="divl" style="margin:0 0"></div>
+          <div class="tog-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+            <div class="tog-label">Accent colour</div>
+            <div class="accent-row" style="padding:0;flex-wrap:wrap">
+              <div class="acc-opt" data-color="#05D9B4" onclick="setAccent('#05D9B4','#03A88C')" title="Teal" style="background:#05D9B4"></div>
+              <div class="acc-opt" data-color="#4F8EF7" onclick="setAccent('#4F8EF7','#2B6FE0')" title="Blue" style="background:#4F8EF7"></div>
+              <div class="acc-opt" data-color="#A78BFA" onclick="setAccent('#A78BFA','#7C5CDB')" title="Purple" style="background:#A78BFA"></div>
+              <div class="acc-opt" data-color="#F5A623" onclick="setAccent('#F5A623','#D4891A')" title="Amber" style="background:#F5A623"></div>
+              <div class="acc-opt" data-color="#FF5757" onclick="setAccent('#FF5757','#D43B3B')" title="Red" style="background:#FF5757"></div>
+              <div class="acc-opt" data-color="#34D399" onclick="setAccent('#34D399','#1FAF72')" title="Green" style="background:#34D399"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-sec-title">Account</div>
+        <div class="set-card">
+          <div class="tog-row">
+            <div>
+              <div class="tog-label">Signed in as</div>
+              <div class="tog-sub" id="setEmail" style="font-family:'JetBrains Mono',monospace"></div>
+            </div>
+          </div>
+          <div class="divl" style="margin:0"></div>
+          <div class="tog-row">
+            <div>
+              <div class="tog-label">Role</div>
+              <div class="tog-sub" id="setRole">—</div>
+            </div>
+          </div>
+          <div class="divl" style="margin:0"></div>
+          <div class="tog-row" onclick="doSignOut()" style="cursor:pointer">
+            <div class="tog-label" style="color:var(--red)">Sign out</div>
+            <svg fill="none" stroke="var(--red)" stroke-width="2" viewBox="0 0 24 24" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-sec-title">About</div>
+        <div class="set-card">
+          <div class="tog-row">
+            <div>
+              <div class="tog-label">WorkTrace</div>
+              <div class="tog-sub">Version 2.1 · Built for Y</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="credit">created by <em>Y</em></div>
+  </div>
+
+  <!-- SCHEDULE VIEW -->
+  <div class="view" id="v-sch">
+    <div class="sch-wrap">
+      <div class="sch-nav">
+        <button class="sch-nav-btn" onclick="navSch(-1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+        <span class="sch-nav-title" id="schNavTitle"></span>
+        <button class="sch-nav-btn" onclick="navSch(1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div id="schContent"></div>
+    </div>
+    <div class="credit">created by <em>Y</em></div>
+  </div>
+
 </div>
 
 <div class="bnav" id="bnav">
@@ -543,6 +709,7 @@ body.light .auth-box::before{opacity:0.3}
     <button class="nb" id="nb-dash" onclick="sv('dash')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Dash<div class="nb-badge"></div></button>
     <button class="nb" id="nb-week" onclick="sv('week')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Week<div class="nb-badge"></div></button>
     <button class="nb" id="nb-rep" onclick="sv('rep')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Report<div class="nb-badge"></div></button>
+    <button class="nb" id="nb-sch" onclick="sv('sch')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Schedule<div class="nb-badge"></div></button>
     <button class="nb" id="nb-set" onclick="sv('set')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>Setup<div class="nb-badge"></div></button>
   </div>
 </div>
@@ -553,6 +720,7 @@ const SUPABASE_URL='https://vwoylscgfhuzmsnkjdlu.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3b3lsc2NnZmh1em1zbmtqZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDY0OTUsImV4cCI6MjA5NzcyMjQ5NX0.ci08mxviFw5le494yUUE70fTRnWi6TqqC1Rjk971k_s';
 const{createClient}=window.supabase||supabase;
 const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const supabaseClient=sb;
 
 const LOCS=[
   {id:'bravo',name:'Bravo',img:'data:image/jpeg;base64,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',color:'',abbr:''},
@@ -750,14 +918,17 @@ function showToast(txt,t=''){
 function sv(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  document.getElementById(`v-${name}`).classList.add('on');
-  const nb=document.getElementById(`nb-${name}`);if(nb)nb.classList.add('on');
-  if(name==='dash')renderDash();
-  if(name==='week')renderWeekView();
-  if(name==='rep')renderReport();
+  const vEl=document.getElementById('v-'+name);
+  if(vEl) vEl.classList.add('on');
+  const nb=document.getElementById('nb-'+name);if(nb)nb.classList.add('on');
+  if(name==='dash') renderDash();
+  if(name==='week') renderWeekView();
+  if(name==='rep')  renderReport();
+  if(name==='sch')  renderSchedule();
   if(name==='set'){
     const se=document.getElementById('setEmail');if(se&&ME)se.textContent=ME.email;
-    applyThemeUI();
+    const sr=document.getElementById('setRole');if(sr&&ME)sr.textContent=getRole(ME.email);
+    syncThemeToggle();
   }
 }
 
@@ -853,18 +1024,19 @@ async function renderReport(){
 async function navRep(d){repOff+=d;await renderReport()}
 function copyRep(){navigator.clipboard.writeText(document.getElementById('rvText').textContent).then(()=>showToast('Copied to clipboard')).catch(()=>showToast('Select and copy manually'))}
 
-// ── THEME ──────────────────────────────────
-function setTheme(t){
+// ── THEME & SETTINGS ──────────────────────
+function setThemeToggle(isLight){
+  const t=isLight?'light':'dark';
   localStorage.setItem('wt_theme',t);
-  document.body.classList.toggle('light',t==='light');
-  applyThemeUI();
+  document.body.classList.toggle('light',isLight);
+  syncThemeToggle();
 }
-function applyThemeUI(){
+function syncThemeToggle(){
   const t=localStorage.getItem('wt_theme')||'dark';
-  document.querySelectorAll('.theme-opt').forEach(el=>el.classList.remove('active'));
-  const el=document.getElementById(`theme-${t}`);if(el)el.classList.add('active');
-  const acc=localStorage.getItem('wt_accent')||'#05D9B4';
+  const tog=document.getElementById('themeToggle');
+  if(tog) tog.checked=(t==='light');
   document.querySelectorAll('.acc-opt').forEach(el=>{
+    const acc=localStorage.getItem('wt_accent')||'#05D9B4';
     el.classList.toggle('active-acc',el.dataset.color===acc);
   });
 }
@@ -875,8 +1047,7 @@ function setAccent(color,dim){
   document.documentElement.style.setProperty('--teal2',dim);
   document.documentElement.style.setProperty('--teal-bg',color+'18');
   document.documentElement.style.setProperty('--teal-bg2',color+'28');
-  document.documentElement.style.setProperty('--border-active',color+'66');
-  applyThemeUI();
+  syncThemeToggle();
 }
 function loadSavedPrefs(){
   const t=localStorage.getItem('wt_theme')||'dark';
@@ -886,6 +1057,212 @@ function loadSavedPrefs(){
   if(acc&&dim)setAccent(acc,dim);
 }
 loadSavedPrefs();
+
+// ── ROLE SYSTEM ──────────────────────────
+// Set roles here — add emails as needed
+// Roles: 'admin', 'employer', 'employee'
+const ROLES={
+  // Add admin/employer emails below:
+   'yasaslokuge1438@gmail.com':'admin',
+  // 'manager@example.com':'employer',
+};
+function getRole(email){
+  if(!email) return 'employee';
+  const e=email.toLowerCase().trim();
+  return ROLES[e]||'employee';
+}
+function isManager(){
+  return ME&&(getRole(ME.email)==='admin'||getRole(ME.email)==='employer');
+}
+
+// ── SCHEDULE ─────────────────────────────
+let schOff=0, schAssignments=[], modalSelDays=new Set(), modalSelLocs=new Set();
+
+async function loadSchedule(dates){
+  if(!ME) return;
+  const mon=dates[0], sun=dates[6];
+  let q=supabaseClient.from('schedules').select('*').gte('work_date',mon).lte('work_date',sun);
+  if(!isManager()) q=q.eq('employee_email',ME.email);
+  const{data,error}=await q;
+  if(error){console.error(error);return[];}
+  return data||[];
+}
+
+async function renderSchedule(){
+  const dates=wkDates(schOff);
+  const mon=fd(dates[0]), sun=fd(dates[6]);
+  document.getElementById('schNavTitle').textContent=
+    mon.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})+' – '+
+    sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'});
+
+  const container=document.getElementById('schContent');
+  container.innerHTML='<div class="sch-empty">Loading…</div>';
+
+  const rows=await loadSchedule(dates);
+  schAssignments=rows;
+
+  if(isManager()){
+    renderManagerSchedule(dates, rows);
+  } else {
+    renderEmployeeSchedule(dates, rows);
+  }
+}
+
+function renderManagerSchedule(dates, rows){
+  const container=document.getElementById('schContent');
+  container.innerHTML='';
+
+  // Header row
+  const hd=document.createElement('div');
+  hd.className='sch-head';
+  hd.innerHTML=`<span class="sch-head-title">Team schedule</span><button class="btn-add-assign" onclick="openModal()">+ Assign</button>`;
+  container.appendChild(hd);
+
+  if(!rows.length){
+    const em=document.createElement('div');
+    em.className='sch-empty';
+    em.textContent='No assignments yet — tap Assign to add one.';
+    container.appendChild(em);
+    return;
+  }
+
+  // Group by email
+  const byEmail={};
+  rows.forEach(r=>{
+    if(!byEmail[r.employee_email]) byEmail[r.employee_email]={email:r.employee_email,days:{}};
+    if(!byEmail[r.employee_email].days[r.work_date]) byEmail[r.employee_email].days[r.work_date]=[];
+    byEmail[r.employee_email].days[r.work_date].push(...(r.locations||[]));
+  });
+
+  const DABB_MAP={'Mon':0,'Tue':1,'Wed':2,'Thu':3,'Fri':4,'Sat':5,'Sun':6};
+  const avatarColors=['#05D9B4','#4F8EF7','#A78BFA','#F5A623','#FF5757','#34D399'];
+
+  Object.values(byEmail).forEach((person,pi)=>{
+    const card=document.createElement('div');
+    card.className='person-card';
+    const initials=person.email.substring(0,2).toUpperCase();
+    const color=avatarColors[pi%avatarColors.length];
+    const totalLocs=Object.values(person.days).flat().length;
+
+    let daysHTML='';
+    dates.forEach((d,i)=>{
+      const locs=person.days[d]||[];
+      const dayName=DAYS_ABB[i];
+      const dayDate=fd(d).getDate();
+      daysHTML+=`<div class="person-day-block">
+        <div class="person-day-lbl">${dayName} ${dayDate}</div>
+        <div class="person-day-locs">
+          ${locs.length?locs.map(l=>`<span class="person-loc-tag">${LOCS.find(x=>x.id===l)?.name||l}</span>`).join('')
+            :'<span class="person-loc-tag empty">—</span>'}
+        </div>
+      </div>`;
+    });
+
+    card.innerHTML=`
+      <div class="person-head">
+        <div class="person-avatar" style="background:${color}22;color:${color}">${initials}</div>
+        <div>
+          <div class="person-name">${person.email.split('@')[0]}</div>
+          <div class="person-email">${person.email}</div>
+        </div>
+        <div class="person-count">${totalLocs} loc</div>
+      </div>
+      <div class="person-day-blocks">${daysHTML}</div>
+      <div style="padding:0 14px 10px">
+        <button class="assign-del-btn" onclick="deletePersonSchedule('${person.email}')">✕ Remove all for this person</button>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function renderEmployeeSchedule(dates, rows){
+  const container=document.getElementById('schContent');
+  container.innerHTML='';
+
+  const hd=document.createElement('div');
+  hd.className='sch-head';
+  hd.innerHTML=`<span class="sch-head-title">My schedule</span><span class="sch-role-badge emp">Employee</span>`;
+  container.appendChild(hd);
+
+  if(!rows.length){
+    const em=document.createElement('div');
+    em.className='sch-empty';
+    em.textContent='No schedule assigned yet. Check back later.';
+    container.appendChild(em);
+    return;
+  }
+
+  dates.forEach((d,i)=>{
+    const dayRows=rows.filter(r=>r.work_date===d);
+    const locs=dayRows.flatMap(r=>r.locations||[]);
+    const has=locs.length>0;
+    const el=document.createElement('div');
+    el.className=`my-sch-day${has?' has':''}`;
+    el.innerHTML=`
+      <div class="my-sch-dayname">${DAYS_FULL[i]}</div>
+      <div class="my-sch-date">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div>
+      <div class="my-sch-locs">
+        ${has?locs.map(l=>`<span class="person-loc-tag">${LOCS.find(x=>x.id===l)?.name||l}</span>`).join('')
+          :'<span class="my-sch-empty">Nothing assigned</span>'}
+      </div>`;
+    container.appendChild(el);
+  });
+}
+
+async function navSch(dir){schOff+=dir;await renderSchedule();}
+
+// Modal
+function openModal(){
+  modalSelDays=new Set();
+  modalSelLocs=new Set();
+  document.getElementById('assignEmail').value='';
+  // Render day buttons
+  const dc=document.getElementById('modalDays');
+  dc.innerHTML=DAYS_ABB.map((d,i)=>`<button class="modal-day-btn" onclick="toggleModalDay(this,'${wkDates(schOff)[i]}')" data-d="${wkDates(schOff)[i]}"><span class="modal-day-abbr">${d}</span></button>`).join('');
+  // Render loc buttons
+  const lc=document.getElementById('modalLocs');
+  lc.innerHTML=LOCS.map(l=>`<button class="modal-loc-btn" onclick="toggleModalLoc(this,'${l.id}')">${l.name}</button>`).join('');
+  document.getElementById('assignModal').classList.add('open');
+}
+function closeModal(){document.getElementById('assignModal').classList.remove('open');}
+function toggleModalDay(btn,d){
+  if(modalSelDays.has(d)){modalSelDays.delete(d);btn.classList.remove('sel');}
+  else{modalSelDays.add(d);btn.classList.add('sel');}
+}
+function toggleModalLoc(btn,id){
+  if(modalSelLocs.has(id)){modalSelLocs.delete(id);btn.classList.remove('sel');}
+  else{modalSelLocs.add(id);btn.classList.add('sel');}
+}
+
+async function saveAssignment(){
+  const email=document.getElementById('assignEmail').value.trim().toLowerCase();
+  if(!email||!modalSelDays.size||!modalSelLocs.size){
+    showToast('Fill in email, days and locations','warn');return;
+  }
+  const locs=[...modalSelLocs];
+  const rows=[...modalSelDays].map(d=>({
+    created_by:ME.id, employee_email:email, work_date:d, locations:locs
+  }));
+  const{error}=await supabaseClient.from('schedules').upsert(rows,{onConflict:'employee_email,work_date'});
+  if(error){showToast('Error saving — try again','warn');console.error(error);return;}
+  closeModal();
+  showToast(`Schedule saved for ${email.split('@')[0]}`);
+  await renderSchedule();
+}
+
+async function deletePersonSchedule(email){
+  const dates=wkDates(schOff);
+  const{error}=await supabaseClient.from('schedules').delete()
+    .eq('employee_email',email).gte('work_date',dates[0]).lte('work_date',dates[6]);
+  if(error){showToast('Error','warn');return;}
+  showToast('Removed');
+  await renderSchedule();
+}
+
+// Close modal on overlay click
+document.getElementById('assignModal').addEventListener('click',function(e){
+  if(e.target===this)closeModal();
+});
 
 // ── EDIT FROM WEEK VIEW ──────────────────────
 function editDay(dateStr){
@@ -944,5 +1321,31 @@ document.addEventListener('keydown',e=>{
   else doSignUp();
 });
 </script>
+
+<!-- ASSIGNMENT MODAL -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Assign locations</div>
+    <div class="modal-sub">Assign work locations to a team member for specific days</div>
+    <div class="modal-field">
+      <div class="modal-label">Employee email</div>
+      <input class="modal-input" type="email" id="assignEmail" placeholder="employee@example.com"/>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Days</div>
+      <div class="modal-days" id="modalDays"></div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Locations</div>
+      <div class="modal-locs-grid" id="modalLocs"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-modal-save" onclick="saveAssignment()">Assign</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
