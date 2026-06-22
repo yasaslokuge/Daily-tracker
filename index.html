@@ -11,7 +11,7 @@
   <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
   <meta http-equiv="X-Frame-Options" content="DENY"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -429,7 +429,7 @@ body.light #bgCanvas{opacity:0.1}
 <canvas id="bgCanvas"></canvas>
 <div id="loader">
   <div class="ld-logo"><div class="spin-ring"></div><div class="ld-word">Work<b>Trace</b></div></div>
-  <div class="ld-txt">loading your workspace…</div>
+  <div class="ld-txt" id="ldTxt">connecting…</div>
 </div>
 
 <div id="authWrap" style="display:none;flex-direction:column">
@@ -557,7 +557,7 @@ body.light #bgCanvas{opacity:0.1}
 <script>
 const SUPABASE_URL='https://vwoylscgfhuzmsnkjdlu.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3b3lsc2NnZmh1em1zbmtqZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDY0OTUsImV4cCI6MjA5NzcyMjQ5NX0.ci08mxviFw5le494yUUE70fTRnWi6TqqC1Rjk971k_s';
-const{createClient}=supabase;
+const{createClient}=window.supabase||supabase;
 const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 const LOCS=[
@@ -974,29 +974,46 @@ function editDay(dateStr){
   draw();
 })();
 
-// Fallback: if Supabase doesn't respond in 5s, show auth screen anyway
-const loaderTimeout = setTimeout(()=>{
-  hideLoader();hideApp();showAuth();
-  document.getElementById('siErr').textContent='Connection slow — check your internet and try again.';
-  document.getElementById('siErr').style.display='block';
-},5000);
+// ── BOOT ──────────────────────────────────
+let booted = false;
 
-sb.auth.onAuthStateChange(async(event,session)=>{
-  clearTimeout(loaderTimeout);
-  if(session?.user) await initApp(session.user);
-  else{hideLoader();hideApp();showAuth();}
-});
+function boot(session) {
+  if (booted) return;
+  booted = true;
+  if (session && session.user) {
+    initApp(session.user);
+  } else {
+    hideLoader();
+    hideApp();
+    showAuth();
+  }
+}
 
-// Also try getting session immediately (faster than waiting for event)
-sb.auth.getSession().then(({data:{session}})=>{
-  if(session?.user){clearTimeout(loaderTimeout);initApp(session.user);}
-  else{clearTimeout(loaderTimeout);hideLoader();hideApp();showAuth();}
-}).catch(err=>{
-  clearTimeout(loaderTimeout);
-  hideLoader();hideApp();showAuth();
-  document.getElementById('siErr').textContent='Could not connect to server. Check your internet.';
-  document.getElementById('siErr').style.display='block';
-});
+// Hard timeout — always show something within 4 seconds no matter what
+setTimeout(() => {
+  if (!booted) {
+    booted = true;
+    hideLoader();
+    hideApp();
+    showAuth();
+  }
+}, 4000);
+
+// 1. Try getSession first (fastest path)
+try {
+  sb.auth.getSession().then(({ data }) => {
+    boot(data && data.session ? data.session : null);
+  }).catch(() => boot(null));
+} catch(e) {
+  boot(null);
+}
+
+// 2. Also listen for auth state changes (handles token refresh etc)
+try {
+  sb.auth.onAuthStateChange((event, session) => {
+    if (!booted) boot(session);
+  });
+} catch(e) {}
 document.addEventListener('keydown',e=>{
   if(e.key!=='Enter')return;
   if(document.getElementById('siBox').style.display!=='none')doSignIn();
