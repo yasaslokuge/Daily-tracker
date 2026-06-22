@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WorkTrace</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0F1923;
+    --navy-card: #1A2635;
+    --navy-card2: #223040;
+    --teal: #00C9A7;
+    --teal-dim: #00896F;
+    --teal-glow: rgba(0,201,167,0.12);
+    --text-primary: #F0F4F8;
+    --text-secondary: #8A9BB0;
+    --text-muted: #4A5A6A;
+    --border: rgba(255,255,255,0.07);
+    --border-active: rgba(0,201,167,0.4);
+    --danger: #FF6B6B;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --transition: 0.18s ease;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--navy);
+    color: var(--text-primary);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Layout ── */
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0 80px;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15,25,35,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .brand-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 10px var(--teal);
+    flex-shrink: 0;
+  }
+
+  .brand-name {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+
+  .brand-name span { color: var(--teal); }
+
+  .topbar-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 300;
+  }
+
+  /* ── Bottom nav ── */
+  .bottomnav {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: rgba(15,25,35,0.96);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+  }
+
+  .nav-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 12px 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transition: color var(--transition);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.6; }
+  .nav-btn.active { color: var(--teal); }
+  .nav-btn:hover { color: var(--text-secondary); }
+
+  /* ── Views ── */
+  .view { display: none; padding: 0; }
+  .view.active { display: block; }
+
+  /* ── Week strip ── */
+  .week-strip {
+    padding: 16px 20px 8px;
+  }
+
+  .week-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .week-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .day-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .day-abbr {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .day-num {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1.5px solid var(--border);
+    background: var(--navy-card);
+    color: var(--text-secondary);
+    transition: all var(--transition);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .day-chip.has-data .day-num {
+    border-color: var(--teal-dim);
+    background: rgba(0,201,167,0.08);
+    color: var(--teal);
+  }
+
+  .day-chip.selected .day-num {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  .day-chip.today .day-num:not(.day-chip.selected .day-num) {
+    border-color: rgba(0,201,167,0.5);
+  }
+
+  .day-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: transparent;
+  }
+
+  .day-chip.has-data .day-dot { background: var(--teal); }
+
+  /* ── Section heading ── */
+  .section-head {
+    padding: 16px 20px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .section-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--teal);
+    font-weight: 300;
+  }
+
+  /* ── Location grid ── */
+  .loc-grid {
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .loc-card {
+    background: var(--navy-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 14px 12px;
+    cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .loc-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--teal-glow);
+    opacity: 0;
+    transition: opacity var(--transition);
+  }
+
+  .loc-card.selected {
+    border-color: var(--teal);
+    background: rgba(0,201,167,0.06);
+  }
+
+  .loc-card.selected::before { opacity: 1; }
+
+  .loc-card:active { transform: scale(0.97); }
+
+  .loc-check {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: all var(--transition);
+    flex-shrink: 0;
+  }
+
+  .loc-card.selected .loc-check {
+    background: var(--teal);
+    border-color: var(--teal);
+  }
+
+  .loc-check svg { display: none; width: 10px; height: 10px; }
+  .loc-card.selected .loc-check svg { display: block; }
+
+  .loc-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    padding-right: 22px;
+    line-height: 1.3;
+  }
+
+  .loc-card.selected .loc-name { color: var(--teal); }
+
+  /* ── Notes area ── */
+  .notes-area {
+    padding: 14px 20px 0;
+  }
+
+  .notes-label {
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .notes-input {
+    width: 100%;
+    background: var(--navy-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 12px 14px;
+    resize: none;
+    outline: none;
+    transition: border-color var(--transition);
+    min-height: 80px;
+  }
+
+  .notes-input::placeholder { color: var(--text-muted); }
+  .notes-input:focus { border-color: var(--border-active); }
+
+  /* ── Save button ── */
+  .save-row {
+    padding: 14px 20px 0;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-save {
+    flex: 1;
+    background: var(--teal);
+    color: var(--navy);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 13px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: all var(--transition);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-save:hover { background: #00d8b4; }
+  .btn-save:active { transform: scale(0.98); }
+  .btn-save:disabled {
+    background: var(--navy-card2);
+    color: var(--text-muted);
+    cursor: default;
+  }
+
+  .btn-clear {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    padding: 13px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .btn-clear:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 90px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--teal);
+    color: var(--navy);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Weekly View ── */
+  .week-summary {
+    padding: 16px 20px 0;
+  }
+
+  .week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .week-nav-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .week-nav-btn {
+    background: var(--navy-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .week-nav-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .week-nav-btn svg { width: 16px; height: 16px; }
+
+  .week-day-entry {
+    background: var(--navy-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: border-color var(--transition);
+  }
+
+  .week-day-entry.has-data { border-color: rgba(0,201,167,0.2); }
+
+  .entry-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+  }
+
+  .entry-dayname {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .entry-daydate {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .entry-count {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--navy-card2);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .entry-count.has-data {
+    color: var(--teal);
+    background: var(--teal-glow);
+  }
+
+  .entry-locs {
+    padding: 0 14px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .entry-loc-tag {
+    font-size: 12px;
+    color: var(--teal);
+    background: var(--teal-glow);
+    border: 1px solid rgba(0,201,167,0.2);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+
+  .entry-note {
+    padding: 0 14px 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .empty-day {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 0 14px 12px;
+  }
+
+  /* ── Report view ── */
+  .report-view {
+    padding: 16px 20px 0;
+  }
+
+  .report-block {
+    background: var(--navy-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+
+  .report-head-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .report-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .report-range {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--teal);
+    margin-top: 2px;
+    font-weight: 300;
+  }
+
+  .report-text {
+    background: var(--navy);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .btn-copy {
+    width: 100%;
+    background: none;
+    border: 1.5px solid var(--teal);
+    border-radius: var(--radius-md);
+    color: var(--teal);
+    padding: 13px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all var(--transition);
+    letter-spacing: 0.3px;
+  }
+
+  .btn-copy:hover { background: var(--teal-glow); }
+  .btn-copy:active { transform: scale(0.98); }
+
+  /* ── Stats ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .stat-card {
+    background: var(--navy-card2);
+    border-radius: var(--radius-md);
+    padding: 14px;
+  }
+
+  .stat-val {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--teal);
+    font-family: 'DM Mono', monospace;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 5px;
+  }
+
+  /* ── Credit ── */
+  .credit {
+    text-align: center;
+    padding: 20px 0 6px;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    font-weight: 300;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .credit em { font-style: italic; color: var(--teal-dim); }
+
+  /* ── Utility ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 20px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .empty-state svg {
+    width: 40px; height: 40px;
+    margin: 0 auto 12px;
+    display: block;
+    opacity: 0.3;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span class="brand-name">Work<span>Trace</span></span>
+    </div>
+    <div class="topbar-date" id="topbarDate"></div>
+  </div>
+
+  <!-- VIEW: Log -->
+  <div class="view active" id="view-log">
+    <!-- Week strip -->
+    <div class="week-strip">
+      <div class="week-label">This week</div>
+      <div class="week-days" id="weekDays"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Location grid -->
+    <div class="section-head">
+      <span class="section-title">Locations</span>
+      <span class="section-date" id="selectedDateLabel"></span>
+    </div>
+
+    <div class="loc-grid" id="locGrid"></div>
+
+    <!-- Notes -->
+    <div class="notes-area">
+      <div class="notes-label">Notes (optional)</div>
+      <textarea class="notes-input" id="notesInput" placeholder="Any notes for this day…" rows="3"></textarea>
+    </div>
+
+    <!-- Save -->
+    <div class="save-row">
+      <button class="btn-clear" id="btnClear" onclick="clearDay()">Clear</button>
+      <button class="btn-save" id="btnSave" onclick="saveDay()">Save Day</button>
+    </div>
+
+    <div class="credit">created by <em>Y</em></div>
+  </div>
+
+  <!-- VIEW: Week -->
+  <div class="view" id="view-week">
+    <div class="week-summary">
+      <div class="week-nav">
+        <button class="week-nav-btn" onclick="navWeek(-1)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="week-nav-title" id="weekNavTitle"></span>
+        <button class="week-nav-btn" onclick="navWeek(1)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div id="weekEntries"></div>
+    </div>
+    <div class="credit">created by <em>Y</em></div>
+  </div>
+
+  <!-- VIEW: Report -->
+  <div class="view" id="view-report">
+    <div class="report-view">
+      <div class="stats-row" id="statsRow"></div>
+      <div class="report-block">
+        <div class="report-head-row">
+          <div>
+            <div class="report-title">Weekly Report</div>
+            <div class="report-range" id="reportRange"></div>
+          </div>
+        </div>
+        <div class="report-text" id="reportText"></div>
+        <button class="btn-copy" onclick="copyReport()">Copy to clipboard</button>
+      </div>
+    </div>
+    <div class="credit">created by <em>Y</em></div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<div class="bottomnav">
+  <button class="nav-btn active" id="nav-log" onclick="switchView('log')">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m-8-8h16"/></svg>
+    Log
+  </button>
+  <button class="nav-btn" id="nav-week" onclick="switchView('week')">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Week
+  </button>
+  <button class="nav-btn" id="nav-report" onclick="switchView('report')">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Report
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LOCATIONS = ['Bravo','Swash','Office (Empire)','Empire','Broken','ACS','Wynyard','Parisole','Office (Parisole)'];
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAYS_FULL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+// State
+let selectedDate = getLocalToday();
+let selectedWeekOffset = 0; // for week/report nav
+
+function getLocalToday() {
+  const d = new Date();
+  return toLocalDateStr(d);
+}
+
+function toLocalDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseLocal(str) {
+  const [y,m,d] = str.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+
+// Get Monday of a given date's week
+function getWeekMonday(dateStr) {
+  const d = parseLocal(dateStr);
+  const day = d.getDay(); // 0=Sun
+  const diff = (day === 0) ? -6 : 1 - day;
+  const mon = new Date(d);
+  mon.setDate(d.getDate() + diff);
+  return mon;
+}
+
+function addDays(d, n) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+// Storage helpers
+function loadData() {
+  try { return JSON.parse(localStorage.getItem('worktrace_data') || '{}'); }
+  catch { return {}; }
+}
+
+function saveData(data) {
+  localStorage.setItem('worktrace_data', JSON.stringify(data));
+}
+
+function getDayData(dateStr) {
+  return loadData()[dateStr] || { locations: [], note: '' };
+}
+
+function setDayData(dateStr, locations, note) {
+  const data = loadData();
+  data[dateStr] = { locations, note };
+  saveData(data);
+}
+
+// Init
+function init() {
+  updateTopbarDate();
+  renderWeekStrip();
+  renderLocGrid();
+  loadDayIntoUI(selectedDate);
+}
+
+function updateTopbarDate() {
+  const d = new Date();
+  document.getElementById('topbarDate').textContent =
+    d.toLocaleDateString('en-NZ', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// ── Week strip ──
+function renderWeekStrip() {
+  const mon = getWeekMonday(getLocalToday());
+  const data = loadData();
+  const today = getLocalToday();
+  const container = document.getElementById('weekDays');
+  container.innerHTML = '';
+
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(mon, i);
+    const ds = toLocalDateStr(d);
+    const hasData = data[ds] && data[ds].locations && data[ds].locations.length > 0;
+    const isToday = ds === today;
+    const isSelected = ds === selectedDate;
+
+    const chip = document.createElement('div');
+    chip.className = `day-chip${hasData ? ' has-data' : ''}${isSelected ? ' selected' : ''}${isToday ? ' today' : ''}`;
+    chip.innerHTML = `
+      <span class="day-abbr">${DAYS[i]}</span>
+      <div class="day-num">${d.getDate()}</div>
+      <div class="day-dot"></div>
+    `;
+    chip.addEventListener('click', () => selectDay(ds));
+    container.appendChild(chip);
+  }
+}
+
+function selectDay(dateStr) {
+  selectedDate = dateStr;
+  renderWeekStrip();
+  renderLocGrid();
+  loadDayIntoUI(dateStr);
+  updateSelectedDateLabel();
+}
+
+function updateSelectedDateLabel() {
+  const d = parseLocal(selectedDate);
+  document.getElementById('selectedDateLabel').textContent =
+    d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+// ── Location grid ──
+let tempSelected = new Set();
+
+function renderLocGrid() {
+  const container = document.getElementById('locGrid');
+  container.innerHTML = '';
+  LOCATIONS.forEach(loc => {
+    const card = document.createElement('div');
+    card.className = `loc-card${tempSelected.has(loc) ? ' selected' : ''}`;
+    card.dataset.loc = loc;
+    card.innerHTML = `
+      <div class="loc-check">
+        <svg fill="none" stroke="#0F1923" stroke-width="2.5" viewBox="0 0 12 12"><path stroke-linecap="round" stroke-linejoin="round" d="M2 6l3 3 5-5"/></svg>
+      </div>
+      <div class="loc-name">${loc}</div>
+    `;
+    card.addEventListener('click', () => toggleLoc(loc, card));
+    container.appendChild(card);
+  });
+}
+
+function toggleLoc(loc, card) {
+  if (tempSelected.has(loc)) {
+    tempSelected.delete(loc);
+    card.classList.remove('selected');
+  } else {
+    tempSelected.add(loc);
+    card.classList.add('selected');
+  }
+}
+
+function loadDayIntoUI(dateStr) {
+  const d = getDayData(dateStr);
+  tempSelected = new Set(d.locations);
+  document.getElementById('notesInput').value = d.note || '';
+  renderLocGrid();
+  updateSelectedDateLabel();
+}
+
+function saveDay() {
+  const note = document.getElementById('notesInput').value.trim();
+  const locs = [...tempSelected];
+  setDayData(selectedDate, locs, note);
+  renderWeekStrip();
+  showToast(locs.length > 0 ? `Saved ${locs.length} location${locs.length>1?'s':''}` : 'Day cleared');
+}
+
+function clearDay() {
+  tempSelected.clear();
+  document.getElementById('notesInput').value = '';
+  renderLocGrid();
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── View switching ──
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`view-${name}`).classList.add('active');
+  document.getElementById(`nav-${name}`).classList.add('active');
+  if (name === 'week') renderWeekView();
+  if (name === 'report') renderReport();
+}
+
+// ── Week view ──
+function renderWeekView() {
+  const mon = addDays(getWeekMonday(getLocalToday()), selectedWeekOffset * 7);
+  const sun = addDays(mon, 6);
+  document.getElementById('weekNavTitle').textContent =
+    `${mon.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} – ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
+
+  const data = loadData();
+  const container = document.getElementById('weekEntries');
+  container.innerHTML = '';
+
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(mon, i);
+    const ds = toLocalDateStr(d);
+    const day = data[ds] || { locations: [], note: '' };
+    const hasData = day.locations && day.locations.length > 0;
+
+    const el = document.createElement('div');
+    el.className = `week-day-entry${hasData ? ' has-data' : ''}`;
+
+    let locsHTML = hasData
+      ? `<div class="entry-locs">${day.locations.map(l=>`<span class="entry-loc-tag">${l}</span>`).join('')}</div>`
+      : `<div class="empty-day">No locations logged</div>`;
+
+    let noteHTML = day.note ? `<div class="entry-note">"${day.note}"</div>` : '';
+
+    el.innerHTML = `
+      <div class="entry-head">
+        <div>
+          <div class="entry-dayname">${DAYS_FULL[i]}</div>
+          <div class="entry-daydate">${d.toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div>
+        </div>
+        <div class="entry-count${hasData ? ' has-data' : ''}">${hasData ? day.locations.length + ' loc' : '—'}</div>
+      </div>
+      ${locsHTML}${noteHTML}
+    `;
+    container.appendChild(el);
+  }
+}
+
+function navWeek(dir) {
+  selectedWeekOffset += dir;
+  renderWeekView();
+}
+
+// ── Report ──
+function renderReport() {
+  const mon = addDays(getWeekMonday(getLocalToday()), selectedWeekOffset * 7);
+  const sun = addDays(mon, 6);
+
+  document.getElementById('reportRange').textContent =
+    `${mon.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric'})} – ${sun.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}`;
+
+  const data = loadData();
+  let totalLocs = 0;
+  let daysWorked = 0;
+  let lines = [];
+
+  lines.push(`WORK LOCATION REPORT`);
+  lines.push(`Week of ${mon.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})} – ${sun.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})}`);
+  lines.push(`${'─'.repeat(40)}`);
+
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(mon, i);
+    const ds = toLocalDateStr(d);
+    const day = data[ds] || { locations: [], note: '' };
+    const locs = day.locations || [];
+    const dateStr = d.toLocaleDateString('en-NZ',{weekday:'long',day:'numeric',month:'long'});
+
+    if (locs.length > 0) {
+      daysWorked++;
+      totalLocs += locs.length;
+      lines.push(`\n${dateStr}`);
+      locs.forEach(l => lines.push(`  • ${l}`));
+      if (day.note) lines.push(`  Note: ${day.note}`);
+    } else {
+      lines.push(`\n${dateStr}`);
+      lines.push(`  — No locations logged`);
+    }
+  }
+
+  lines.push(`\n${'─'.repeat(40)}`);
+  lines.push(`Days worked: ${daysWorked} / 7`);
+  lines.push(`Total locations: ${totalLocs}`);
+
+  document.getElementById('reportText').textContent = lines.join('\n');
+
+  // Stats
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-val">${daysWorked}</div>
+      <div class="stat-label">Days Worked</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">${totalLocs}</div>
+      <div class="stat-label">Total Locations</div>
+    </div>
+  `;
+}
+
+function copyReport() {
+  const text = document.getElementById('reportText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Copied to clipboard');
+  }).catch(() => {
+    showToast('Select and copy manually');
+  });
+}
+
+// ── Boot ──
+init();
+</script>
+</body>
+</html>
