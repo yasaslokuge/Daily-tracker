@@ -466,7 +466,7 @@ body.light .auth-box::before{opacity:0.3}
 .person-day-blocks::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
 /* Modal/overlay for assigning */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:900;display:none;align-items:flex-end;justify-content:center;-webkit-overflow-scrolling:touch}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;display:none;align-items:flex-end;justify-content:center;-webkit-overflow-scrolling:touch}
 .modal-overlay.open{display:flex}.modal-sheet{position:relative;z-index:901}
 .modal-sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:20px}
 .modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
@@ -565,7 +565,7 @@ body.light .auth-box::before{opacity:0.3}
       <button class="btn-clr" onclick="clearDay()">Clear</button>
       <button class="btn-save" id="btnSave" onclick="saveDay()">Save Day</button>
     </div>
-    <div class="credit">created by <em>Y</em></div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
   </div>
 
   <!-- DASHBOARD -->
@@ -584,7 +584,7 @@ body.light .auth-box::before{opacity:0.3}
       </div>
       <div class="rec"><div class="rec-h">Recent activity</div><div id="recList"></div></div>
     </div>
-    <div class="credit">created by <em>Y</em></div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
   </div>
 
   <!-- WEEK -->
@@ -597,7 +597,7 @@ body.light .auth-box::before{opacity:0.3}
       </div>
       <div id="wkEntries"></div>
     </div>
-    <div class="credit">created by <em>Y</em></div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
   </div>
 
   <!-- REPORT -->
@@ -615,7 +615,7 @@ body.light .auth-box::before{opacity:0.3}
         <button class="btn-copy" onclick="copyRep()">Copy to clipboard</button>
       </div>
     </div>
-    <div class="credit">created by <em>Y</em></div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
   </div>
 
   <!-- SETTINGS VIEW -->
@@ -659,16 +659,12 @@ body.light .auth-box::before{opacity:0.3}
             </div>
           </div>
           <div class="divl" style="margin:0"></div>
-          <div class="tog-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div class="tog-row">
             <div>
               <div class="tog-label">My role</div>
-              <div class="tog-sub" id="setRole" style="margin-bottom:8px">—</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap">
-                <button onclick="setMyRole('employee')" style="background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;color:var(--text2);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Employee</button>
-                <button onclick="setMyRole('employer')" style="background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;color:var(--text2);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Employer</button>
-                <button onclick="setMyRole('admin')" style="background:var(--teal-bg);border:1.5px solid rgba(5,217,180,0.3);border-radius:8px;color:var(--teal);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Admin</button>
-              </div>
+              <div class="tog-sub" id="setRole">—</div>
             </div>
+            <div id="setRoleBadge" style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:var(--teal-bg);color:var(--teal);border:1px solid rgba(5,217,180,0.2)"></div>
           </div>
           <div class="divl" style="margin:0"></div>
           <div class="tog-row" onclick="doSignOut()" style="cursor:pointer">
@@ -690,7 +686,7 @@ body.light .auth-box::before{opacity:0.3}
         </div>
       </div>
     </div>
-    <div class="credit">created by <em>Y</em></div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
   </div>
 
   <!-- SCHEDULE VIEW -->
@@ -703,7 +699,7 @@ body.light .auth-box::before{opacity:0.3}
       </div>
       <div id="schContent"></div>
     </div>
-    <div class="credit">created by <em>Y</em></div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
   </div>
 
 </div>
@@ -931,8 +927,18 @@ function sv(name){
   if(name==='rep')  renderReport();
   if(name==='sch')  renderSchedule();
   if(name==='set'){
-    const se=document.getElementById('setEmail');if(se&&ME)se.textContent=ME.email;
-    const sr=document.getElementById('setRole');if(sr&&ME)sr.textContent=getRole(ME.email);
+    if(ME){
+      const se=document.getElementById('setEmail');if(se)se.textContent=ME.email;
+      const role=getRole(ME.email);
+      const sr=document.getElementById('setRole');if(sr)sr.textContent='Cannot be changed here';
+      const rb=document.getElementById('setRoleBadge');
+      if(rb){
+        rb.textContent=role.charAt(0).toUpperCase()+role.slice(1);
+        rb.style.background=role==='admin'?'var(--purple-bg)':role==='employer'?'var(--blue-bg)':'var(--teal-bg)';
+        rb.style.color=role==='admin'?'var(--purple)':role==='employer'?'var(--blue)':'var(--teal)';
+        rb.style.borderColor=role==='admin'?'rgba(167,139,250,0.2)':role==='employer'?'rgba(79,142,247,0.2)':'rgba(5,217,180,0.2)';
+      }
+    }
     syncThemeToggle();
   }
 }
@@ -1065,34 +1071,22 @@ loadSavedPrefs();
 
 // ── ROLE SYSTEM ──────────────────────────
 // ── ROLE SYSTEM ──────────────────────────
-// Admins/employers: add their emails here
-// Everyone else is automatically 'employee'
-const MANAGER_EMAILS=[
-  // 'youremail@example.com',
-  // 'manager@example.com',
-];
+// ── ROLES ────────────────────────────────
+// Add admin/employer emails below. These cannot be changed by the user.
+// Everyone else is automatically 'employee'.
+const ROLE_MAP={
+  // 'admin@example.com':'admin',
+  // 'employer@example.com':'employer',
+};
 
 function getRole(email){
   if(!email) return 'employee';
-  const e=email.toLowerCase().trim();
-  // Check hardcoded list
-  if(MANAGER_EMAILS.includes(e)) return 'admin';
-  // Check localStorage override (set from Settings)
-  const stored=localStorage.getItem('wt_role_'+e);
-  if(stored) return stored;
-  return 'employee';
+  return ROLE_MAP[email.toLowerCase().trim()]||'employee';
 }
 function isManager(){
   if(!ME) return false;
   const r=getRole(ME.email);
   return r==='admin'||r==='employer';
-}
-function setMyRole(role){
-  if(!ME) return;
-  localStorage.setItem('wt_role_'+ME.email.toLowerCase(),role);
-  const sr=document.getElementById('setRole');
-  if(sr) sr.textContent=role;
-  showToast('Role set to '+role);
 }
 
 // ── SCHEDULE ─────────────────────────────
@@ -1234,19 +1228,23 @@ async function navSch(dir){schOff+=dir;await renderSchedule();}
 // Modal
 function openModal(){
   const overlay=document.getElementById('assignModal');
-  if(!overlay){console.error('Modal not found');return;}
+  if(!overlay){showToast('Modal missing','warn');return;}
   modalSelDays=new Set();
   modalSelLocs=new Set();
   const emailEl=document.getElementById('assignEmail');
   if(emailEl) emailEl.value='';
+  const dates=wkDates(schOff);
   const dc=document.getElementById('modalDays');
   if(dc) dc.innerHTML=DAYS_ABB.map((d,i)=>{
-    const dt=wkDates(schOff)[i];
-    return `<button class="modal-day-btn" onclick="toggleModalDay(this,'${dt}')" data-d="${dt}"><span class="modal-day-abbr">${d}</span></button>`;
+    const dt=dates[i];
+    const dateNum=fd(dt).getDate();
+    return '<button class="modal-day-btn" onclick="toggleModalDay(this,''+dt+'')" data-d="'+dt+'"><span class="modal-day-abbr">'+d+'</span><span style="font-size:10px;color:var(--text3);display:block;margin-top:2px">'+dateNum+'</span></button>';
   }).join('');
   const lc=document.getElementById('modalLocs');
-  if(lc) lc.innerHTML=LOCS.map(l=>`<button class="modal-loc-btn" onclick="toggleModalLoc(this,'${l.id}')">${l.name}</button>`).join('');
-  overlay.style.display='flex';
+  if(lc) lc.innerHTML=LOCS.map(l=>'<button class="modal-loc-btn" onclick="toggleModalLoc(this,''+l.id+'')">'+l.name+'</button>').join('');
+  overlay.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
+  const sheet=overlay.querySelector('.modal-sheet');
+  if(sheet) sheet.scrollTop=0;
 }
 function closeModal(){
   const m=document.getElementById('assignModal');
@@ -1262,19 +1260,32 @@ function toggleModalLoc(btn,id){
 }
 
 async function saveAssignment(){
-  const email=document.getElementById('assignEmail').value.trim().toLowerCase();
-  if(!email||!modalSelDays.size||!modalSelLocs.size){
-    showToast('Fill in email, days and locations','warn');return;
-  }
+  const emailEl=document.getElementById('assignEmail');
+  const email=emailEl?emailEl.value.trim().toLowerCase():'';
+  if(!email){showToast('Enter an employee email','warn');return;}
+  if(!modalSelDays.size){showToast('Select at least one day','warn');return;}
+  if(!modalSelLocs.size){showToast('Select at least one location','warn');return;}
   const locs=[...modalSelLocs];
   const rows=[...modalSelDays].map(d=>({
-    created_by:ME.id, employee_email:email, work_date:d, locations:locs
+    created_by:ME.id,
+    employee_email:email,
+    work_date:d,
+    locations:locs
   }));
-  const{error}=await supabaseClient.from('schedules').upsert(rows,{onConflict:'employee_email,work_date'});
-  if(error){showToast('Error saving — try again','warn');console.error(error);return;}
-  closeModal();
-  showToast(`Schedule saved for ${email.split('@')[0]}`);
-  await renderSchedule();
+  try{
+    const{error}=await supabaseClient.from('schedules').upsert(rows,{onConflict:'employee_email,work_date'});
+    if(error){
+      showToast('DB error: '+error.message,'warn');
+      console.error('Schedule save error:',error);
+      return;
+    }
+    closeModal();
+    showToast('Schedule saved for '+email.split('@')[0]);
+    await renderSchedule();
+  }catch(e){
+    showToast('Error — check console','warn');
+    console.error(e);
+  }
 }
 
 async function deletePersonSchedule(email){
