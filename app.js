@@ -425,7 +425,7 @@ loadSavedPrefs();
 // Add admin/employer emails below. These cannot be changed by the user.
 // Everyone else is automatically 'employee'.
 const ROLE_MAP={
-  // 'admin@example.com':'admin',
+  'yasaslokuge1438@gmail.com':'admin',
   // 'employer@example.com':'employer',
 };
 
