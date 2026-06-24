@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
+<title>WorkTrace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Styles -->
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div id="loader">
+  <div class="ld-logo"><div class="spin-ring"></div><div class="ld-word">Work<b>Trace</b></div></div>
+  <div class="ld-txt" id="ldTxt">connecting…</div>
+</div>
+
+<div id="authWrap" style="display:none;flex-direction:column">
+  <div class="auth-logo"><div class="a-dot"></div><div class="a-word">Work<span>Trace</span></div></div>
+  <div class="auth-box" id="siBox">
+    <div class="auth-h">Welcome back</div>
+    <div class="auth-sub">Sign in to continue tracking</div>
+    <div class="amsg err" id="siErr"></div><div class="amsg ok" id="siOk"></div>
+    <div class="fg"><label>Email</label><input type="email" id="siEmail" placeholder="you@example.com" autocomplete="email"/></div>
+    <div class="fg"><label>Password</label><input type="password" id="siPass" placeholder="••••••••" autocomplete="current-password"/></div>
+    <button class="btn-auth" id="siBtn" onclick="doSignIn()">Sign In</button>
+    <div class="auth-tog">No account? <a onclick="toggleAuth('up')">Create one</a></div>
+  </div>
+  <div class="auth-box" id="suBox" style="display:none">
+    <div class="auth-h">Create account</div>
+    <div class="auth-sub">Start tracking your work locations</div>
+    <div class="amsg err" id="suErr"></div><div class="amsg ok" id="suOk"></div>
+    <div class="fg"><label>Email</label><input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email"/></div>
+    <div class="fg"><label>Password</label><input type="password" id="suPass" placeholder="Min 6 characters" autocomplete="new-password"/></div>
+    <button class="btn-auth" id="suBtn" onclick="doSignUp()">Create Account</button>
+    <div class="auth-tog">Have an account? <a onclick="toggleAuth('in')">Sign in</a></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;flex-direction:column">
+  <div class="topbar">
+    <div class="tb-brand" onclick="sv('log')" style="cursor:pointer"><div class="tb-dot"></div><div class="tb-name">Work<span>Trace</span></div></div>
+    <div class="tb-r"><div class="tb-user" id="tbUser"></div><button class="btn-so" onclick="doSignOut()">Sign out</button></div>
+  </div>
+
+  <!-- LOG -->
+  <div class="view on" id="v-log">
+    <div class="hero-band">
+      <div class="hero-small" id="heroSmall"></div>
+      <div class="hero-big" id="heroBig"></div>
+      <div class="hero-meta">
+        <div class="streak-pill"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span id="streakTxt">0 day streak</span></div>
+      </div>
+      <div class="hero-badge" id="heroBadge"></div>
+    </div>
+    <div class="ws-wrap">
+      <div class="ws-lbl">This week</div>
+      <div class="ws-days" id="wsDays"></div>
+    </div>
+    <div class="divl"></div>
+    <div class="sec-head"><span class="sec-title">Locations worked</span><span class="sec-badge" id="selLbl"></span></div>
+    <div class="loc-grid" id="locGrid"></div>
+    <div class="notes-wrap">
+      <div class="notes-lbl">Notes</div>
+      <textarea class="notes-ta" id="notesTA" placeholder="Anything notable about today…" rows="3"></textarea>
+    </div>
+    <div class="sup-wrap">
+      <div class="sup-lbl">Supplies needed <span class="sup-lbl-hint">tap to flag</span></div>
+      <div class="sup-grid" id="supGrid"></div>
+    </div>
+    <div class="save-row">
+      <button class="btn-clr" onclick="clearDay()">Clear</button>
+      <button class="btn-save" id="btnSave" onclick="saveDay()">Save Day</button>
+    </div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="view" id="v-dash">
+    <div class="dash-wrap">
+      <div class="dash-g" id="dashG">Good morning</div>
+      <div class="dash-s" id="dashS">Here's your week at a glance</div>
+      <div class="stats-g" id="dashStats"></div>
+      <div class="wcc">
+        <div class="wcc-h"><div class="wcc-t">Locations per day</div><div class="wcc-s" id="wccR"></div></div>
+        <div class="bar-chart" id="barChart"></div>
+      </div>
+      <div class="sac" id="sacCard">
+        <div class="sac-h"><div class="sac-ico"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><div class="sac-t">Supplies needed this week</div></div>
+        <div id="sacList"></div>
+      </div>
+      <div class="rec"><div class="rec-h">Recent activity</div><div id="recList"></div></div>
+    </div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
+  </div>
+
+  <!-- WEEK -->
+  <div class="view" id="v-week">
+    <div class="wv-wrap">
+      <div class="wv-nav">
+        <button class="wv-btn" onclick="navWeek(-1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+        <span class="wv-title" id="wvTitle"></span>
+        <button class="wv-btn" onclick="navWeek(1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div id="wkEntries"></div>
+    </div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="view" id="v-rep">
+    <div class="rv-wrap">
+      <div class="rv-nav">
+        <button class="rv-btn" onclick="navRep(-1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+        <span class="rv-title" id="rvTitle"></span>
+        <button class="rv-btn" onclick="navRep(1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div class="rv-stats" id="rvStats"></div>
+      <div class="rv-card">
+        <div class="rv-head"><div class="rv-htitle">Weekly Report</div><div class="rv-range" id="rvRange"></div></div>
+        <div class="rv-text" id="rvText"></div>
+        <button class="btn-copy" onclick="copyRep()">Copy to clipboard</button>
+      </div>
+    </div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="view" id="v-set">
+    <div class="set-wrap">
+      <div class="set-section">
+        <div class="set-sec-title">Appearance</div>
+        <div class="set-card">
+          <div class="tog-row">
+            <div>
+              <div class="tog-label">Light mode</div>
+              <div class="tog-sub">Switch between dark and light</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="themeToggle" onchange="setThemeToggle(this.checked)"/>
+              <span class="tog-slider"></span>
+            </label>
+          </div>
+          <div class="divl" style="margin:0 0"></div>
+          <div class="tog-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+            <div class="tog-label">Accent colour</div>
+            <div class="accent-row" style="padding:0;flex-wrap:wrap">
+              <div class="acc-opt" data-color="#05D9B4" onclick="setAccent('#05D9B4','#03A88C')" title="Teal" style="background:#05D9B4"></div>
+              <div class="acc-opt" data-color="#4F8EF7" onclick="setAccent('#4F8EF7','#2B6FE0')" title="Blue" style="background:#4F8EF7"></div>
+              <div class="acc-opt" data-color="#A78BFA" onclick="setAccent('#A78BFA','#7C5CDB')" title="Purple" style="background:#A78BFA"></div>
+              <div class="acc-opt" data-color="#F5A623" onclick="setAccent('#F5A623','#D4891A')" title="Amber" style="background:#F5A623"></div>
+              <div class="acc-opt" data-color="#FF5757" onclick="setAccent('#FF5757','#D43B3B')" title="Red" style="background:#FF5757"></div>
+              <div class="acc-opt" data-color="#34D399" onclick="setAccent('#34D399','#1FAF72')" title="Green" style="background:#34D399"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-sec-title">Account</div>
+        <div class="set-card">
+          <div class="tog-row">
+            <div>
+              <div class="tog-label">Signed in as</div>
+              <div class="tog-sub" id="setEmail" style="font-family:'JetBrains Mono',monospace"></div>
+            </div>
+          </div>
+          <div class="divl" style="margin:0"></div>
+          <div class="tog-row">
+            <div>
+              <div class="tog-label">My role</div>
+              <div class="tog-sub" id="setRole">—</div>
+            </div>
+            <div id="setRoleBadge" style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:var(--teal-bg);color:var(--teal);border:1px solid rgba(5,217,180,0.2)"></div>
+          </div>
+          <div class="divl" style="margin:0"></div>
+          <div class="tog-row" onclick="doSignOut()" style="cursor:pointer">
+            <div class="tog-label" style="color:var(--red)">Sign out</div>
+            <svg fill="none" stroke="var(--red)" stroke-width="2" viewBox="0 0 24 24" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-sec-title">About</div>
+        <div class="set-card">
+          <div class="tog-row">
+            <div>
+              <div class="tog-label">WorkTrace</div>
+              <div class="tog-sub">Version 2.1 · Built for Y</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
+  </div>
+
+  <!-- SCHEDULE VIEW -->
+  <div class="view" id="v-sch">
+    <div class="sch-wrap">
+      <div class="sch-nav">
+        <button class="sch-nav-btn" onclick="navSch(-1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+        <span class="sch-nav-title" id="schNavTitle"></span>
+        <button class="sch-nav-btn" onclick="navSch(1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div id="schContent"></div>
+    </div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
+  </div>
+
+
+  <!-- REQUESTS VIEW -->
+  <div class="view" id="v-req">
+    <div class="req-wrap">
+      <div class="req-head">
+        <div class="req-head-title" id="reqHeadTitle">Requests</div>
+        <div id="reqUnreadBadge" style="display:none;background:var(--red);color:#fff;font-size:11px;font-weight:700;border-radius:20px;padding:3px 9px"></div>
+      </div>
+      <div class="req-tabs" id="reqTabs">
+        <button class="req-tab on" id="rtab-send" onclick="switchReqTab('send')">Send Request</button>
+        <button class="req-tab" id="rtab-inbox" onclick="switchReqTab('inbox')">Inbox</button>
+        <button class="req-tab" id="rtab-sent" onclick="switchReqTab('sent')">Sent</button>
+      </div>
+
+      <!-- SEND TAB -->
+      <div id="req-panel-send">
+        <div class="new-req-form">
+          <div class="new-req-title">New supply or maintenance request</div>
+          <div class="new-req-field">
+            <div class="new-req-label">Location</div>
+            <select id="reqLocation" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;outline:none;-webkit-appearance:none;appearance:none">
+              <option value="">Select a location…</option>
+            </select>
+          </div>
+          <div class="new-req-field">
+            <div class="new-req-label">Supplies needed</div>
+            <div class="supply-select" id="reqSupplyChips"></div>
+          </div>
+          <div class="new-req-field">
+            <div class="new-req-label">Additional note (optional)</div>
+            <textarea class="new-req-textarea" id="reqNote" placeholder="e.g. Running very low on bio tabs, need by Thursday…" rows="3"></textarea>
+          </div>
+          <div class="new-req-field">
+            <div class="new-req-label">Priority</div>
+            <div class="priority-row">
+              <div class="priority-chip norm sel" id="pchip-normal" onclick="setPriority('normal')">Normal</div>
+              <div class="priority-chip urg" id="pchip-urgent" onclick="setPriority('urgent')">🚨 Urgent</div>
+            </div>
+          </div>
+          <button class="btn-send-req" onclick="sendRequest()">Send to Manager</button>
+        </div>
+      </div>
+
+      <!-- INBOX TAB (managers see this) -->
+      <div id="req-panel-inbox" style="display:none">
+        <div class="req-list" id="reqInboxList"></div>
+      </div>
+
+      <!-- SENT TAB -->
+      <div id="req-panel-sent" style="display:none">
+        <div class="req-list" id="reqSentList"></div>
+      </div>
+    </div>
+    <div class="credit">created by <em>D.Y.D Lokuge</em></div>
+  </div>
+
+</div>
+
+<div class="bnav" id="bnav">
+  <div class="bnav-i">
+    <button class="nb on" id="nb-log" onclick="sv('log')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Log<div class="nb-badge"></div></button>
+    <button class="nb" id="nb-dash" onclick="sv('dash')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Dash<div class="nb-badge"></div></button>
+    <button class="nb" id="nb-week" onclick="sv('week')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Week<div class="nb-badge"></div></button>
+    <button class="nb" id="nb-rep" onclick="sv('rep')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Report<div class="nb-badge"></div></button>
+    <button class="nb" id="nb-req" onclick="sv('req')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>Requests<div class="nb-badge" id="req-badge-dot"></div></button>
+    <button class="nb" id="nb-sch" onclick="sv('sch')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Schedule<div class="nb-badge"></div></button>
+    <button class="nb" id="nb-set" onclick="sv('set')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>Setup<div class="nb-badge"></div></button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- App Logic -->
+<script src="app.js"></script>
+
+<!-- ASSIGNMENT MODAL -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Assign locations</div>
+    <div class="modal-sub">Assign work locations to a team member for specific days</div>
+    <div class="modal-field">
+      <div class="modal-label">Employee email</div>
+      <input class="modal-input" type="email" id="assignEmail" placeholder="employee@example.com"/>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Days</div>
+      <div class="modal-days" id="modalDays"></div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Locations</div>
+      <div class="modal-locs-grid" id="modalLocs"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-modal-save" onclick="saveAssignment()">Assign</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
