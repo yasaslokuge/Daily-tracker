@@ -567,3 +567,45 @@ body.light .auth-box::before{opacity:0.3}
 .btn-send-req:hover{background:#07EEC7}
 .btn-send-req:active{transform:scale(0.98)}
 .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:3px}
+
+/* ── KEY MANAGEMENT ── */
+.loc-key-btn{position:absolute;bottom:8px;right:8px;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.3);background:rgba(8,14,20,0.55);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;backdrop-filter:blur(4px);transition:all var(--t);padding:0}
+.loc-key-btn svg{width:13px;height:13px;stroke:rgba(255,255,255,0.6);transition:stroke var(--t)}
+.loc-key-btn.has-key{border-color:var(--amber);background:rgba(245,166,35,0.25)}
+.loc-key-btn.has-key svg{stroke:var(--amber)}
+.loc-key-btn:hover{border-color:var(--teal);background:rgba(5,217,180,0.25)}
+.loc-key-btn:hover svg{stroke:var(--teal)}
+.loc-key-holder{display:inline-block;font-size:9px;font-weight:700;color:var(--amber);background:rgba(245,166,35,0.2);border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;letter-spacing:0.3px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Key modal sheet */
+.key-modal-sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px;position:relative;z-index:901}
+.key-modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
+.key-modal-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.key-modal-sub{font-size:12px;color:var(--text2);margin-bottom:16px}
+.key-loc-dropdown{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;outline:none;transition:border-color var(--t);margin-bottom:12px;-webkit-appearance:none;appearance:none}
+.key-loc-dropdown:focus{border-color:var(--teal)}
+.key-holder-input{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;outline:none;transition:border-color var(--t);margin-bottom:16px}
+.key-holder-input:focus{border-color:var(--teal)}
+.key-holder-input::placeholder{color:var(--text3)}
+.key-actions{display:flex;gap:8px}
+.btn-key-save{flex:1;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:13px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--t)}
+.btn-key-save:hover{background:#07EEC7}
+.btn-key-cancel{background:none;border:1.5px solid var(--border2);border-radius:10px;color:var(--text2);padding:13px 16px;font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;transition:all var(--t)}
+.btn-key-cancel:hover{border-color:var(--red);color:var(--red)}
+.btn-key-clear{background:none;border:1.5px solid rgba(255,87,87,0.3);border-radius:10px;color:var(--red);padding:13px 16px;font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;transition:all var(--t)}
+.btn-key-clear:hover{background:var(--red-bg)}
+
+/* Key overview card in Dashboard */
+.keys-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.keys-card-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.keys-card-icon{width:28px;height:28px;border-radius:7px;background:var(--amber-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.keys-card-icon svg{width:15px;height:15px;stroke:var(--amber);fill:none}
+.keys-card-title{font-size:13px;font-weight:700}
+.key-row{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border-radius:8px;padding:9px 12px;margin-bottom:6px;cursor:pointer;transition:background var(--t)}
+.key-row:last-child{margin-bottom:0}
+.key-row:hover{background:var(--amber-bg)}
+.key-row:active{transform:scale(0.98)}
+.key-loc-name{font-size:12px;font-weight:600;color:var(--text)}
+.key-holder-name{font-size:11px;font-weight:700;color:var(--amber);background:rgba(245,166,35,0.15);border-radius:5px;padding:2px 8px}
+.key-unassigned{font-size:11px;color:var(--text3);font-style:italic}
+.key-icon-sm{width:14px;height:14px;stroke:var(--text3);margin-right:4px;vertical-align:middle;flex-shrink:0}
