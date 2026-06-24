@@ -131,23 +131,38 @@ async function saveLog(date,locs,note,sups){
 }
 function gd(d){return cache[d]||{locations:[],note:'',supplies:{}}}
 
-/* ─── KEY MANAGEMENT ─────────────────────────────────── */
-const KEY_STORAGE_KEY='wt_loc_keys';
+/* ─── KEY MANAGEMENT (Supabase) ─────────────────────── */
+// In-memory cache so we don't re-fetch on every render
+let keysCache = {};  // { locId: holderName }
+let keysCacheLoaded = false;
 
-function loadLocKeys(){
-  try{return JSON.parse(localStorage.getItem(KEY_STORAGE_KEY)||'{}');}catch{return {};}
+async function loadLocKeys(){
+  if(keysCacheLoaded) return keysCache;
+  try{
+    const{data,error}=await supabaseClient.from('location_keys').select('location_id,holder_name');
+    if(error){console.error('Keys load error:',error);return keysCache;}
+    keysCache={};
+    (data||[]).forEach(r=>{if(r.holder_name) keysCache[r.location_id]=r.holder_name;});
+    keysCacheLoaded=true;
+  }catch(e){console.error(e);}
+  return keysCache;
 }
-function saveLocKeys(data){
-  localStorage.setItem(KEY_STORAGE_KEY, JSON.stringify(data));
-}
+
 function getLocKey(locId){
-  const all=loadLocKeys();
-  return all[locId]||null;
+  return keysCache[locId]||null;
 }
-function setLocKey(locId,holder){
-  const all=loadLocKeys();
-  if(holder){all[locId]=holder;}else{delete all[locId];}
-  saveLocKeys(all);
+
+async function setLocKey(locId,locName,holder){
+  try{
+    const{error}=await supabaseClient.from('location_keys').upsert(
+      {location_id:locId,location_name:locName,holder_name:holder||null,updated_by:ME.id,updated_at:new Date().toISOString()},
+      {onConflict:'location_id'}
+    );
+    if(error){showToast('Error saving key: '+error.message,'warn');console.error(error);return false;}
+    if(holder) keysCache[locId]=holder;
+    else delete keysCache[locId];
+    return true;
+  }catch(e){console.error(e);return false;}
 }
 
 function openKeyModal(locId, locName, currentHolder){
@@ -163,13 +178,21 @@ function closeKeyModal(){
   const m=document.getElementById('keyModal');
   if(m) m.style.display='none';
 }
-function saveKeyHolder(){
+async function saveKeyHolder(){
   const locId=document.getElementById('keyModalLocId').value;
   const holder=document.getElementById('keyHolderInput').value.trim();
-  setLocKey(locId,holder);
-  closeKeyModal();
-  renderLocGrid();
-  showToast(holder?'Key assigned to '+holder:'Key cleared');
+  const loc=LOCS.find(l=>l.id===locId);
+  const locName=loc?loc.name:locId;
+  const btn=document.querySelector('.btn-key-save');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  const ok=await setLocKey(locId,locName,holder);
+  if(btn){btn.disabled=false;btn.textContent='Save';}
+  if(ok){
+    closeKeyModal();
+    renderLocGrid();
+    renderKeysOverview();
+    showToast(holder?'Key assigned to '+holder:'Key cleared');
+  }
 }
 
 
@@ -180,7 +203,9 @@ async function initApp(u){
   document.getElementById('tbUser').textContent=u.email;
   await loadWk(wkDates(0));
   hideLoader();hideAuth();showApp();
-  renderHero();renderWS();renderLocGrid();renderSupGrid();loadDayUI(selDate);
+  // Pre-load keys from Supabase
+  await loadLocKeys();
+  renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
   setTimeout(checkUnread,2000);
 }
 
@@ -215,11 +240,12 @@ function renderWS(){
   });
 }
 
-function selDay(date){selDate=date;renderWS();loadDayUI(date)}
+async function selDay(date){selDate=date;renderWS();await loadDayUI(date);}
 
 
 /* ─── 10. LOCATION & SUPPLY GRID ────────────────────── */
-function renderLocGrid(){
+async function renderLocGrid(){
+  await loadLocKeys();
   const c=document.getElementById('locGrid');c.innerHTML='';
   LOCS.forEach(loc=>{
     const el=document.createElement('div');
@@ -255,12 +281,12 @@ function renderSupGrid(){
   });
 }
 
-function loadDayUI(date){
+async function loadDayUI(date){
   const d=gd(date);
   tempL=new Set(d.locations||[]);
   tempS=new Set(Object.keys(d.supplies||{}).filter(k=>d.supplies[k]));
   document.getElementById('notesTA').value=d.note||'';
-  renderLocGrid();renderSupGrid();
+  await renderLocGrid();renderSupGrid();
   document.getElementById('selLbl').textContent=fd(date).toLocaleDateString('en-NZ',{weekday:'short',day:'numeric',month:'short'});
   renderHero();setSaved('');
 }
@@ -332,11 +358,11 @@ function sv(name){
 
 /* ─── 13. DASHBOARD ─────────────────────────────────── */
 
-function renderKeysOverview(){
+async function renderKeysOverview(){
   const el=document.getElementById('keysOverview');
   if(!el) return;
-  el.innerHTML='';
-  const all=loadLocKeys();
+  el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">Loading…</div>';
+  const all=await loadLocKeys();
   LOCS.forEach(loc=>{
     const holder=all[loc.id]||null;
     const row=document.createElement('div');
