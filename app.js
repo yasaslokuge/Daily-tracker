@@ -528,8 +528,7 @@ function buildRepImageCard(){
   // Report body lines
   const body = document.getElementById('repImgBody');
   if(body){
-    const lines = document.getElementById('rvText').textContent.split('
-');
+    const lines = document.getElementById('rvText').textContent.split('\n');
     body.innerHTML = lines.map(line=>{
       if(!line.trim()) return '<div style="height:6px"></div>';
       const isHeader = line.startsWith('WORK') || line.startsWith('Week of') || line.startsWith('-');
