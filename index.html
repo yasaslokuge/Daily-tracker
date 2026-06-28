@@ -24,23 +24,74 @@
 
 <div id="authWrap" style="display:none;flex-direction:column">
   <div class="auth-logo"><div class="a-dot"></div><div class="a-word">Work<span>Trace</span></div></div>
+
+  <!-- ── SIGN IN (shown first / default) ── -->
   <div class="auth-box" id="siBox">
     <div class="auth-h">Welcome back</div>
     <div class="auth-sub">Sign in to continue tracking</div>
-    <div class="amsg err" id="siErr"></div><div class="amsg ok" id="siOk"></div>
+    <div class="amsg err" id="siErr"></div>
+    <div class="amsg ok" id="siOk"></div>
     <div class="fg"><label>Email</label><input type="email" id="siEmail" placeholder="you@example.com" autocomplete="email"/></div>
-    <div class="fg"><label>Password</label><input type="password" id="siPass" placeholder="••••••••" autocomplete="current-password"/></div>
+    <div class="fg"><label>Password</label><input type="password" id="siPass" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password"/></div>
     <button class="btn-auth" id="siBtn" onclick="doSignIn()">Sign In</button>
     <div class="auth-tog">No account? <a onclick="toggleAuth('up')">Create one</a></div>
   </div>
+
+  <!-- ── CREATE ACCOUNT (secondary - with full company options) ── -->
   <div class="auth-box" id="suBox" style="display:none">
-    <div class="auth-h">Create account</div>
-    <div class="auth-sub">Start tracking your work locations</div>
-    <div class="amsg err" id="suErr"></div><div class="amsg ok" id="suOk"></div>
+    <div class="auth-h">Create your account</div>
+    <div class="auth-sub">Set up your email, password and workspace</div>
+    <div class="amsg err" id="suErr"></div>
+    <div class="amsg ok" id="suOk"></div>
+
+    <!-- Step 1: Email & Password -->
+    <div class="su-step-label">1. Your details</div>
     <div class="fg"><label>Email</label><input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email"/></div>
     <div class="fg"><label>Password</label><input type="password" id="suPass" placeholder="Min 6 characters" autocomplete="new-password"/></div>
-    <button class="btn-auth" id="suBtn" onclick="doSignUp()">Create Account</button>
-    <div class="auth-tog">Have an account? <a onclick="toggleAuth('in')">Sign in</a></div>
+
+    <!-- Step 2: Company options -->
+    <div class="su-step-label" style="margin-top:6px">2. Choose your workspace</div>
+    <div class="su-option-row">
+      <div class="su-option on" id="suOptCreate" onclick="selectSignUpOption('create')">
+        <div class="su-option-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+        <div class="su-option-text">
+          <div class="su-option-title">Create a company</div>
+          <div class="su-option-sub">I'm an employer or admin</div>
+        </div>
+      </div>
+      <div class="su-option" id="suOptJoin" onclick="selectSignUpOption('join')">
+        <div class="su-option-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div class="su-option-text">
+          <div class="su-option-title">Join my team</div>
+          <div class="su-option-sub">I have an invite code</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create company fields -->
+    <div id="suCreateFields">
+      <div class="fg" style="margin-top:12px"><label>Company Name</label><input type="text" id="suCompanyName" placeholder="e.g. Clean Pro Services" autocomplete="organization"/></div>
+      <div class="fg">
+        <label>Locations <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(add your work sites)</span></label>
+        <div id="suLocList"></div>
+        <button type="button" onclick="addSuLocation()" style="width:100%;background:none;border:1.5px dashed var(--border2);border-radius:10px;color:var(--text2);padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:4px">+ Add Location</button>
+      </div>
+    </div>
+
+    <!-- Join company fields -->
+    <div id="suJoinFields" style="display:none">
+      <div class="fg" style="margin-top:12px">
+        <label>Invite Code</label>
+        <input type="text" id="suInviteCode" placeholder="e.g. A1B2C3D4" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-size:18px"/>
+      </div>
+    </div>
+
+    <button class="btn-auth" id="suBtn" onclick="doSignUpFull()" style="margin-top:6px">Create Account</button>
+    <div class="auth-tog">Already have an account? <a onclick="toggleAuth('in')">Sign in</a></div>
   </div>
 </div>
 
