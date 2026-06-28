@@ -81,7 +81,7 @@ function wkDates(off=0){const m=addD(mon(td()),off*7);return Array.from({length:
 
 /* --- 5. UI HELPERS ----------------------------------- */
 function hideLoader(){document.getElementById('loader').classList.add('out')}
-function showAuth(){document.getElementById('authWrap').style.cssText='display:flex;flex-direction:column'}
+function showAuth(){const a=document.getElementById('authWrap');if(a){a.style.display='block';toggleAuth('in');}}
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
 function showApp(){document.getElementById('app').style.cssText='display:flex;flex-direction:column';document.getElementById('bnav').style.display='flex'}
 function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none'}
@@ -89,13 +89,14 @@ function hideApp(){document.getElementById('app').style.display='none';document.
 
 /* --- 6. AUTH FUNCTIONS ------------------------------- */
 function toggleAuth(m){
-  document.getElementById('siBox').style.display=m==='in'?'block':'none';
-  document.getElementById('suBox').style.display=m==='up'?'block':'none';
+  const si=document.getElementById('siBox');
+  const su=document.getElementById('suBox');
+  if(si) si.style.display=m==='in'?'block':'none';
+  if(su) su.style.display=m==='up'?'block':'none';
   ['siErr','siOk','suErr','suOk'].forEach(id=>{
     const e=document.getElementById(id);
     if(e){e.style.display='none';e.textContent='';}
   });
-  // Reset sign up option selection when switching to sign up
   if(m==='up') selectSignUpOption('create');
 }
 
