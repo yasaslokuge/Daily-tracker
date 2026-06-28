@@ -239,6 +239,202 @@ async function saveKeyHolder(){
 
 
 
+/* --- COMPANY & MULTI-TENANT -------------------------- */
+
+async function loadMyCompany(){
+  const{data:membership,error:me}=await supabaseClient
+    .from('company_members').select('*').eq('user_id',ME.id).single();
+  if(me||!membership) return null;
+  MY_ROLE=membership.role;
+  const{data:company,error:ce}=await supabaseClient
+    .from('companies').select('*').eq('id',membership.company_id).single();
+  if(ce||!company) return null;
+  COMPANY=company;
+  if(company.locations&&company.locations.length>0){
+    LOCS=company.locations.map(l=>({...l,keys:[]}));
+  }
+  return company;
+}
+
+async function createCompany(name,locations){
+  const{data,error}=await supabaseClient.from('companies').insert({
+    name,owner_id:ME.id,locations
+  }).select().single();
+  if(error){console.error(error);return null;}
+  await supabaseClient.from('company_members').insert({
+    company_id:data.id,user_id:ME.id,user_email:ME.email,role:'admin'
+  });
+  return data;
+}
+
+async function joinCompany(inviteCode){
+  const{data:company,error}=await supabaseClient
+    .from('companies').select('*')
+    .eq('invite_code',inviteCode.toUpperCase().trim()).single();
+  if(error||!company) return{error:'Invalid invite code'};
+  const{data:existing}=await supabaseClient.from('company_members')
+    .select('id').eq('company_id',company.id).eq('user_id',ME.id).single();
+  if(existing) return{error:'You are already a member of this company'};
+  const{error:je}=await supabaseClient.from('company_members').insert({
+    company_id:company.id,user_id:ME.id,user_email:ME.email,role:'employee'
+  });
+  if(je) return{error:je.message};
+  return{company};
+}
+
+async function getCompanyMembers(){
+  if(!COMPANY) return[];
+  const{data,error}=await supabaseClient.from('company_members')
+    .select('*').eq('company_id',COMPANY.id).order('role');
+  if(error) return[];
+  return data||[];
+}
+
+async function updateMemberRole(userId,role){
+  if(!COMPANY) return false;
+  const{error}=await supabaseClient.from('company_members')
+    .update({role}).eq('company_id',COMPANY.id).eq('user_id',userId);
+  if(!error) showToast('Role updated');
+  return !error;
+}
+
+async function saveCompanyLocations(locations){
+  if(!COMPANY) return false;
+  const{error}=await supabaseClient.from('companies')
+    .update({locations}).eq('id',COMPANY.id);
+  if(!error){COMPANY.locations=locations;LOCS=locations.map(l=>({...l,keys:[]}));}
+  return !error;
+}
+
+function showCompanySetup(){
+  const setup=document.getElementById('companySetup');
+  if(setup) setup.style.cssText='display:flex;flex-direction:column';
+  hideApp();
+  const authWrap=document.getElementById('authWrap');
+  if(authWrap) authWrap.style.display='none';
+}
+function hideCompanySetup(){
+  const setup=document.getElementById('companySetup');
+  if(setup) setup.style.display='none';
+}
+
+function switchCompanyTab(tab){
+  ['create','join'].forEach(t=>{
+    const tb=document.getElementById('co-tab-'+t);
+    const pn=document.getElementById('co-panel-'+t);
+    if(tb) tb.classList.toggle('on',t===tab);
+    if(pn) pn.style.display=t===tab?'block':'none';
+  });
+}
+
+let coLocCount=0;
+function addCoLocation(){
+  coLocCount++;
+  const container=document.getElementById('coLocList');
+  if(!container) return;
+  const row=document.createElement('div');
+  row.className='co-loc-row';
+  row.id='co-loc-'+coLocCount;
+  row.innerHTML='<input class="co-loc-input" type="text" placeholder="Location name (e.g. Main Office)" id="coLoc'+coLocCount+'"/>'
+    +'<button onclick="removeCoLoc('+coLocCount+')" class="co-loc-del">x</button>';
+  container.appendChild(row);
+}
+function removeCoLoc(n){
+  const el=document.getElementById('co-loc-'+n);
+  if(el) el.remove();
+}
+
+async function submitCreateCompany(){
+  const nameEl=document.getElementById('coName');
+  const name=nameEl?nameEl.value.trim():'';
+  if(!name){showToast('Enter a company name','warn');return;}
+  const rows=document.querySelectorAll('.co-loc-input');
+  const locations=[];
+  const colors=['#1a2840','#0e3028','#1a3a5c','#2a1a40','#3a1a1a','#1a3a2a','#1a2a3a','#2d1a4a','#1a3a5c','#1a2840','#0e3028'];
+  rows.forEach((inp,i)=>{
+    const n=inp.value.trim();
+    if(n) locations.push({id:'loc'+i,name:n,img:'',color:colors[i%colors.length],abbr:n.substring(0,2).toUpperCase(),keys:[]});
+  });
+  if(!locations.length){showToast('Add at least one location','warn');return;}
+  const btn=document.getElementById('btnCreateCo');
+  if(btn){btn.disabled=true;btn.textContent='Creating...';}
+  const company=await createCompany(name,locations);
+  if(btn){btn.disabled=false;btn.textContent='Create Company';}
+  if(!company){showToast('Error creating company','warn');return;}
+  COMPANY=company;LOCS=locations;MY_ROLE='admin';
+  hideCompanySetup();showApp();
+  const roleEl=document.getElementById('tbRole');
+  if(roleEl) roleEl.textContent=MY_ROLE;
+  renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
+  showToast('Company created! Invite code: '+company.invite_code);
+}
+
+async function submitJoinCompany(){
+  const codeEl=document.getElementById('coInviteCode');
+  const code=codeEl?codeEl.value.trim():'';
+  if(!code){showToast('Enter an invite code','warn');return;}
+  const btn=document.getElementById('btnJoinCo');
+  if(btn){btn.disabled=true;btn.textContent='Joining...';}
+  const result=await joinCompany(code);
+  if(btn){btn.disabled=false;btn.textContent='Join Company';}
+  if(result.error){showToast(result.error,'warn');return;}
+  COMPANY=result.company;MY_ROLE='employee';
+  if(result.company.locations&&result.company.locations.length){
+    LOCS=result.company.locations.map(l=>({...l,keys:[]}));
+  }
+  hideCompanySetup();showApp();
+  const roleEl=document.getElementById('tbRole');
+  if(roleEl) roleEl.textContent=MY_ROLE;
+  renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
+  showToast('Joined '+result.company.name+'!');
+}
+
+async function renderCompanySettings(){
+  const el=document.getElementById('companySettingsContent');
+  if(!el||!COMPANY) return;
+  const members=await getCompanyMembers();
+  const isAdmin=MY_ROLE==='admin';
+  el.innerHTML=
+    '<div style="margin-bottom:12px">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--text)">'+COMPANY.name+'</div>'
+    +'<div style="font-size:11px;color:var(--text3);font-family:monospace;margin-top:3px">Invite code: <span style="color:var(--teal);font-weight:700;letter-spacing:2px">'+COMPANY.invite_code+'</span></div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+members.length+' member'+(members.length!==1?'s':'')+'</div>'
+    +'</div>'
+    +'<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Team</div>'
+    +members.map(m=>{
+      const isMe=m.user_id===ME.id;
+      return '<div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
+        +'<div><div style="font-size:12px;font-weight:700;color:var(--text)">'+m.user_email.split('@')[0]+'</div>'
+        +'<div style="font-size:10px;color:var(--text3);font-family:monospace">'+m.user_email+'</div></div>'
+        +(isAdmin&&!isMe
+          ?('<select onchange="updateMemberRole(\'' + m.user_id + '\',this.value)" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:4px 8px;cursor:pointer">'
+            +'<option value="employee"'+(m.role==='employee'?' selected':'')+'>Employee</option>'
+            +'<option value="employer"'+(m.role==='employer'?' selected':'')+'>Employer</option>'
+            +'<option value="admin"'+(m.role==='admin'?' selected':'')+'>Admin</option>'
+            +'</select>')
+          :'<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;background:var(--teal-bg);color:var(--teal)">'+m.role+'</span>')
+        +'</div>';
+    }).join('')
+    +(isAdmin
+      ?'<div style="margin-top:14px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Locations</div>'
+       +'<div id="coLocEditList">'
+       +LOCS.map((l,i)=>'<div style="display:flex;gap:6px;margin-bottom:6px">'
+         +'<input value="'+l.name+'" id="coLocEdit'+i+'" style="flex:1;background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none"/>'
+         +'</div>').join('')
+       +'</div>'
+       +'<button onclick="saveCoLocations()" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-top:6px">Save Locations</button>'
+      :'');
+}
+
+async function saveCoLocations(){
+  const inputs=document.querySelectorAll('[id^="coLocEdit"]');
+  const locs=LOCS.map((l,i)=>({...l,name:inputs[i]?inputs[i].value.trim()||l.name:l.name}));
+  const ok=await saveCompanyLocations(locs);
+  if(ok){showToast('Locations updated');await renderLocGrid();renderCompanySettings();}
+  else showToast('Error saving','warn');
+}
+
+
 /* --- 8. APP INIT ------------------------------------- */
 async function initApp(u){
   ME=u;
