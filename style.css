@@ -609,3 +609,18 @@ body.light .auth-box::before{opacity:0.3}
 .key-holder-name{font-size:11px;font-weight:700;color:var(--amber);background:rgba(245,166,35,0.15);border-radius:5px;padding:2px 8px}
 .key-unassigned{font-size:11px;color:var(--text3);font-style:italic}
 .key-icon-sm{width:14px;height:14px;stroke:var(--text3);margin-right:4px;vertical-align:middle;flex-shrink:0}
+
+
+/* ── REPORT ACTION BUTTONS ── */
+.rep-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.btn-rep-action{background:none;border:1.5px solid var(--border2);border-radius:var(--radius);color:var(--text2);padding:11px 6px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all var(--t);display:flex;flex-direction:column;align-items:center;gap:5px;-webkit-tap-highlight-color:transparent}
+.btn-rep-action svg{width:20px;height:20px;flex-shrink:0}
+.btn-rep-action:active{transform:scale(0.96)}
+.btn-share{border-color:rgba(5,217,180,0.4);color:var(--teal)}
+.btn-share:hover{background:var(--teal-bg);border-color:var(--teal)}
+.btn-image{border-color:rgba(79,142,247,0.4);color:var(--blue)}
+.btn-image:hover{background:var(--blue-bg);border-color:var(--blue)}
+.btn-copy-txt{border-color:var(--border2);color:var(--text2)}
+.btn-copy-txt:hover{border-color:var(--teal);color:var(--teal)}
+.btn-rep-action:disabled{opacity:0.5;cursor:default;transform:none}
+@media(min-width:390px){.btn-rep-action{font-size:13px;padding:12px 8px}}
