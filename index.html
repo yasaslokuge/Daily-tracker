@@ -61,7 +61,14 @@
       <div class="hero-badge" id="heroBadge"></div>
     </div>
     <div class="ws-wrap">
-      <div class="ws-lbl">This week</div>
+      <div class="ws-nav-row">
+        <button class="ws-nav-btn" onclick="navLogWeek(-1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+        <div>
+          <div class="ws-lbl" id="wsLbl">This week</div>
+          <div class="ws-nav-title" id="wsNavTitle"></div>
+        </div>
+        <button class="ws-nav-btn" onclick="navLogWeek(1)" id="wsNavNext"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+      </div>
       <div class="ws-days" id="wsDays"></div>
     </div>
     <div class="divl"></div>
@@ -208,13 +215,65 @@
         </div>
       </div>
 
+      <!-- BUG REPORT SECTION -->
+      <div class="set-section">
+        <div class="set-sec-title">Report an Issue</div>
+        <div class="set-card">
+          <div class="tog-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+            <div style="width:100%">
+              <div class="tog-label">Title</div>
+              <div class="tog-sub" style="margin-bottom:8px">Brief summary of the issue</div>
+              <input id="bugTitle" type="text" placeholder="e.g. Save button not working" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:11px 13px;outline:none"/>
+            </div>
+            <div style="width:100%">
+              <div class="tog-label">Category</div>
+              <select id="bugCategory" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:11px 13px;outline:none;-webkit-appearance:none">
+                <option value="bug">Bug / Error</option>
+                <option value="feature">Feature Request</option>
+                <option value="display">Display / Layout</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div style="width:100%">
+              <div class="tog-label">Description</div>
+              <textarea id="bugDesc" placeholder="Describe what happened and what you expected..." rows="3" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:11px 13px;outline:none;resize:none;min-height:80px"></textarea>
+            </div>
+            <button id="btnSubmitBug" onclick="submitBugReport()" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:13px;font-family:Inter,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Send Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KEY AUDIT LOG (managers only) -->
+      <div class="set-section" id="keyAuditSection" style="display:none">
+        <div class="set-sec-title">Key Audit Log</div>
+        <div class="set-card" style="padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:12px;color:var(--text2)">All key assignments &amp; clears</div>
+            <button onclick="loadKeyAuditLog()" style="background:var(--card2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-size:11px;padding:4px 10px;cursor:pointer;font-family:Inter,sans-serif">Refresh</button>
+          </div>
+          <div id="keyAuditList"><div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Tap Refresh to load</div></div>
+        </div>
+      </div>
+
+      <!-- HISTORY LOG (admin only) -->
+      <div class="set-section" id="historySection" style="display:none">
+        <div class="set-sec-title">Save History (90 days)</div>
+        <div class="set-card" style="padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:12px;color:var(--text2)">All saved &amp; updated records</div>
+            <button onclick="loadHistoryLog()" style="background:var(--card2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-size:11px;padding:4px 10px;cursor:pointer;font-family:Inter,sans-serif">Refresh</button>
+          </div>
+          <div id="historyList"><div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Tap Refresh to load</div></div>
+        </div>
+      </div>
+
       <div class="set-section">
         <div class="set-sec-title">About</div>
         <div class="set-card">
           <div class="tog-row">
             <div>
               <div class="tog-label">WorkTrace</div>
-              <div class="tog-sub">Version 2.1 · Built for Y</div>
+              <div class="tog-sub">Version 2.1 - Built by D.Y.D Lokuge</div>
             </div>
           </div>
         </div>
