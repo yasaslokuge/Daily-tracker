@@ -476,6 +476,147 @@ async function renderReport(){
   document.getElementById('rvStats').innerHTML=`<div class="rv-stat"><div class="rv-val">${dw}</div><div class="rv-lbl">Days worked</div></div><div class="rv-stat"><div class="rv-val">${tl}</div><div class="rv-lbl">Locations</div></div><div class="rv-stat"><div class="rv-val">${sc}</div><div class="rv-lbl">Supply alerts</div></div>`;
 }
 async function navRep(d){repOff+=d;await renderReport()}
+
+/* ─── REPORT SHARING & IMAGE EXPORT ─────────────────── */
+
+// ── Share via native share sheet (WhatsApp, Messages, Email etc) ──
+async function shareRep(){
+  const text = document.getElementById('rvText').textContent;
+  const title = 'WorkTrace — Weekly Report';
+
+  // Check if Web Share API is available (iOS Safari, Android Chrome)
+  if(navigator.share){
+    try{
+      await navigator.share({ title, text });
+      showToast('Report shared');
+    } catch(e){
+      // User cancelled — not an error
+      if(e.name !== 'AbortError') showToast('Share failed','warn');
+    }
+  } else {
+    // Fallback for desktop — copy to clipboard with instructions
+    navigator.clipboard.writeText(text)
+      .then(()=>showToast('Copied — paste into WhatsApp or Email'))
+      .catch(()=>showToast('Select and copy manually'));
+  }
+}
+
+// ── Build the hidden image card with current report data ──
+function buildRepImageCard(){
+  // Range label
+  const range = document.getElementById('rvRange').textContent;
+  const imgRange = document.getElementById('repImgRange');
+  if(imgRange) imgRange.textContent = range;
+
+  // Stats row (3 stat boxes)
+  const statsEl = document.getElementById('rvStats');
+  const imgStats = document.getElementById('repImgStats');
+  if(imgStats && statsEl){
+    const vals = statsEl.querySelectorAll('.rv-val');
+    const lbls = statsEl.querySelectorAll('.rv-lbl');
+    const colors = ['#05D9B4','#4F8EF7','#F5A623'];
+    imgStats.innerHTML = '';
+    vals.forEach((v,i)=>{
+      imgStats.innerHTML += `<div style="background:#111C2A;border-radius:8px;padding:10px;text-align:center;border-top:2px solid ${colors[i]||'#05D9B4'}">
+        <div style="font-size:24px;font-weight:700;color:${colors[i]||'#05D9B4'};font-family:monospace;line-height:1">${v.textContent}</div>
+        <div style="font-size:10px;color:#7A90A8;margin-top:4px">${lbls[i]?lbls[i].textContent:''}</div>
+      </div>`;
+    });
+  }
+
+  // Report body lines
+  const body = document.getElementById('repImgBody');
+  if(body){
+    const lines = document.getElementById('rvText').textContent.split('
+');
+    body.innerHTML = lines.map(line=>{
+      if(!line.trim()) return '<div style="height:6px"></div>';
+      const isHeader = line.startsWith('WORK') || line.startsWith('Week of') || line.startsWith('─');
+      const isBullet = line.trim().startsWith('•');
+      const isWarning = line.trim().startsWith('⚠');
+      const isDayName = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/.test(line.trim());
+      const isTotal = line.startsWith('Days worked') || line.startsWith('Total') || line.startsWith('Supply');
+
+      let color = '#7A90A8', weight = '400', size = '11px';
+      if(isHeader){ color='#3D5166'; size='10px'; }
+      else if(isDayName){ color='#EDF2F7'; weight='700'; size='12px'; }
+      else if(isBullet){ color='#05D9B4'; }
+      else if(isWarning){ color='#F5A623'; }
+      else if(isTotal){ color='#EDF2F7'; weight='600'; }
+
+      return `<div style="font-size:${size};color:${color};font-weight:${weight};font-family:monospace;line-height:1.7;white-space:pre-wrap">${line}</div>`;
+    }).join('');
+  }
+}
+
+// ── Generate PNG and trigger download / share ──
+async function saveRepImage(){
+  const btn = document.getElementById('btnImage');
+  if(btn){ btn.disabled=true; btn.textContent='Generating…'; }
+
+  try{
+    buildRepImageCard();
+    const card = document.getElementById('repImageCard');
+
+    // Briefly make visible for html2canvas
+    card.style.left = '-9999px';
+    card.style.top = '0';
+    card.style.display = 'block';
+
+    await new Promise(r=>setTimeout(r,100)); // let DOM paint
+
+    const canvas = await html2canvas(card, {
+      backgroundColor: '#0F1923',
+      scale: 2,          // retina quality
+      useCORS: true,
+      logging: false,
+      width: 380,
+    });
+
+    card.style.left = '-9999px'; // hide again
+
+    const dataUrl = canvas.toDataURL('image/png');
+
+    // Try native share with file (Android/iOS)
+    if(navigator.share && navigator.canShare){
+      try{
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], 'worktrace-report.png', {type:'image/png'});
+        if(navigator.canShare({files:[file]})){
+          await navigator.share({
+            title: 'WorkTrace — Weekly Report',
+            files: [file]
+          });
+          showToast('Image shared');
+          if(btn){btn.disabled=false;btn.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Save Image';}
+          return;
+        }
+      } catch(e){
+        if(e.name==='AbortError'){
+          if(btn){btn.disabled=false;btn.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Save Image';}
+          return;
+        }
+      }
+    }
+
+    // Fallback — download link
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'worktrace-report-' + new Date().toISOString().slice(0,10) + '.png';
+    a.click();
+    showToast('Image saved to downloads');
+
+  } catch(e){
+    console.error('Image generation error:', e);
+    showToast('Could not generate image','warn');
+  }
+
+  if(btn){
+    btn.disabled=false;
+    btn.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Save Image';
+  }
+}
+
 function copyRep(){navigator.clipboard.writeText(document.getElementById('rvText').textContent).then(()=>showToast('Copied to clipboard')).catch(()=>showToast('Select and copy manually'))}
 
 
