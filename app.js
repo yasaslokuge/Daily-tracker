@@ -1196,10 +1196,22 @@ try {
   boot(null);
 }
 
-// 2. Also listen for auth state changes (handles token refresh etc)
+// 2. Listen for auth state changes - handles sign in AFTER boot
 try {
   sb.auth.onAuthStateChange((event, session) => {
-    if (!booted) boot(session);
+    if (!booted) {
+      // First load - use boot()
+      boot(session);
+    } else if (event === 'SIGNED_IN' && session && session.user) {
+      // User just signed in from login screen
+      initApp(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      // User signed out
+      ME = null;
+      cache = {};
+      hideApp();
+      showAuth();
+    }
   });
 } catch(e) {}
 document.addEventListener('keydown',e=>{
