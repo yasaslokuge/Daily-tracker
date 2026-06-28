@@ -1,6 +1,7 @@
-/* ═══════════════════════════════════════════════════════
+// charset: utf-8
+/* =======================================================
    WorkTrace - Application Logic
-   ═══════════════════════════════════════════════════════
+   =======================================================
    Sections:
    1. Config (Supabase URL + Key)
    2. Data (Locations, Supplies, Constants)
@@ -23,9 +24,9 @@
    19. Assignment Modal
    20. Requests System
    21. Boot Sequence
-═══════════════════════════════════════════════════════ */
+======================================================= */
 
-/* ─── 1. CONFIG ─────────────────────────────────────── */
+/* --- 1. CONFIG --------------------------------------- */
 const SUPABASE_URL='https://vwoylscgfhuzmsnkjdlu.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3b3lsc2NnZmh1em1zbmtqZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDY0OTUsImV4cCI6MjA5NzcyMjQ5NX0.ci08mxviFw5le494yUUE70fTRnWi6TqqC1Rjk971k_s';
 const{createClient}=window.supabase||supabase;
@@ -33,7 +34,7 @@ const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const supabaseClient=sb;
 
 
-/* ─── 2. DATA: LOCATIONS & SUPPLIES ─────────────────── */
+/* --- 2. DATA: LOCATIONS & SUPPLIES ------------------- */
 const LOCS=[
   {id:'bravo',name:'Bravo',img:'data:image/jpeg;base64,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',color:'',abbr:'',keys:[]},
   {id:'swash',name:'Swash',img:'data:image/jpeg;base64,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',color:'',abbr:'',keys:[]},
@@ -61,11 +62,11 @@ const DABB=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
 
-/* ─── 3. STATE VARIABLES ────────────────────────────── */
+/* --- 3. STATE VARIABLES ------------------------------ */
 let ME=null,selDate=td(),weekOff=0,repOff=0,cache={},tempL=new Set(),tempS=new Set();
 
 
-/* ─── 4. DATE UTILITIES ─────────────────────────────── */
+/* --- 4. DATE UTILITIES ------------------------------- */
 function td(){const d=new Date();return ds(d)}
 function ds(d){return`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`}
 function p2(n){return String(n).padStart(2,'0')}
@@ -75,7 +76,7 @@ function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r}
 function wkDates(off=0){const m=addD(mon(td()),off*7);return Array.from({length:7},(_,i)=>ds(addD(m,i)))}
 
 
-/* ─── 5. UI HELPERS ─────────────────────────────────── */
+/* --- 5. UI HELPERS ----------------------------------- */
 function hideLoader(){document.getElementById('loader').classList.add('out')}
 function showAuth(){document.getElementById('authWrap').style.cssText='display:flex;flex-direction:column'}
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
@@ -83,7 +84,7 @@ function showApp(){document.getElementById('app').style.cssText='display:flex;fl
 function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none'}
 
 
-/* ─── 6. AUTH FUNCTIONS ─────────────────────────────── */
+/* --- 6. AUTH FUNCTIONS ------------------------------- */
 function toggleAuth(m){
   document.getElementById('siBox').style.display=m==='in'?'block':'none';
   document.getElementById('suBox').style.display=m==='up'?'block':'none';
@@ -114,7 +115,7 @@ async function doSignUp(){
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
 
 
-/* ─── 7. DATABASE ───────────────────────────────────── */
+/* --- 7. DATABASE ------------------------------------- */
 async function loadWk(dates){
   if(!ME)return;
   const{data,error}=await sb.from('work_logs').select('*').eq('user_id',ME.id).in('log_date',dates);
@@ -133,7 +134,7 @@ async function saveLog(date,locs,note,sups){
 }
 function gd(d){return cache[d]||{locations:[],note:'',supplies:{}}}
 
-/* ─── KEY MANAGEMENT (Supabase) ─────────────────────── */
+/* --- KEY MANAGEMENT (Supabase) ----------------------- */
 // In-memory cache so we don't re-fetch on every render
 let keysCache = {};  // { locId: holderName }
 let keysCacheLoaded = false;
@@ -199,7 +200,7 @@ async function saveKeyHolder(){
 
 
 
-/* ─── 8. APP INIT ───────────────────────────────────── */
+/* --- 8. APP INIT ------------------------------------- */
 async function initApp(u){
   ME=u;
   document.getElementById('tbUser').textContent=u.email;
@@ -212,7 +213,7 @@ async function initApp(u){
 }
 
 
-/* ─── 9. HERO & WEEK STRIP ──────────────────────────── */
+/* --- 9. HERO & WEEK STRIP ---------------------------- */
 function renderHero(){
   const d=fd(selDate);
   document.getElementById('heroSmall').textContent=
@@ -225,7 +226,7 @@ function renderHero(){
 function setSaved(s){
   const e=document.getElementById('heroBadge');
   if(s==='saving'){e.textContent='Saving to cloud...';e.className='hero-badge saving'}
-  else if(s==='saved'){e.textContent='Saved to cloud ✓';e.className='hero-badge saved'}
+  else if(s==='saved'){e.textContent='Saved to cloud OK';e.className='hero-badge saved'}
   else{e.textContent='';e.className='hero-badge'}
 }
 
@@ -245,7 +246,7 @@ function renderWS(){
 async function selDay(date){selDate=date;renderWS();await loadDayUI(date);}
 
 
-/* ─── 10. LOCATION & SUPPLY GRID ────────────────────── */
+/* --- 10. LOCATION & SUPPLY GRID ---------------------- */
 async function renderLocGrid(){
   await loadLocKeys();
   const c=document.getElementById('locGrid');c.innerHTML='';
@@ -294,7 +295,7 @@ async function loadDayUI(date){
 }
 
 
-/* ─── 11. SAVE / CLEAR ──────────────────────────────── */
+/* --- 11. SAVE / CLEAR -------------------------------- */
 async function saveDay(){
   const note=document.getElementById('notesTA').value.trim();
   const locs=[...tempL];
@@ -321,7 +322,7 @@ function showToast(txt,t=''){
 }
 
 
-/* ─── 12. VIEW SWITCHER ─────────────────────────────── */
+/* --- 12. VIEW SWITCHER ------------------------------- */
 function sv(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
@@ -358,7 +359,7 @@ function sv(name){
 }
 
 
-/* ─── 13. DASHBOARD ─────────────────────────────────── */
+/* --- 13. DASHBOARD ----------------------------------- */
 
 async function renderKeysOverview(){
   const el=document.getElementById('keysOverview');
@@ -375,7 +376,7 @@ async function renderKeysOverview(){
         <svg class="key-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
         <div class="key-loc-name">${loc.name}</div>
       </div>
-      ${holder?`<span class="key-holder-name">🗝 ${holder}</span>`:'<span class="key-unassigned">Unassigned</span>'}
+      ${holder?`<span class="key-holder-name">[key] ${holder}</span>`:'<span class="key-unassigned">Unassigned</span>'}
     `;
     el.appendChild(row);
   });
@@ -386,7 +387,7 @@ async function renderDash(){
   const h=new Date().getHours();
   document.getElementById('dashG').textContent=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
   const m=fd(dates[0]),sun=fd(dates[6]);
-  document.getElementById('dashS').textContent=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} – ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
+  document.getElementById('dashS').textContent=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
   let dw=0,tl=0,sd=0,streak=0,chk=td();
   while(true){const dd=gd(chk);if(dd.locations&&dd.locations.length){streak++;chk=ds(addD(fd(chk),-1))}else break}
   dates.forEach(d=>{const dd=gd(d);if(dd.locations&&dd.locations.length){dw++;tl+=dd.locations.length}if(dd.supplies&&Object.values(dd.supplies).some(Boolean))sd++});
@@ -396,7 +397,7 @@ async function renderDash(){
     <div class="s-card ca"><div class="s-ico ca"><svg stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><div class="s-val">${streak}</div><div class="s-lbl">Day streak</div></div>
     <div class="s-card cp"><div class="s-ico cp"><svg stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><div class="s-val">${sd}</div><div class="s-lbl">Supply alerts</div></div>`;
   const wm=addD(mon(td()),0),wsu=addD(wm,6);
-  document.getElementById('wccR').textContent=`${wm.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} – ${wsu.toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}`;
+  document.getElementById('wccR').textContent=`${wm.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${wsu.toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}`;
   const mx=Math.max(1,...dates.map(d=>gd(d).locations?.length||0)),tday=td();
   document.getElementById('barChart').innerHTML=dates.map((d,i)=>{
     const cnt=gd(d).locations?.length||0,pct=Math.round((cnt/mx)*100),isT=d===tday;
@@ -411,7 +412,7 @@ async function renderDash(){
     const dstr=fd(d).toLocaleDateString('en-NZ',{weekday:'short',day:'numeric',month:'short'});
     sacRows.push(`<div class="sac-row"><div><div class="sac-loc">${locName}</div><div class="sac-dt">${dstr}</div></div><div class="sac-tags">${tags.map(t=>`<span class="sac-tag">${t}</span>`).join('')}</div></div>`);
   });
-  document.getElementById('sacList').innerHTML=sacRows.length?sacRows.join(''):'<div class="sac-empty">No supply alerts this week ✓</div>';
+  document.getElementById('sacList').innerHTML=sacRows.length?sacRows.join(''):'<div class="sac-empty">No supply alerts this week OK</div>';
   document.getElementById('sacCard').style.display=sacRows.length?'block':'block';
   const recRows=[];
   dates.slice().reverse().forEach((d,i)=>{
@@ -424,11 +425,11 @@ async function renderDash(){
 }
 
 
-/* ─── 14. WEEK VIEW ─────────────────────────────────── */
+/* --- 14. WEEK VIEW ----------------------------------- */
 async function renderWeekView(){
   const dates=wkDates(weekOff);
   const m=fd(dates[0]),sun=fd(dates[6]);
-  document.getElementById('wvTitle').textContent=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} – ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
+  document.getElementById('wvTitle').textContent=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
   await loadWk(dates);
   const c=document.getElementById('wkEntries');c.innerHTML='';
   dates.forEach((d,i)=>{
@@ -439,7 +440,7 @@ async function renderWeekView(){
     const el=document.createElement('div');el.className=`wde${has?' has':''}`;
     el.innerHTML=`<div class="wde-h"><div><div class="wde-dn">${DFULL[i]}</div><div class="wde-dd">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div></div><div class="wde-r">${hasSup?'<div class="wde-sdot"></div>':''}<div class="wde-cnt${has?' has':''}">${has?dd.locations.length+' loc':'-'}</div><button class="wde-edit-btn" onclick="editDay('${d}')">Edit</button></div></div>
     ${has?`<div class="wde-locs">${locNames.map(n=>`<span class="wde-lt">${n}</span>`).join('')}</div>`:'<div class="wde-empty">Nothing logged</div>'}
-    ${supNames.length?`<div class="wde-sups">${supNames.map(n=>`<span class="wde-st">⚠ ${n}</span>`).join('')}</div>`:''}
+    ${supNames.length?`<div class="wde-sups">${supNames.map(n=>`<span class="wde-st">! ${n}</span>`).join('')}</div>`:''}
     ${dd.note?`<div class="wde-note">"${dd.note}"</div>`:''}`;
     c.appendChild(el);
   });
@@ -447,15 +448,15 @@ async function renderWeekView(){
 async function navWeek(d){weekOff+=d;await renderWeekView()}
 
 
-/* ─── 15. REPORT ────────────────────────────────────── */
+/* --- 15. REPORT -------------------------------------- */
 async function renderReport(){
   const dates=wkDates(repOff);
   const m=fd(dates[0]),sun=fd(dates[6]);
-  document.getElementById('rvTitle').textContent=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} – ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
+  document.getElementById('rvTitle').textContent=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
   await loadWk(dates);
   let dw=0,tl=0,sc=0,lines=['WORK LOCATION REPORT',
-    `Week of ${m.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})} – ${sun.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})}`,
-    '─'.repeat(44)];
+    `Week of ${m.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})}`,
+    '-'.repeat(44)];
   dates.forEach((d,i)=>{
     const dd=gd(d),locs=dd.locations||[];
     const supNeeded=Object.keys(dd.supplies||{}).filter(k=>dd.supplies[k]);
@@ -463,23 +464,23 @@ async function renderReport(){
     const supNames=supNeeded.map(k=>SUPS.find(s=>s.id===k)?.name||k);
     lines.push('');
     lines.push(fd(d).toLocaleDateString('en-NZ',{weekday:'long',day:'numeric',month:'long'}));
-    if(locs.length){dw++;tl+=locs.length;locNames.forEach(n=>lines.push(`  • ${n}`));
+    if(locs.length){dw++;tl+=locs.length;locNames.forEach(n=>lines.push(`  * ${n}`));
       if(dd.note)lines.push(`  Note: ${dd.note}`);
-      if(supNames.length){sc+=supNames.length;lines.push(`  ⚠ Supplies needed: ${supNames.join(', ')}`)}}
+      if(supNames.length){sc+=supNames.length;lines.push(`  ! Supplies needed: ${supNames.join(', ')}`)}}
     else lines.push('  - No locations logged');
   });
-  lines.push('');lines.push('─'.repeat(44));
+  lines.push('');lines.push('-'.repeat(44));
   lines.push(`Days worked: ${dw} / 7`);lines.push(`Total locations: ${tl}`);
   if(sc)lines.push(`Supply items flagged: ${sc}`);
   document.getElementById('rvText').textContent=lines.join('\n');
-  document.getElementById('rvRange').textContent=`${m.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric'})} – ${sun.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}`;
+  document.getElementById('rvRange').textContent=`${m.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}`;
   document.getElementById('rvStats').innerHTML=`<div class="rv-stat"><div class="rv-val">${dw}</div><div class="rv-lbl">Days worked</div></div><div class="rv-stat"><div class="rv-val">${tl}</div><div class="rv-lbl">Locations</div></div><div class="rv-stat"><div class="rv-val">${sc}</div><div class="rv-lbl">Supply alerts</div></div>`;
 }
 async function navRep(d){repOff+=d;await renderReport()}
 
-/* ─── REPORT SHARING & IMAGE EXPORT ─────────────────── */
+/* --- REPORT SHARING & IMAGE EXPORT ------------------- */
 
-// ── Share via native share sheet (WhatsApp, Messages, Email etc) ──
+// -- Share via native share sheet (WhatsApp, Messages, Email etc) --
 async function shareRep(){
   const text = document.getElementById('rvText').textContent;
   const title = 'WorkTrace - Weekly Report';
@@ -501,7 +502,7 @@ async function shareRep(){
   }
 }
 
-// ── Build the hidden image card with current report data ──
+// -- Build the hidden image card with current report data --
 function buildRepImageCard(){
   // Range label
   const range = document.getElementById('rvRange').textContent;
@@ -531,7 +532,7 @@ function buildRepImageCard(){
 ');
     body.innerHTML = lines.map(line=>{
       if(!line.trim()) return '<div style="height:6px"></div>';
-      const isHeader = line.startsWith('WORK') || line.startsWith('Week of') || line.startsWith('─');
+      const isHeader = line.startsWith('WORK') || line.startsWith('Week of') || line.startsWith('-');
       const isBullet = line.trim().startsWith('\u2022');
       const isWarning = line.trim().startsWith('\u26a0');
       const isDayName = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/.test(line.trim());
@@ -549,7 +550,7 @@ function buildRepImageCard(){
   }
 }
 
-// ── Generate PNG and trigger download / share ──
+// -- Generate PNG and trigger download / share --
 async function saveRepImage(){
   const btn = document.getElementById('btnImage');
   if(btn){ btn.disabled=true; btn.textContent='Generating...'; }
@@ -620,8 +621,8 @@ async function saveRepImage(){
 function copyRep(){navigator.clipboard.writeText(document.getElementById('rvText').textContent).then(()=>showToast('Copied to clipboard')).catch(()=>showToast('Select and copy manually'))}
 
 
-/* ─── 16. THEME & SETTINGS ──────────────────────────── */
-// ── THEME & SETTINGS ──────────────────────
+/* --- 16. THEME & SETTINGS ---------------------------- */
+// -- THEME & SETTINGS ----------------------
 function setThemeToggle(isLight){
   const t=isLight?'light':'dark';
   localStorage.setItem('wt_theme',t);
@@ -656,10 +657,10 @@ function loadSavedPrefs(){
 loadSavedPrefs();
 
 
-/* ─── 17. ROLE SYSTEM ───────────────────────────────── */
-// ── ROLE SYSTEM// ── ROLE SYSTEM ──────────────────────────
-// ── ROLE SYSTEM ──────────────────────────
-// ── ROLES ────────────────────────────────
+/* --- 17. ROLE SYSTEM --------------------------------- */
+// -- ROLE SYSTEM// -- ROLE SYSTEM --------------------------
+// -- ROLE SYSTEM --------------------------
+// -- ROLES --------------------------------
 // Add admin/employer emails below. These cannot be changed by the user.
 // Everyone else is automatically 'employee'.
 const ROLE_MAP={
@@ -678,8 +679,8 @@ function isManager(){
 }
 
 
-/* ─── 18. SCHEDULE ──────────────────────────────────── */
-// ── SCHEDULE ─────────────────────────────
+/* --- 18. SCHEDULE ------------------------------------ */
+// -- SCHEDULE -----------------------------
 let schOff=0, schAssignments=[], modalSelDays=new Set(), modalSelLocs=new Set();
 
 async function loadSchedule(dates){
@@ -696,7 +697,7 @@ async function renderSchedule(){
   const dates=wkDates(schOff);
   const mon=fd(dates[0]), sun=fd(dates[6]);
   document.getElementById('schNavTitle').textContent=
-    mon.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})+' – '+
+    mon.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})+' - '+
     sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'});
 
   const container=document.getElementById('schContent');
@@ -773,7 +774,7 @@ function renderManagerSchedule(dates, rows){
       </div>
       <div class="person-day-blocks">${daysHTML}</div>
       <div style="padding:0 14px 10px">
-        <button class="assign-del-btn" onclick="deletePersonSchedule('${person.email}')">✕ Remove all for this person</button>
+        <button class="assign-del-btn" onclick="deletePersonSchedule('${person.email}')">x Remove all for this person</button>
       </div>`;
     container.appendChild(card);
   });
@@ -816,7 +817,7 @@ function renderEmployeeSchedule(dates, rows){
 async function navSch(dir){schOff+=dir;await renderSchedule();}
 
 
-/* ─── 19. ASSIGNMENT MODAL ──────────────────────────── */
+/* --- 19. ASSIGNMENT MODAL ---------------------------- */
 // Modal
 function openModal(){
   const overlay=document.getElementById('assignModal');
@@ -901,7 +902,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 
-// ── EDIT FROM WEEK VIEW ──────────────────────
+// -- EDIT FROM WEEK VIEW ----------------------
 function editDay(dateStr){
   selDate=dateStr;
   weekOff=0;
@@ -913,8 +914,8 @@ function editDay(dateStr){
 // Background animation removed
 
 
-/* ─── 20. REQUESTS SYSTEM ───────────────────────────── */
-// ── REQUESTS SYSTEM ──────────────────────
+/* --- 20. REQUESTS SYSTEM ----------------------------- */
+// -- REQUESTS SYSTEM ----------------------
 let reqPriority='normal', reqSelSupplies=new Set(), reqTabActive='send';
 let unreadCount=0;
 
@@ -983,7 +984,7 @@ async function sendRequest(){
     reqSelSupplies.clear();
     document.querySelectorAll('.supply-chip').forEach(c=>c.classList.remove('sel'));
     setPriority('normal');
-    showToast('Request sent to manager ✓');
+    showToast('Request sent to manager OK');
     switchReqTab('sent');
   }catch(e){showToast('Error sending','warn');console.error(e);}
 }
@@ -1044,7 +1045,7 @@ function buildReqCard(r, showActions){
       </div>
     </div>
     <div class="req-body">
-      <div style="margin-bottom:6px"><span class="req-location-tag">📍 ${r.location_name||'-'}</span></div>
+      <div style="margin-bottom:6px"><span class="req-location-tag">[pin] ${r.location_name||'-'}</span></div>
       ${suppliesHTML?`<div class="req-items">${suppliesHTML}</div>`:''}
       ${r.note?`<div class="req-message">"${r.note}"</div>`:''}
     </div>
@@ -1088,8 +1089,8 @@ function updateReqBadge(){
 }
 
 
-/* ─── 21. BOOT SEQUENCE ─────────────────────────────── */
-// ── BOOT ──────────────────────────────────
+/* --- 21. BOOT SEQUENCE ------------------------------- */
+// -- BOOT ----------------------------------
 let booted = false;
 
 function boot(session) {
