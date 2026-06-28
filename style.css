@@ -643,3 +643,17 @@ body.light .auth-box::before{opacity:0.3}
 .co-loc-input:focus{border-color:var(--teal)}
 .co-loc-del{background:none;border:1.5px solid var(--border2);border-radius:8px;color:var(--text3);width:36px;height:36px;cursor:pointer;font-size:14px;flex-shrink:0;transition:all var(--t);display:flex;align-items:center;justify-content:center}
 .co-loc-del:hover{border-color:var(--red);color:var(--red)}
+
+
+/* -- SIGN UP COMPANY OPTIONS -- */
+.su-step-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;margin-top:4px}
+.su-option-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.su-option{background:var(--card2);border:1.5px solid var(--border2);border-radius:12px;padding:12px 10px;cursor:pointer;transition:all var(--t);-webkit-tap-highlight-color:transparent}
+.su-option.on{border-color:var(--teal);background:var(--teal-bg)}
+.su-option-icon{width:32px;height:32px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:8px;transition:background var(--t)}
+.su-option.on .su-option-icon{background:rgba(5,217,180,0.2)}
+.su-option-icon svg{width:16px;height:16px;stroke:var(--text3);transition:stroke var(--t)}
+.su-option.on .su-option-icon svg{stroke:var(--teal)}
+.su-option-title{font-size:12px;font-weight:700;color:var(--text);transition:color var(--t)}
+.su-option.on .su-option-title{color:var(--teal)}
+.su-option-sub{font-size:10px;color:var(--text3);margin-top:2px}
