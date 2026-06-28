@@ -342,18 +342,27 @@ async function saveKeyHolder(){
 /* --- COMPANY & MULTI-TENANT -------------------------- */
 
 async function loadMyCompany(){
-  const{data:membership,error:me}=await supabaseClient
-    .from('company_members').select('*').eq('user_id',ME.id).single();
-  if(me||!membership) return null;
-  MY_ROLE=membership.role;
-  const{data:company,error:ce}=await supabaseClient
-    .from('companies').select('*').eq('id',membership.company_id).single();
-  if(ce||!company) return null;
-  COMPANY=company;
-  if(company.locations&&company.locations.length>0){
-    LOCS=company.locations.map(l=>({...l,keys:[]}));
+  try{
+    // Use maybeSingle() instead of single() - won't error if no row found
+    const{data:membership,error:me}=await supabaseClient
+      .from('company_members').select('*').eq('user_id',ME.id).maybeSingle();
+    if(me){console.error('company_members error:',me.message);return null;}
+    if(!membership){console.log('No company membership found for',ME.email);return null;}
+    MY_ROLE=membership.role;
+    const{data:company,error:ce}=await supabaseClient
+      .from('companies').select('*').eq('id',membership.company_id).maybeSingle();
+    if(ce){console.error('companies error:',ce.message);return null;}
+    if(!company){console.error('Company not found for id',membership.company_id);return null;}
+    COMPANY=company;
+    if(company.locations&&company.locations.length>0){
+      LOCS=company.locations.map(l=>({...l,keys:[]}));
+    }
+    console.log('Company loaded:',company.name,'Role:',MY_ROLE);
+    return company;
+  }catch(e){
+    console.error('loadMyCompany exception:',e);
+    return null;
   }
-  return company;
 }
 
 async function createCompany(name,locations){
