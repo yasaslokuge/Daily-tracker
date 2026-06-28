@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   WorkTrace — Application Logic
+   WorkTrace - Application Logic
    ═══════════════════════════════════════════════════════
    Sections:
    1. Config (Supabase URL + Key)
@@ -95,7 +95,7 @@ async function doSignIn(){
   const email=document.getElementById('siEmail').value.trim();
   const pass=document.getElementById('siPass').value;
   if(!email||!pass){msg('siErr','Enter email and password');return}
-  const b=document.getElementById('siBtn');b.disabled=true;b.textContent='Signing in…';
+  const b=document.getElementById('siBtn');b.disabled=true;b.textContent='Signing in...';
   const{error}=await sb.auth.signInWithPassword({email,password:pass});
   b.disabled=false;b.textContent='Sign In';
   if(error)msg('siErr',error.message);
@@ -105,11 +105,11 @@ async function doSignUp(){
   const pass=document.getElementById('suPass').value;
   if(!email||!pass){msg('suErr','Fill in all fields');return}
   if(pass.length<6){msg('suErr','Password must be 6+ characters');return}
-  const b=document.getElementById('suBtn');b.disabled=true;b.textContent='Creating…';
+  const b=document.getElementById('suBtn');b.disabled=true;b.textContent='Creating...';
   const{error}=await sb.auth.signUp({email,password:pass});
   b.disabled=false;b.textContent='Create Account';
   if(error)msg('suErr',error.message);
-  else{msg('suOk','Account created — sign in below.','ok');toggleAuth('in')}
+  else{msg('suOk','Account created - sign in below.','ok');toggleAuth('in')}
 }
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
 
@@ -171,7 +171,7 @@ function openKeyModal(locId, locName, currentHolder){
   const existing=currentHolder||getLocKey(locId)||'';
   const sheet=document.getElementById('keyModal');
   if(!sheet){showToast('Key modal missing','warn');return;}
-  document.getElementById('keyModalTitle').textContent='Key — '+locName;
+  document.getElementById('keyModalTitle').textContent='Key - '+locName;
   document.getElementById('keyHolderInput').value=existing;
   document.getElementById('keyModalLocId').value=locId;
   sheet.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
@@ -186,7 +186,7 @@ async function saveKeyHolder(){
   const loc=LOCS.find(l=>l.id===locId);
   const locName=loc?loc.name:locId;
   const btn=document.querySelector('.btn-key-save');
-  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  if(btn){btn.disabled=true;btn.textContent='Saving...';}
   const ok=await setLocKey(locId,locName,holder);
   if(btn){btn.disabled=false;btn.textContent='Save';}
   if(ok){
@@ -224,7 +224,7 @@ function renderHero(){
 }
 function setSaved(s){
   const e=document.getElementById('heroBadge');
-  if(s==='saving'){e.textContent='Saving to cloud…';e.className='hero-badge saving'}
+  if(s==='saving'){e.textContent='Saving to cloud...';e.className='hero-badge saving'}
   else if(s==='saved'){e.textContent='Saved to cloud ✓';e.className='hero-badge saved'}
   else{e.textContent='';e.className='hero-badge'}
 }
@@ -306,10 +306,10 @@ async function saveDay(){
     setSaved('saved');
     // Use requestAnimationFrame to batch DOM updates
     requestAnimationFrame(()=>{renderWS();renderHero();});
-    showToast(locs.length?`Saved — ${locs.length} location${locs.length>1?'s':''}`:'Day saved');
+    showToast(locs.length?`Saved - ${locs.length} location${locs.length>1?'s':''}`:'Day saved');
     setTimeout(()=>setSaved(''),3000);
   } else {
-    setSaved('');showToast('Error saving — try again','warn');
+    setSaved('');showToast('Error saving - try again','warn');
   }
 }
 function clearDay(){tempL.clear();tempS.clear();document.getElementById('notesTA').value='';renderLocGrid();renderSupGrid();setSaved('')}
@@ -363,7 +363,7 @@ function sv(name){
 async function renderKeysOverview(){
   const el=document.getElementById('keysOverview');
   if(!el) return;
-  el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">Loading…</div>';
+  el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">Loading...</div>';
   const all=await loadLocKeys();
   LOCS.forEach(loc=>{
     const holder=all[loc.id]||null;
@@ -437,7 +437,7 @@ async function renderWeekView(){
     const locNames=(dd.locations||[]).map(id=>LOCS.find(l=>l.id===id)?.name||id);
     const supNames=Object.keys(dd.supplies||{}).filter(k=>dd.supplies[k]).map(k=>SUPS.find(s=>s.id===k)?.name||k);
     const el=document.createElement('div');el.className=`wde${has?' has':''}`;
-    el.innerHTML=`<div class="wde-h"><div><div class="wde-dn">${DFULL[i]}</div><div class="wde-dd">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div></div><div class="wde-r">${hasSup?'<div class="wde-sdot"></div>':''}<div class="wde-cnt${has?' has':''}">${has?dd.locations.length+' loc':'—'}</div><button class="wde-edit-btn" onclick="editDay('${d}')">Edit</button></div></div>
+    el.innerHTML=`<div class="wde-h"><div><div class="wde-dn">${DFULL[i]}</div><div class="wde-dd">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div></div><div class="wde-r">${hasSup?'<div class="wde-sdot"></div>':''}<div class="wde-cnt${has?' has':''}">${has?dd.locations.length+' loc':'-'}</div><button class="wde-edit-btn" onclick="editDay('${d}')">Edit</button></div></div>
     ${has?`<div class="wde-locs">${locNames.map(n=>`<span class="wde-lt">${n}</span>`).join('')}</div>`:'<div class="wde-empty">Nothing logged</div>'}
     ${supNames.length?`<div class="wde-sups">${supNames.map(n=>`<span class="wde-st">⚠ ${n}</span>`).join('')}</div>`:''}
     ${dd.note?`<div class="wde-note">"${dd.note}"</div>`:''}`;
@@ -466,7 +466,7 @@ async function renderReport(){
     if(locs.length){dw++;tl+=locs.length;locNames.forEach(n=>lines.push(`  • ${n}`));
       if(dd.note)lines.push(`  Note: ${dd.note}`);
       if(supNames.length){sc+=supNames.length;lines.push(`  ⚠ Supplies needed: ${supNames.join(', ')}`)}}
-    else lines.push('  — No locations logged');
+    else lines.push('  - No locations logged');
   });
   lines.push('');lines.push('─'.repeat(44));
   lines.push(`Days worked: ${dw} / 7`);lines.push(`Total locations: ${tl}`);
@@ -482,7 +482,7 @@ async function navRep(d){repOff+=d;await renderReport()}
 // ── Share via native share sheet (WhatsApp, Messages, Email etc) ──
 async function shareRep(){
   const text = document.getElementById('rvText').textContent;
-  const title = 'WorkTrace — Weekly Report';
+  const title = 'WorkTrace - Weekly Report';
 
   // Check if Web Share API is available (iOS Safari, Android Chrome)
   if(navigator.share){
@@ -490,13 +490,13 @@ async function shareRep(){
       await navigator.share({ title, text });
       showToast('Report shared');
     } catch(e){
-      // User cancelled — not an error
+      // User cancelled - not an error
       if(e.name !== 'AbortError') showToast('Share failed','warn');
     }
   } else {
-    // Fallback for desktop — copy to clipboard with instructions
+    // Fallback for desktop - copy to clipboard with instructions
     navigator.clipboard.writeText(text)
-      .then(()=>showToast('Copied — paste into WhatsApp or Email'))
+      .then(()=>showToast('Copied - paste into WhatsApp or Email'))
       .catch(()=>showToast('Select and copy manually'));
   }
 }
@@ -532,8 +532,8 @@ function buildRepImageCard(){
     body.innerHTML = lines.map(line=>{
       if(!line.trim()) return '<div style="height:6px"></div>';
       const isHeader = line.startsWith('WORK') || line.startsWith('Week of') || line.startsWith('─');
-      const isBullet = line.trim().startsWith('•');
-      const isWarning = line.trim().startsWith('⚠');
+      const isBullet = line.trim().startsWith('\u2022');
+      const isWarning = line.trim().startsWith('\u26a0');
       const isDayName = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/.test(line.trim());
       const isTotal = line.startsWith('Days worked') || line.startsWith('Total') || line.startsWith('Supply');
 
@@ -552,7 +552,7 @@ function buildRepImageCard(){
 // ── Generate PNG and trigger download / share ──
 async function saveRepImage(){
   const btn = document.getElementById('btnImage');
-  if(btn){ btn.disabled=true; btn.textContent='Generating…'; }
+  if(btn){ btn.disabled=true; btn.textContent='Generating...'; }
 
   try{
     buildRepImageCard();
@@ -584,7 +584,7 @@ async function saveRepImage(){
         const file = new File([blob], 'worktrace-report.png', {type:'image/png'});
         if(navigator.canShare({files:[file]})){
           await navigator.share({
-            title: 'WorkTrace — Weekly Report',
+            title: 'WorkTrace - Weekly Report',
             files: [file]
           });
           showToast('Image shared');
@@ -599,7 +599,7 @@ async function saveRepImage(){
       }
     }
 
-    // Fallback — download link
+    // Fallback - download link
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = 'worktrace-report-' + new Date().toISOString().slice(0,10) + '.png';
@@ -700,7 +700,7 @@ async function renderSchedule(){
     sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'});
 
   const container=document.getElementById('schContent');
-  container.innerHTML='<div class="sch-empty">Loading…</div>';
+  container.innerHTML='<div class="sch-empty">Loading...</div>';
 
   const rows=await loadSchedule(dates);
   schAssignments=rows;
@@ -725,7 +725,7 @@ function renderManagerSchedule(dates, rows){
   if(!rows.length){
     const em=document.createElement('div');
     em.className='sch-empty';
-    em.textContent='No assignments yet — tap Assign to add one.';
+    em.textContent='No assignments yet - tap Assign to add one.';
     container.appendChild(em);
     return;
   }
@@ -757,7 +757,7 @@ function renderManagerSchedule(dates, rows){
         <div class="person-day-lbl">${dayName} ${dayDate}</div>
         <div class="person-day-locs">
           ${locs.length?locs.map(l=>`<span class="person-loc-tag">${LOCS.find(x=>x.id===l)?.name||l}</span>`).join('')
-            :'<span class="person-loc-tag empty">—</span>'}
+            :'<span class="person-loc-tag empty">-</span>'}
         </div>
       </div>`;
     });
@@ -875,7 +875,7 @@ async function saveAssignment(){
     showToast('Schedule saved for '+email.split('@')[0]);
     await renderSchedule();
   }catch(e){
-    showToast('Error — check console','warn');
+    showToast('Error - check console','warn');
     console.error(e);
   }
 }
@@ -922,7 +922,7 @@ function initReqUI(){
   // Populate location select
   const sel=document.getElementById('reqLocation');
   if(sel){
-    sel.innerHTML='<option value="">Select a location…</option>';
+    sel.innerHTML='<option value="">Select a location...</option>';
     LOCS.forEach(l=>{ const o=document.createElement('option');o.value=l.id;o.textContent=l.name;sel.appendChild(o); });
   }
   // Populate supply chips
@@ -991,7 +991,7 @@ async function sendRequest(){
 async function loadInbox(){
   const el=document.getElementById('reqInboxList');
   if(!el) return;
-  el.innerHTML='<div class="req-empty">Loading…</div>';
+  el.innerHTML='<div class="req-empty">Loading...</div>';
   try{
     const{data,error}=await supabaseClient.from('requests').select('*').order('created_at',{ascending:false}).limit(50);
     if(error){el.innerHTML='<div class="req-empty">Error loading</div>';return;}
@@ -1007,7 +1007,7 @@ async function loadInbox(){
 async function loadSent(){
   const el=document.getElementById('reqSentList');
   if(!el) return;
-  el.innerHTML='<div class="req-empty">Loading…</div>';
+  el.innerHTML='<div class="req-empty">Loading...</div>';
   try{
     const{data,error}=await supabaseClient.from('requests').select('*').eq('sender_id',ME.id).order('created_at',{ascending:false}).limit(30);
     if(error){el.innerHTML='<div class="req-empty">Error loading</div>';return;}
@@ -1044,7 +1044,7 @@ function buildReqCard(r, showActions){
       </div>
     </div>
     <div class="req-body">
-      <div style="margin-bottom:6px"><span class="req-location-tag">📍 ${r.location_name||'—'}</span></div>
+      <div style="margin-bottom:6px"><span class="req-location-tag">📍 ${r.location_name||'-'}</span></div>
       ${suppliesHTML?`<div class="req-items">${suppliesHTML}</div>`:''}
       ${r.note?`<div class="req-message">"${r.note}"</div>`:''}
     </div>
@@ -1053,7 +1053,7 @@ function buildReqCard(r, showActions){
 }
 
 async function resolveRequest(id, btn){
-  btn.disabled=true; btn.textContent='Saving…';
+  btn.disabled=true; btn.textContent='Saving...';
   const{error}=await supabaseClient.from('requests').update({status:'done'}).eq('id',id);
   if(error){showToast('Error','warn');btn.disabled=false;btn.textContent='Mark resolved';return;}
   showToast('Marked as resolved');
@@ -1104,7 +1104,7 @@ function boot(session) {
   }
 }
 
-// Hard timeout — always show something within 4 seconds no matter what
+// Hard timeout - always show something within 4 seconds no matter what
 setTimeout(() => {
   if (!booted) {
     booted = true;
