@@ -91,7 +91,43 @@ function hideApp(){document.getElementById('app').style.display='none';document.
 function toggleAuth(m){
   document.getElementById('siBox').style.display=m==='in'?'block':'none';
   document.getElementById('suBox').style.display=m==='up'?'block':'none';
-  ['siErr','siOk','suErr','suOk'].forEach(id=>{const e=document.getElementById(id);e.style.display='none';e.textContent=''});
+  ['siErr','siOk','suErr','suOk'].forEach(id=>{
+    const e=document.getElementById(id);
+    if(e){e.style.display='none';e.textContent='';}
+  });
+  // Reset sign up option selection when switching to sign up
+  if(m==='up') selectSignUpOption('create');
+}
+
+// Sign up option selection (create company vs join)
+let suOption='create';
+let suLocCount=0;
+function selectSignUpOption(opt){
+  suOption=opt;
+  const cr=document.getElementById('suOptCreate');
+  const jo=document.getElementById('suOptJoin');
+  const cf=document.getElementById('suCreateFields');
+  const jf=document.getElementById('suJoinFields');
+  if(cr) cr.classList.toggle('on',opt==='create');
+  if(jo) jo.classList.toggle('on',opt==='join');
+  if(cf) cf.style.display=opt==='create'?'block':'none';
+  if(jf) jf.style.display=opt==='join'?'block':'none';
+}
+
+function addSuLocation(){
+  suLocCount++;
+  const container=document.getElementById('suLocList');
+  if(!container) return;
+  const row=document.createElement('div');
+  row.className='co-loc-row';
+  row.id='su-loc-'+suLocCount;
+  row.innerHTML='<input class="co-loc-input su-loc-input" type="text" placeholder="Location name" id="suLoc'+suLocCount+'"/>'
+    +'<button type="button" onclick="removeSuLoc('+suLocCount+')" class="co-loc-del">x</button>';
+  container.appendChild(row);
+}
+function removeSuLoc(n){
+  const el=document.getElementById('su-loc-'+n);
+  if(el) el.remove();
 }
 function msg(id,txt,t='err'){const e=document.getElementById(id);e.textContent=txt;e.className=`amsg ${t}`;e.style.display='block'}
 
@@ -115,6 +151,69 @@ async function doSignUp(){
   if(error)msg('suErr',error.message);
   else{msg('suOk','Account created - sign in below.','ok');toggleAuth('in')}
 }
+async function doSignUpFull(){
+  const email=document.getElementById('suEmail')?.value.trim();
+  const pass=document.getElementById('suPass')?.value;
+  if(!email||!pass){msg('suErr','Fill in your email and password');return;}
+  if(pass.length<6){msg('suErr','Password must be 6+ characters');return;}
+
+  if(suOption==='create'){
+    const coName=document.getElementById('suCompanyName')?.value.trim();
+    if(!coName){msg('suErr','Enter your company name');return;}
+    const locInputs=document.querySelectorAll('.su-loc-input');
+    const locs=[];
+    const colors=['#1a2840','#0e3028','#1a3a5c','#2a1a40','#3a1a1a','#1a3a2a','#1a2a3a','#2d1a4a','#1a3a5c','#1a2840','#0e3028'];
+    locInputs.forEach((inp,i)=>{
+      const n=inp.value.trim();
+      if(n) locs.push({id:'loc'+i,name:n,img:'',color:colors[i%colors.length],abbr:n.substring(0,2).toUpperCase(),keys:[]});
+    });
+    if(!locs.length){msg('suErr','Add at least one location');return;}
+    const btn=document.getElementById('suBtn');
+    if(btn){btn.disabled=true;btn.textContent='Creating account...';}
+    // Create auth account
+    const{error:ae}=await sb.auth.signUp({email,password:pass});
+    if(ae){msg('suErr',ae.message);if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
+    // Sign in immediately
+    const{data:sd,error:se}=await sb.auth.signInWithPassword({email,password:pass});
+    if(se||!sd.user){msg('suErr','Account created - please sign in');toggleAuth('in');if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
+    ME=sd.user;
+    // Create company
+    const company=await createCompany(coName,locs);
+    if(!company){msg('suErr','Error creating company - please sign in and try again');if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
+    COMPANY=company;LOCS=locs;MY_ROLE='admin';
+    if(btn){btn.disabled=false;btn.textContent='Create Account';}
+    hideAuth();showApp();
+    document.getElementById('tbUser').textContent=ME.email;
+    document.getElementById('tbRole').textContent='admin';
+    renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
+    showToast('Welcome! Invite code: '+company.invite_code);
+
+  } else {
+    // Join company
+    const code=document.getElementById('suInviteCode')?.value.trim();
+    if(!code){msg('suErr','Enter your invite code');return;}
+    const btn=document.getElementById('suBtn');
+    if(btn){btn.disabled=true;btn.textContent='Creating account...';}
+    const{error:ae}=await sb.auth.signUp({email,password:pass});
+    if(ae&&ae.message!=='User already registered'){msg('suErr',ae.message);if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
+    const{data:sd,error:se}=await sb.auth.signInWithPassword({email,password:pass});
+    if(se||!sd.user){msg('suErr','Account created - please sign in');toggleAuth('in');if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
+    ME=sd.user;
+    const result=await joinCompany(code);
+    if(result.error){msg('suErr',result.error);if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
+    COMPANY=result.company;MY_ROLE='employee';
+    if(result.company.locations&&result.company.locations.length){
+      LOCS=result.company.locations.map(l=>({...l,keys:[]}));
+    }
+    if(btn){btn.disabled=false;btn.textContent='Create Account';}
+    hideAuth();showApp();
+    document.getElementById('tbUser').textContent=ME.email;
+    document.getElementById('tbRole').textContent='employee';
+    renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
+    showToast('Joined '+result.company.name+'!');
+  }
+}
+
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
 
 
@@ -1430,6 +1529,8 @@ try {
 } catch(e) {}
 document.addEventListener('keydown',e=>{
   if(e.key!=='Enter')return;
-  if(document.getElementById('siBox').style.display!=='none')doSignIn();
-  else doSignUp();
+  const siBox=document.getElementById('siBox');
+  const suBox=document.getElementById('suBox');
+  if(siBox&&siBox.style.display!=='none') doSignIn();
+  else if(suBox&&suBox.style.display!=='none') doSignUpFull();
 });
