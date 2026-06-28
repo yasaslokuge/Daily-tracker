@@ -44,10 +44,64 @@
   </div>
 </div>
 
+
+<!-- COMPANY SETUP SCREEN -->
+<div id="companySetup" style="display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:20px;background:var(--bg);position:relative;overflow:hidden">
+  <div style="width:100%;max-width:420px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 18px var(--teal)"></div>
+      <div style="font-size:22px;font-weight:700;letter-spacing:-0.5px">Work<span style="color:var(--teal)">Trace</span></div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:24px">Set up your workspace to get started</div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <button class="co-tab on" id="co-tab-create" onclick="switchCompanyTab('create')">Create Company</button>
+      <button class="co-tab" id="co-tab-join" onclick="switchCompanyTab('join')">Join with Code</button>
+    </div>
+
+    <!-- CREATE PANEL -->
+    <div id="co-panel-create" style="background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:24px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:0.5"></div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">Create your company</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:18px">Add your company and locations. You'll get an invite code to share with your team.</div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:7px">Company Name</div>
+        <input id="coName" type="text" placeholder="e.g. Clean Pro Services" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:15px;padding:13px 14px;outline:none"/>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:7px">Locations</div>
+        <div id="coLocList"></div>
+        <button onclick="addCoLocation()" style="width:100%;background:none;border:1.5px dashed var(--border2);border-radius:10px;color:var(--text2);padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:4px">+ Add Location</button>
+      </div>
+
+      <button id="btnCreateCo" onclick="submitCreateCompany()" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:14px;font-family:Inter,sans-serif;font-size:15px;font-weight:700;cursor:pointer">Create Company</button>
+    </div>
+
+    <!-- JOIN PANEL -->
+    <div id="co-panel-join" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:24px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:0.5"></div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">Join your team</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:18px">Enter the invite code your manager shared with you.</div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:7px">Invite Code</div>
+        <input id="coInviteCode" type="text" placeholder="e.g. A1B2C3D4" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:18px;padding:13px 14px;outline:none;text-transform:uppercase;letter-spacing:4px;text-align:center"/>
+      </div>
+
+      <button id="btnJoinCo" onclick="submitJoinCompany()" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:14px;font-family:Inter,sans-serif;font-size:15px;font-weight:700;cursor:pointer">Join Company</button>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--text3);font-family:monospace;letter-spacing:1px">created by D.Y.D Lokuge</div>
+  </div>
+</div>
+
 <div id="app" style="display:none;flex-direction:column">
   <div class="topbar">
     <div class="tb-brand" onclick="sv('log')" style="cursor:pointer"><div class="tb-dot"></div><div class="tb-name">Work<span>Trace</span></div></div>
-    <div class="tb-r"><div class="tb-user" id="tbUser"></div><button class="btn-so" onclick="doSignOut()">Sign out</button></div>
+    <div class="tb-r"><div class="tb-user" id="tbUser"></div><span id="tbRole" style="font-size:9px;font-weight:700;color:var(--teal);background:var(--teal-bg);border-radius:4px;padding:2px 6px;text-transform:uppercase;letter-spacing:0.5px"></span><button class="btn-so" onclick="doSignOut()">Sign out</button></div>
   </div>
 
   <!-- LOG -->
@@ -264,6 +318,16 @@
             <button onclick="loadHistoryLog()" style="background:var(--card2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-size:11px;padding:4px 10px;cursor:pointer;font-family:Inter,sans-serif">Refresh</button>
           </div>
           <div id="historyList"><div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Tap Refresh to load</div></div>
+        </div>
+      </div>
+
+      <!-- COMPANY SETTINGS -->
+      <div class="set-section" id="companySettingsSection">
+        <div class="set-sec-title">Company</div>
+        <div class="set-card" style="padding:14px">
+          <div id="companySettingsContent">
+            <div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Loading...</div>
+          </div>
         </div>
       </div>
 
