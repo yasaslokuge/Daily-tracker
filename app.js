@@ -63,7 +63,7 @@ const DFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sund
 
 
 /* --- 3. STATE VARIABLES ------------------------------ */
-let ME=null,selDate=td(),weekOff=0,repOff=0,cache={},tempL=new Set(),tempS=new Set();
+let ME=null,selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set();
 
 
 /* --- 4. DATE UTILITIES ------------------------------- */
@@ -125,12 +125,27 @@ async function loadWk(dates){
 }
 async function saveLog(date,locs,note,sups){
   if(!ME)return false;
+  // Check if updating existing record
+  const existing=cache[date];
+  const action=existing&&existing.locations&&existing.locations.length>0?'update':'save';
   const{error}=await sb.from('work_logs').upsert(
     {user_id:ME.id,log_date:date,locations:locs,note,supplies:sups,updated_at:new Date().toISOString()},
     {onConflict:'user_id,log_date'}
   );
   if(error){console.error(error);return false}
-  cache[date]={locations:locs,note,supplies:sups};return true;
+  cache[date]={locations:locs,note,supplies:sups};
+  // Write backup to history table (non-blocking)
+  sb.from('work_logs_history').insert({
+    user_id:ME.id,
+    user_email:ME.email,
+    log_date:date,
+    locations:locs,
+    note:note||'',
+    supplies:sups||{},
+    action:action,
+    saved_at:new Date().toISOString()
+  }).then(({error:he})=>{if(he)console.warn('History save error:',he);});
+  return true;
 }
 function gd(d){return cache[d]||{locations:[],note:'',supplies:{}}}
 
@@ -157,11 +172,32 @@ function getLocKey(locId){
 
 async function setLocKey(locId,locName,holder){
   try{
+    // Check for duplicate - is this holder already assigned to another location?
+    if(holder){
+      const duplicate=Object.entries(keysCache).find(([id,name])=>
+        id!==locId && name&&name.toLowerCase()===holder.toLowerCase()
+      );
+      if(duplicate){
+        const dupLocName=LOCS.find(l=>l.id===duplicate[0])?.name||duplicate[0];
+        const confirmed=confirm(holder+' is already assigned to '+dupLocName+'. Assign to '+locName+' as well?');
+        if(!confirmed) return false;
+      }
+    }
     const{error}=await supabaseClient.from('location_keys').upsert(
       {location_id:locId,location_name:locName,holder_name:holder||null,updated_by:ME.id,updated_at:new Date().toISOString()},
       {onConflict:'location_id'}
     );
     if(error){showToast('Error saving key: '+error.message,'warn');console.error(error);return false;}
+    // Write audit log
+    supabaseClient.from('key_audit_log').insert({
+      location_id:locId,
+      location_name:locName,
+      holder_name:holder||null,
+      action:holder?'assigned':'cleared',
+      performed_by:ME.id,
+      performed_by_email:ME.email,
+      performed_at:new Date().toISOString()
+    }).then(({error:ae})=>{if(ae)console.warn('Key audit error:',ae);});
     if(holder) keysCache[locId]=holder;
     else delete keysCache[locId];
     return true;
@@ -204,7 +240,7 @@ async function saveKeyHolder(){
 async function initApp(u){
   ME=u;
   document.getElementById('tbUser').textContent=u.email;
-  await loadWk(wkDates(0));
+  await loadWk(wkDates(logOff));
   hideLoader();hideAuth();showApp();
   // Pre-load keys from Supabase
   await loadLocKeys();
@@ -231,7 +267,27 @@ function setSaved(s){
 }
 
 function renderWS(){
-  const today=td(),dates=wkDates(0),c=document.getElementById('wsDays');
+  const today=td(),dates=wkDates(logOff),c=document.getElementById('wsDays');
+  // Update label
+  const lbl=document.getElementById('wsLbl');
+  if(lbl){
+    if(logOff===0) lbl.textContent='This week';
+    else if(logOff===-1) lbl.textContent='Last week';
+    else{
+      const m=fd(dates[0]);
+      lbl.textContent=m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'}) + ' week';
+    }
+  }
+  // Update nav buttons
+  const navTitle=document.getElementById('wsNavTitle');
+  if(navTitle){
+    const m=fd(dates[0]),sun=fd(dates[6]);
+    navTitle.textContent=m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})+' - '+sun.toLocaleDateString('en-NZ',{day:'numeric',month:'short'});
+  }
+  // Disable next button if already at current week
+  const nextBtn=document.getElementById('wsNavNext');
+  if(nextBtn) nextBtn.style.opacity=logOff>=0?'0.3':'1';
+  if(nextBtn) nextBtn.disabled=logOff>=0;
   c.innerHTML='';
   dates.forEach((date,i)=>{
     const d=fd(date),day=gd(date),has=day.locations&&day.locations.length>0;
@@ -241,6 +297,17 @@ function renderWS(){
     ch.onclick=()=>selDay(date);
     c.appendChild(ch);
   });
+}
+async function navLogWeek(dir){
+  logOff+=dir;
+  const dates=wkDates(logOff);
+  await loadWk(dates);
+  renderWS();
+  // Select first day of new week if current selDate not in range
+  if(!dates.includes(selDate)){
+    selDate=logOff===0?td():dates[0];
+  }
+  await loadDayUI(selDate);
 }
 
 async function selDay(date){selDate=date;renderWS();await loadDayUI(date);}
@@ -353,6 +420,12 @@ function sv(name){
         rb.style.color=role==='admin'?'var(--purple)':role==='employer'?'var(--blue)':'var(--teal)';
         rb.style.borderColor=role==='admin'?'rgba(167,139,250,0.2)':role==='employer'?'rgba(79,142,247,0.2)':'rgba(5,217,180,0.2)';
       }
+      // Show audit sections based on role
+      const isM=isManager();
+      const ka=document.getElementById('keyAuditSection');
+      if(ka) ka.style.display=isM?'block':'none';
+      const hs=document.getElementById('historySection');
+      if(hs) hs.style.display=role==='admin'?'block':'none';
     }
     syncThemeToggle();
   }
