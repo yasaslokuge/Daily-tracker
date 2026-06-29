@@ -1108,13 +1108,21 @@ let activeConfigDay=null;
 async function loadSchedule(dates){
   if(!ME) return[];
   const mon=dates[0], sun=dates[6];
-  let q=supabaseClient.from('schedules').select('id,employee_email,work_date,locations,start_time,note,company_id')
+  console.log('loadSchedule: email='+ME.email+' role='+MY_ROLE+' dates='+mon+' to '+sun);
+  // Always fetch all schedules in date range - filter in JS
+  const{data,error}=await supabaseClient.from('schedules')
+    .select('id,employee_email,work_date,locations,start_time,note,company_id')
     .gte('work_date',mon).lte('work_date',sun);
-  if(!isManager()) q=q.eq('employee_email',ME.email);
-  const{data,error}=await q;
   if(error){console.error('loadSchedule error:',error.message);return[];}
-  // Filter by company in JS to avoid RLS join issues
   const rows=data||[];
+  console.log('loadSchedule: got '+rows.length+' total rows');
+  // For employees filter by their email
+  if(!isManager()){
+    const mine=rows.filter(r=>r.employee_email&&r.employee_email.toLowerCase()===ME.email.toLowerCase());
+    console.log('loadSchedule: my rows='+mine.length);
+    return mine;
+  }
+  // For managers filter by company
   if(COMPANY) return rows.filter(r=>!r.company_id||r.company_id===COMPANY.id);
   return rows;
 }
@@ -1229,13 +1237,16 @@ function renderEmployeeSchedule(dates, rows){
     const has=locs.length>0;
     const el=document.createElement('div');
     el.className=`my-sch-day${has?' has':''}`;
+    const startTime=dayRows[0]?.start_time||'';
+    const note=dayRows[0]?.note||'';
     el.innerHTML=`
       <div class="my-sch-dayname">${DFULL[i]}</div>
-      <div class="my-sch-date">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div>
+      <div class="my-sch-date">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}${startTime?` <span style="color:var(--teal);font-size:11px;font-family:monospace;margin-left:6px">${startTime}</span>`:''}</div>
       <div class="my-sch-locs">
         ${has?locs.map(l=>`<span class="person-loc-tag">${LOCS.find(x=>x.id===l)?.name||l}</span>`).join('')
           :'<span class="my-sch-empty">Nothing assigned</span>'}
-      </div>`;
+      </div>
+      ${note?`<div style="font-size:11px;color:var(--text2);font-style:italic;margin-top:6px;padding:0 2px">"${note}"</div>`:''}`;
     container.appendChild(el);
   });
 }
