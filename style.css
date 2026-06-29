@@ -923,3 +923,15 @@ body.light .auth-top{background:#DFF2EE}
 .modal-loc-btn.sel{border-color:var(--teal);background:var(--teal-bg);color:var(--teal)}
 .modal-locs-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .modal-days{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+
+/* -- KEY MEMBER PICKER -- */
+.key-member-picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+.key-member-btn{display:flex;align-items:center;gap:8px;background:var(--card2);border:1.5px solid var(--border2);border-radius:10px;padding:9px 12px;cursor:pointer;transition:all var(--t);font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:var(--text2);-webkit-tap-highlight-color:transparent}
+.key-member-btn.sel{border-color:var(--teal);background:var(--teal-bg);color:var(--teal)}
+.key-member-btn:hover{border-color:var(--teal)}
+.key-member-avatar{width:26px;height:26px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text);flex-shrink:0;transition:background var(--t)}
+.key-member-btn.sel .key-member-avatar{background:rgba(5,217,180,0.2);color:var(--teal)}
+
+/* -- KEY RETURN BUTTON -- */
+.key-return-btn{border-color:rgba(245,166,35,0.4) !important}
+.key-return-btn:hover{border-color:var(--amber) !important;background:var(--amber-bg) !important}
