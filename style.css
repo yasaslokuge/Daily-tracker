@@ -897,3 +897,29 @@ body.light
 body.light .auth-screen{background:#F5FAF9}
 body.light .auth-body{background:#FFFFFF}
 body.light .auth-top{background:#DFF2EE}
+
+/* -- MORE MENU -- */
+.more-menu{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom));left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--border);z-index:99;padding:8px 16px 16px;animation:slideUp 0.22s ease}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(100%)}to{transform:translateX(-50%) translateY(0)}}
+.more-menu-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
+.more-menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.more-item{background:var(--card2);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 8px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all var(--t);-webkit-tap-highlight-color:transparent}
+.more-item:hover{border-color:var(--teal);background:var(--teal-bg)}
+.more-item.on{border-color:var(--teal);background:var(--teal-bg)}
+.more-item-icon{width:40px;height:40px;border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;position:relative}
+.more-item-icon svg{width:22px;height:22px;stroke:var(--text2)}
+.more-item.on .more-item-icon svg{stroke:var(--teal)}
+.more-item-label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.3px}
+.more-item.on .more-item-label{color:var(--teal)}
+#nb-more.on{color:var(--teal)}
+
+
+/* -- SCHEDULE MODAL PER-DAY CONFIG -- */
+.modal-day-btn{background:var(--card2);border:1.5px solid var(--border2);border-radius:10px;padding:8px 6px;min-width:42px;cursor:pointer;transition:all var(--t);display:flex;flex-direction:column;align-items:center;font-family:Inter,sans-serif;-webkit-tap-highlight-color:transparent}
+.modal-day-btn.sel{border-color:var(--teal);background:var(--teal-bg)}
+.modal-day-abbr{font-size:11px;font-weight:700;color:var(--text)}
+.modal-day-btn.sel .modal-day-abbr{color:var(--teal)}
+.modal-loc-btn{background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all var(--t);font-family:Inter,sans-serif;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.modal-loc-btn.sel{border-color:var(--teal);background:var(--teal-bg);color:var(--teal)}
+.modal-locs-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.modal-days{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
