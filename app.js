@@ -713,7 +713,7 @@ async function getCompanyMembers(){
   if(!COMPANY) return[];
   if(membersCacheLoaded) return membersCache;
   const{data,error}=await supabaseClient.from('company_members')
-    .select('*').eq('company_id',COMPANY.id).order('role');
+    .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id).order('role');
   if(error) return[];
   membersCache=data||[];
   membersCacheLoaded=true;
