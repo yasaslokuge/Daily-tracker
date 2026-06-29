@@ -499,21 +499,15 @@
   <div id="moreMenu" class="more-menu" style="display:none">
     <div class="more-menu-handle"></div>
     <div class="more-menu-grid">
-      <!-- Report: shown for employees, hidden for managers -->
-      <button class="more-item" id="nb-rep" onclick="sv('rep');closeMoreMenu()" style="display:none">
+      <button class="more-item" id="more-rep" onclick="sv('rep');closeMoreMenu()">
         <div class="more-item-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
         <div class="more-item-label">Report</div>
       </button>
-      <!-- Schedule: shown for employees in More, hidden for managers (they have it in nav) -->
-      <button class="more-item" id="nb-sch" onclick="sv('sch');closeMoreMenu()" style="display:none">
-        <div class="more-item-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
-        <div class="more-item-label">Schedule</div>
-      </button>
-      <button class="more-item" id="nb-req" onclick="sv('req');closeMoreMenu()">
-        <div class="more-item-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg><div class="nb-badge" id="req-badge-dot" style="top:2px;right:2px"></div></div>
+      <button class="more-item" id="more-req" onclick="sv('req');closeMoreMenu()">
+        <div class="more-item-icon" style="position:relative"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg><div class="nb-badge" id="req-badge-dot" style="top:0;right:0"></div></div>
         <div class="more-item-label">Requests</div>
       </button>
-      <button class="more-item" id="nb-set" onclick="sv('set');closeMoreMenu()">
+      <button class="more-item" id="more-set" onclick="sv('set');closeMoreMenu()">
         <div class="more-item-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg></div>
         <div class="more-item-label">Settings</div>
       </button>
