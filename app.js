@@ -343,16 +343,24 @@ async function saveKeyHolder(){
 
 async function loadMyCompany(){
   try{
-    // Use maybeSingle() instead of single() - won't error if no row found
-    const{data:membership,error:me}=await supabaseClient
-      .from('company_members').select('*').eq('user_id',ME.id).maybeSingle();
+    // Use limit(1) to handle duplicate rows gracefully
+    const{data:memberships,error:me}=await supabaseClient
+      .from('company_members').select('*').eq('user_id',ME.id).limit(1);
     if(me){console.error('company_members error:',me.message);return null;}
-    if(!membership){console.log('No company membership found for',ME.email);return null;}
+    if(!memberships||!memberships.length){
+      console.log('No company membership found for',ME.email);
+      return null;
+    }
+    const membership=memberships[0];
     MY_ROLE=membership.role;
-    const{data:company,error:ce}=await supabaseClient
-      .from('companies').select('*').eq('id',membership.company_id).maybeSingle();
+    const{data:companies,error:ce}=await supabaseClient
+      .from('companies').select('*').eq('id',membership.company_id).limit(1);
     if(ce){console.error('companies error:',ce.message);return null;}
-    if(!company){console.error('Company not found for id',membership.company_id);return null;}
+    if(!companies||!companies.length){
+      console.error('Company not found for id',membership.company_id);
+      return null;
+    }
+    const company=companies[0];
     COMPANY=company;
     if(company.locations&&company.locations.length>0){
       LOCS=company.locations.map(l=>({...l,keys:[]}));
@@ -366,10 +374,11 @@ async function loadMyCompany(){
 }
 
 async function createCompany(name,locations){
-  const{data,error}=await supabaseClient.from('companies').insert({
+  const{data:rows,error}=await supabaseClient.from('companies').insert({
     name,owner_id:ME.id,locations
-  }).select().single();
-  if(error){console.error(error);return null;}
+  }).select();
+  if(error||!rows||!rows.length){console.error(error);return null;}
+  const data=rows[0];
   await supabaseClient.from('company_members').insert({
     company_id:data.id,user_id:ME.id,user_email:ME.email,role:'admin'
   });
@@ -377,13 +386,14 @@ async function createCompany(name,locations){
 }
 
 async function joinCompany(inviteCode){
-  const{data:company,error}=await supabaseClient
+  const{data:cos,error}=await supabaseClient
     .from('companies').select('*')
-    .eq('invite_code',inviteCode.toUpperCase().trim()).single();
-  if(error||!company) return{error:'Invalid invite code'};
+    .eq('invite_code',inviteCode.toUpperCase().trim()).limit(1);
+  if(error||!cos||!cos.length) return{error:'Invalid invite code'};
+  const company=cos[0];
   const{data:existing}=await supabaseClient.from('company_members')
-    .select('id').eq('company_id',company.id).eq('user_id',ME.id).single();
-  if(existing) return{error:'You are already a member of this company'};
+    .select('id').eq('company_id',company.id).eq('user_id',ME.id).limit(1);
+  if(existing&&existing.length>0) return{error:'You are already a member of this company'};
   const{error:je}=await supabaseClient.from('company_members').insert({
     company_id:company.id,user_id:ME.id,user_email:ME.email,role:'employee'
   });
