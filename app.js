@@ -1046,7 +1046,7 @@ function sv(name){
   if(vEl) vEl.classList.add('on');
   const nb=document.getElementById('nb-'+name);if(nb)nb.classList.add('on');
   // Update more-badge if any more-menu item is active
-  const inMore=['sch','req','set'].includes(name);
+  const inMore=['rep','req','set'].includes(name);
   const moreBadge=document.getElementById('more-badge');
   if(moreBadge) moreBadge.style.display=inMore?'block':'none';
   if(name==='dash') renderDash();
