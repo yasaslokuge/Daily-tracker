@@ -1948,13 +1948,78 @@ async function loadInbox(){
   try{
     const{data,error}=await supabaseClient.from('requests').select('*').order('created_at',{ascending:false}).limit(50);
     if(error){el.innerHTML='<div class="req-empty">Error loading</div>';return;}
-    if(!data||!data.length){el.innerHTML='<div class="req-empty"><svg viewBox="0 0 24 24" fill="none"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>No requests yet</div>';return;}
     el.innerHTML='';
+    if(!data||!data.length){
+      el.innerHTML='<div class="req-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>Inbox is empty</div>';
+      return;
+    }
     const open=data.filter(r=>r.status==='open');
+    const resolved=data.filter(r=>r.status!=='open');
     unreadCount=open.length;
     updateReqBadge();
-    data.forEach(r=>el.appendChild(buildReqCard(r,true)));
-  }catch(e){el.innerHTML='<div class="req-empty">Error</div>';console.error(e);}
+
+    // ── Action bar for managers ──
+    if(isManager()){
+      const bar=document.createElement('div');
+      bar.className='inbox-action-bar';
+
+      // Stats row
+      const stats=document.createElement('div');
+      stats.className='inbox-stats';
+      stats.innerHTML=`
+        <span class="inbox-stat open"><span class="inbox-stat-num">${open.length}</span> Open</span>
+        <span class="inbox-stat done"><span class="inbox-stat-num">${resolved.length}</span> Resolved</span>
+        <span class="inbox-stat total"><span class="inbox-stat-num">${data.length}</span> Total</span>`;
+      bar.appendChild(stats);
+
+      // Bulk action buttons
+      const btns=document.createElement('div');
+      btns.className='inbox-bulk-btns';
+
+      if(open.length){
+        const resolveAll=document.createElement('button');
+        resolveAll.className='inbox-bulk-btn teal';
+        resolveAll.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Resolve all open';
+        resolveAll.onclick=resolveAllOpen;
+        btns.appendChild(resolveAll);
+      }
+      if(resolved.length){
+        const clrRes=document.createElement('button');
+        clrRes.className='inbox-bulk-btn grey';
+        clrRes.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Clear resolved (${resolved.length})';
+        clrRes.onclick=clearAllResolved;
+        btns.appendChild(clrRes);
+      }
+      if(data.length){
+        const clrAll=document.createElement('button');
+        clrAll.className='inbox-bulk-btn red';
+        clrAll.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Clear all';
+        clrAll.onclick=clearAllInbox;
+        btns.appendChild(clrAll);
+      }
+      bar.appendChild(btns);
+      el.appendChild(bar);
+
+      // Section headers
+      if(open.length){
+        const hdr=document.createElement('div');
+        hdr.className='inbox-section-hdr';
+        hdr.innerHTML='<span>Open requests</span><span class="inbox-count-badge open">'+open.length+'</span>';
+        el.appendChild(hdr);
+        open.forEach(r=>el.appendChild(buildReqCard(r,true)));
+      }
+      if(resolved.length){
+        const hdr=document.createElement('div');
+        hdr.className='inbox-section-hdr resolved';
+        hdr.innerHTML='<span>Resolved</span><span class="inbox-count-badge done">'+resolved.length+'</span>';
+        el.appendChild(hdr);
+        resolved.forEach(r=>el.appendChild(buildReqCard(r,true)));
+      }
+    } else {
+      // Employee sees all their own requests
+      data.forEach(r=>el.appendChild(buildReqCard(r,false)));
+    }
+  }catch(e){el.innerHTML='<div class="req-empty">Error loading inbox</div>';console.error(e);}
 }
 
 async function loadSent(){
@@ -2003,6 +2068,37 @@ function buildReqCard(r, showActions){
     </div>
     ${actionsHTML}`;
   return card;
+}
+
+
+async function resolveAllOpen(){
+  if(!isManager()){showToast('Managers only','warn');return;}
+  const confirmed=confirm('Mark ALL open requests as resolved?');
+  if(!confirmed) return;
+  const{error}=await supabaseClient.from('requests').update({status:'done'}).eq('status','open');
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast('All open requests marked as resolved');
+  loadInbox();
+}
+
+async function clearAllResolved(){
+  if(!isManager()){showToast('Managers only','warn');return;}
+  const confirmed=confirm('Clear all resolved and dismissed messages from the inbox?');
+  if(!confirmed) return;
+  const{error}=await supabaseClient.from('requests').delete().eq('status','done');
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast('Cleared all resolved messages');
+  loadInbox();
+}
+
+async function clearAllInbox(){
+  if(!isManager()){showToast('Managers only','warn');return;}
+  const confirmed=confirm('Clear ALL messages from inbox? This cannot be undone.');
+  if(!confirmed) return;
+  const{error}=await supabaseClient.from('requests').delete().neq('id','00000000-0000-0000-0000-000000000000');
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast('Inbox cleared');
+  loadInbox();
 }
 
 async function resolveRequest(id, btn){
