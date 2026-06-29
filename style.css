@@ -949,3 +949,24 @@ body.light .auth-top{background:#DFF2EE}
 .assign-del-btn.del{border-color:rgba(255,87,87,0.3);color:var(--red)}
 .assign-del-btn.del:hover{background:var(--red-bg);border-color:var(--red)}
 .person-day-meta{font-size:10px;color:var(--teal);font-family:monospace;margin-top:4px}
+
+/* -- INBOX ACTION BAR -- */
+.inbox-action-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.inbox-stats{display:flex;gap:10px;margin-bottom:10px}
+.inbox-stat{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.inbox-stat-num{font-size:16px;font-weight:700;color:var(--text)}
+.inbox-stat.open .inbox-stat-num{color:var(--amber)}
+.inbox-stat.done .inbox-stat-num{color:var(--teal)}
+.inbox-bulk-btns{display:flex;flex-wrap:wrap;gap:6px}
+.inbox-bulk-btn{display:flex;align-items:center;gap:5px;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1.5px solid;transition:all var(--t);-webkit-tap-highlight-color:transparent}
+.inbox-bulk-btn.teal{background:var(--teal-bg);border-color:rgba(5,217,180,0.3);color:var(--teal)}
+.inbox-bulk-btn.teal:hover{background:var(--teal);color:#04100D;border-color:var(--teal)}
+.inbox-bulk-btn.grey{background:var(--card2);border-color:var(--border2);color:var(--text2)}
+.inbox-bulk-btn.grey:hover{border-color:var(--teal);color:var(--teal)}
+.inbox-bulk-btn.red{background:none;border-color:rgba(255,87,87,0.3);color:var(--red)}
+.inbox-bulk-btn.red:hover{background:var(--red-bg);border-color:var(--red)}
+.inbox-section-hdr{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin:14px 0 8px;padding:0 2px}
+.inbox-section-hdr.resolved{margin-top:20px}
+.inbox-count-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.inbox-count-badge.open{background:rgba(245,166,35,0.15);color:var(--amber)}
+.inbox-count-badge.done{background:var(--teal-bg);color:var(--teal)}
