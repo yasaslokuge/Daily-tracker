@@ -1400,6 +1400,27 @@ async function deletePersonSchedule(email){
 }
 
 // Close modal on overlay click
+
+/* --- MORE MENU ---------------------------------------- */
+function toggleMoreMenu(){
+  const m=document.getElementById('moreMenu');
+  const o=document.getElementById('moreOverlay');
+  const nb=document.getElementById('nb-more');
+  if(!m) return;
+  const isOpen=m.style.display==='block';
+  m.style.display=isOpen?'none':'block';
+  if(o) o.style.display=isOpen?'none':'block';
+  if(nb) nb.classList.toggle('on',!isOpen);
+}
+function closeMoreMenu(){
+  const m=document.getElementById('moreMenu');
+  const o=document.getElementById('moreOverlay');
+  const nb=document.getElementById('nb-more');
+  if(m) m.style.display='none';
+  if(o) o.style.display='none';
+  if(nb) nb.classList.remove('on');
+}
+
 document.addEventListener('DOMContentLoaded',function(){
   const m=document.getElementById('assignModal');
   if(m) m.addEventListener('click',function(e){
