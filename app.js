@@ -386,18 +386,26 @@ async function createCompany(name,locations){
 }
 
 async function joinCompany(inviteCode){
-  const{data:cos,error}=await supabaseClient
+  const code=inviteCode.toUpperCase().trim();
+  console.log('Joining with code:',code);
+  // Look up company by invite code
+  const{data:cos,error:ce}=await supabaseClient
     .from('companies').select('*')
-    .eq('invite_code',inviteCode.toUpperCase().trim()).limit(1);
-  if(error||!cos||!cos.length) return{error:'Invalid invite code'};
+    .eq('invite_code',code).limit(1);
+  console.log('Company lookup result:',cos,'error:',ce);
+  if(ce){return{error:'Error: '+ce.message};}
+  if(!cos||!cos.length){return{error:'Invalid invite code. Check the code and try again.'};}
   const company=cos[0];
+  // Check if already a member
   const{data:existing}=await supabaseClient.from('company_members')
     .select('id').eq('company_id',company.id).eq('user_id',ME.id).limit(1);
-  if(existing&&existing.length>0) return{error:'You are already a member of this company'};
+  if(existing&&existing.length>0) return{error:'You are already a member of '+company.name};
+  // Join as employee
   const{error:je}=await supabaseClient.from('company_members').insert({
     company_id:company.id,user_id:ME.id,user_email:ME.email,role:'employee'
   });
-  if(je) return{error:je.message};
+  console.log('Join result error:',je);
+  if(je) return{error:'Could not join: '+je.message};
   return{company};
 }
 
@@ -723,9 +731,14 @@ function showToast(txt,t=''){
 function sv(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.more-item').forEach(b=>b.classList.remove('on'));
   const vEl=document.getElementById('v-'+name);
   if(vEl) vEl.classList.add('on');
   const nb=document.getElementById('nb-'+name);if(nb)nb.classList.add('on');
+  // Update more-badge if any more-menu item is active
+  const inMore=['sch','req','set'].includes(name);
+  const moreBadge=document.getElementById('more-badge');
+  if(moreBadge) moreBadge.style.display=inMore?'block':'none';
   if(name==='dash') renderDash();
   if(name==='week') renderWeekView();
   if(name==='rep')  renderReport();
