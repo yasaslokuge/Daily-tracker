@@ -800,7 +800,6 @@ async function submitCreateCompany(){
   if(!company){showToast('Error creating company','warn');return;}
   COMPANY=company;LOCS=locations;MY_ROLE='admin';
   hideCompanySetup();showApp();
-  switchNavForRole();
   const roleEl=document.getElementById('tbRole');
   if(roleEl) roleEl.textContent=MY_ROLE;
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -873,25 +872,6 @@ async function saveCoLocations(){
 }
 
 
-function switchNavForRole(){
-  const schBtn=document.getElementById('nb-sch');
-  const repBtn=document.getElementById('nb-rep');
-  const moreSchItem=document.querySelector('.more-item[id="nb-sch"]');
-  const moreRepItem=document.querySelector('.more-item[id="nb-rep"]');
-  if(isManager()){
-    // Managers: Schedule in nav, Report in More
-    if(schBtn) schBtn.style.display='flex';
-    if(moreRepItem) moreRepItem.style.display='flex';
-    if(repBtn) repBtn.style.display='none';
-    if(moreSchItem) moreSchItem.style.display='none';
-  } else {
-    // Employees: Report in nav, Schedule in More
-    if(repBtn) repBtn.style.display='flex';
-    if(moreSchItem) moreSchItem.style.display='flex';
-    if(schBtn) schBtn.style.display='none';
-    if(moreRepItem) moreRepItem.style.display='none';
-  }
-}
 
 /* --- 8. APP INIT ------------------------------------- */
 async function initApp(u){
@@ -911,7 +891,6 @@ async function initApp(u){
   if(roleEl) roleEl.textContent=MY_ROLE;
   hideAuth();
   showApp();
-  switchNavForRole();
   await loadWk(wkDates(logOff));
   await loadLocKeys();
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -1485,7 +1464,6 @@ function renderManagerSchedule(dates, rows){
   const container=document.getElementById('schContent');
   container.innerHTML='';
 
-  // Header row
   const hd=document.createElement('div');
   hd.className='sch-head';
   hd.innerHTML=`<span class="sch-head-title">Team schedule</span><button class="btn-add-assign" onclick="openModal()">+ Assign</button>`;
@@ -1499,35 +1477,51 @@ function renderManagerSchedule(dates, rows){
     return;
   }
 
-  // Group by email
+  // Group by email, keep full row data per day
   const byEmail={};
   rows.forEach(r=>{
     if(!byEmail[r.employee_email]) byEmail[r.employee_email]={email:r.employee_email,days:{}};
-    if(!byEmail[r.employee_email].days[r.work_date]) byEmail[r.employee_email].days[r.work_date]=[];
-    byEmail[r.employee_email].days[r.work_date].push(...(r.locations||[]));
+    byEmail[r.employee_email].days[r.work_date]=r; // store full row
   });
 
-  const DABB_MAP={'Mon':0,'Tue':1,'Wed':2,'Thu':3,'Fri':4,'Sat':5,'Sun':6};
   const avatarColors=['#05D9B4','#4F8EF7','#A78BFA','#F5A623','#FF5757','#34D399'];
 
   Object.values(byEmail).forEach((person,pi)=>{
     const card=document.createElement('div');
     card.className='person-card';
-    const initials=person.email.substring(0,2).toUpperCase();
+    const name=getMemberName(person.email);
+    const initials=name.charAt(0).toUpperCase();
     const color=avatarColors[pi%avatarColors.length];
-    const totalLocs=Object.values(person.days).flat().length;
+    const totalLocs=Object.values(person.days).reduce((s,r)=>s+(r.locations||[]).length,0);
 
     let daysHTML='';
     dates.forEach((d,i)=>{
-      const locs=person.days[d]||[];
+      const row=person.days[d]||null;
+      const locs=row?.locations||[];
+      const startTime=row?.start_time||'';
+      const note=row?.note||'';
       const dayName=DABB[i];
       const dayDate=fd(d).getDate();
-      daysHTML+=`<div class="person-day-block">
-        <div class="person-day-lbl">${dayName} ${dayDate}</div>
+      const hasData=locs.length>0;
+
+      daysHTML+=`<div class="person-day-block${hasData?' has':''}">
+        <div class="person-day-lbl-row">
+          <span class="person-day-lbl">${dayName} ${dayDate}</span>
+          ${hasData?`<div class="person-day-actions">
+            <button class="sch-day-edit" onclick="editDaySchedule('${person.email}','${d}','${dayName} ${dayDate}')" title="Edit this day">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            <button class="sch-day-del" onclick="deleteDaySchedule('${person.email}','${d}')" title="Remove this day">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>`:''}
+        </div>
         <div class="person-day-locs">
-          ${locs.length?locs.map(l=>`<span class="person-loc-tag">${LOCS.find(x=>x.id===l)?.name||l}</span>`).join('')
+          ${hasData
+            ?locs.map(l=>`<span class="person-loc-tag">${LOCS.find(x=>x.id===l)?.name||l}</span>`).join('')
             :'<span class="person-loc-tag empty">-</span>'}
         </div>
+        ${startTime?`<div class="person-day-meta">${startTime}${note?' · '+note:''}</div>`:''}
       </div>`;
     });
 
@@ -1535,14 +1529,15 @@ function renderManagerSchedule(dates, rows){
       <div class="person-head">
         <div class="person-avatar" style="background:${color}22;color:${color}">${initials}</div>
         <div>
-          <div class="person-name">${person.email.split('@')[0]}</div>
+          <div class="person-name">${name}</div>
           <div class="person-email">${person.email}</div>
         </div>
         <div class="person-count">${totalLocs} loc</div>
       </div>
       <div class="person-day-blocks">${daysHTML}</div>
-      <div style="padding:0 14px 10px">
-        <button class="assign-del-btn" onclick="deletePersonSchedule('${person.email}')">x Remove all for this person</button>
+      <div style="padding:0 14px 12px">
+        <button class="assign-del-btn" onclick="editPersonSchedule('${person.email}')">Edit all days</button>
+        <button class="assign-del-btn del" onclick="deletePersonSchedule('${person.email}')" style="margin-left:8px">Remove all</button>
       </div>`;
     container.appendChild(card);
   });
@@ -1743,12 +1738,81 @@ async function saveAssignment(){
   }
 }
 
+
+async function editDaySchedule(email, date, label){
+  // Open the assign modal pre-filled with existing data for just this day
+  const row=schAssignments.find(r=>r.employee_email===email&&r.work_date===date);
+  if(!row){showToast('Could not find this day','warn');return;}
+  // Pre-fill modal
+  openModal();
+  setTimeout(()=>{
+    const emailEl=document.getElementById('assignEmail');
+    if(emailEl) emailEl.value=email;
+    // Pre-select this day
+    const dayBtns=document.querySelectorAll('.modal-day-btn');
+    dayBtns.forEach(btn=>{
+      if(btn.getAttribute('onclick')&&btn.getAttribute('onclick').includes(date)){
+        // Pre-load existing config into dayConfigs
+        dayConfigs[date]={
+          locations:row.locations||[],
+          startTime:row.start_time||'09:00',
+          note:row.note||''
+        };
+        btn.style.borderColor='var(--teal)';
+        btn.style.background='var(--teal-bg)';
+        // Open day config panel
+        openDayConfig(btn, date, label);
+      }
+    });
+    renderModalSummary();
+  },100);
+}
+
+async function editPersonSchedule(email){
+  // Open the assign modal pre-filled for all days of this person
+  const personRows=schAssignments.filter(r=>r.employee_email===email);
+  openModal();
+  setTimeout(()=>{
+    const emailEl=document.getElementById('assignEmail');
+    if(emailEl) emailEl.value=email;
+    // Pre-load all existing configs
+    personRows.forEach(row=>{
+      dayConfigs[row.work_date]={
+        locations:row.locations||[],
+        startTime:row.start_time||'09:00',
+        note:row.note||''
+      };
+    });
+    // Highlight all configured days
+    document.querySelectorAll('.modal-day-btn').forEach(btn=>{
+      const onclick=btn.getAttribute('onclick')||'';
+      const dateMatch=onclick.match(/'(\d{4}-\d{2}-\d{2})'/);
+      if(dateMatch&&dayConfigs[dateMatch[1]]){
+        btn.style.borderColor='var(--teal)';
+        btn.style.background='var(--teal-bg)';
+      }
+    });
+    renderModalSummary();
+  },100);
+}
+
+async function deleteDaySchedule(email, date){
+  if(!confirm('Remove '+DABB[new Date(date+'T00:00:00').getDay()-1||6]+' schedule for '+getMemberName(email)+'?')) return;
+  const{error}=await supabaseClient.from('schedules').delete()
+    .eq('employee_email',email).eq('work_date',date);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast('Day removed');
+  await renderSchedule();
+}
+
 async function deletePersonSchedule(email){
+  const name=getMemberName(email);
+  if(!confirm('Remove ALL schedule for '+name+' this week?')) return;
   const dates=wkDates(schOff);
   const{error}=await supabaseClient.from('schedules').delete()
     .eq('employee_email',email).gte('work_date',dates[0]).lte('work_date',dates[6]);
-  if(error){showToast('Error','warn');return;}
-  showToast('Removed');
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast('Schedule removed for '+name);
   await renderSchedule();
 }
 
