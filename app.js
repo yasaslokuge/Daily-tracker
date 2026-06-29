@@ -1080,7 +1080,8 @@ function getRole(email){
 }
 function isManager(){
   if(!ME) return false;
-  return MY_ROLE==='admin'||MY_ROLE==='employer';
+  const result=MY_ROLE==='admin'||MY_ROLE==='employer';
+  return result;
 }
 
 
@@ -1089,12 +1090,14 @@ function isManager(){
 let schOff=0, schAssignments=[], modalSelDays=new Set(), modalSelLocs=new Set();
 
 async function loadSchedule(dates){
-  if(!ME) return;
+  if(!ME) return[];
   const mon=dates[0], sun=dates[6];
-  let q=supabaseClient.from('schedules').select('*').gte('work_date',mon).lte('work_date',sun);
+  let q=supabaseClient.from('schedules').select('*')
+    .gte('work_date',mon).lte('work_date',sun);
+  if(COMPANY) q=q.eq('company_id',COMPANY.id);
   if(!isManager()) q=q.eq('employee_email',ME.email);
   const{data,error}=await q;
-  if(error){console.error(error);return[];}
+  if(error){console.error('loadSchedule error:',error.message);return[];}
   return data||[];
 }
 
@@ -1157,7 +1160,7 @@ function renderManagerSchedule(dates, rows){
     let daysHTML='';
     dates.forEach((d,i)=>{
       const locs=person.days[d]||[];
-      const dayName=DAYS_ABB[i];
+      const dayName=DABB[i];
       const dayDate=fd(d).getDate();
       daysHTML+=`<div class="person-day-block">
         <div class="person-day-lbl">${dayName} ${dayDate}</div>
@@ -1209,7 +1212,7 @@ function renderEmployeeSchedule(dates, rows){
     const el=document.createElement('div');
     el.className=`my-sch-day${has?' has':''}`;
     el.innerHTML=`
-      <div class="my-sch-dayname">${DAYS_FULL[i]}</div>
+      <div class="my-sch-dayname">${DFULL[i]}</div>
       <div class="my-sch-date">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div>
       <div class="my-sch-locs">
         ${has?locs.map(l=>`<span class="person-loc-tag">${LOCS.find(x=>x.id===l)?.name||l}</span>`).join('')
@@ -1233,7 +1236,7 @@ function openModal(){
   if(emailEl) emailEl.value='';
   const dates=wkDates(schOff);
   const dc=document.getElementById('modalDays');
-  if(dc) dc.innerHTML=DAYS_ABB.map((d,i)=>{
+  if(dc) dc.innerHTML=DABB.map((d,i)=>{
     const dt=dates[i];
     const dateNum=fd(dt).getDate();
     return `<button class="modal-day-btn" onclick="toggleModalDay(this,'${dt}')" data-d="${dt}"><span class="modal-day-abbr">${d}</span><span style="font-size:10px;color:var(--text3);display:block;margin-top:2px">${dateNum}</span></button>`;
@@ -1266,6 +1269,7 @@ async function saveAssignment(){
   const locs=[...modalSelLocs];
   const rows=[...modalSelDays].map(d=>({
     created_by:ME.id,
+    company_id:COMPANY?COMPANY.id:null,
     employee_email:email,
     work_date:d,
     locations:locs
