@@ -800,6 +800,7 @@ async function submitCreateCompany(){
   if(!company){showToast('Error creating company','warn');return;}
   COMPANY=company;LOCS=locations;MY_ROLE='admin';
   hideCompanySetup();showApp();
+  switchNavForRole();
   const roleEl=document.getElementById('tbRole');
   if(roleEl) roleEl.textContent=MY_ROLE;
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -872,6 +873,26 @@ async function saveCoLocations(){
 }
 
 
+function switchNavForRole(){
+  const schBtn=document.getElementById('nb-sch');
+  const repBtn=document.getElementById('nb-rep');
+  const moreSchItem=document.querySelector('.more-item[id="nb-sch"]');
+  const moreRepItem=document.querySelector('.more-item[id="nb-rep"]');
+  if(isManager()){
+    // Managers: Schedule in nav, Report in More
+    if(schBtn) schBtn.style.display='flex';
+    if(moreRepItem) moreRepItem.style.display='flex';
+    if(repBtn) repBtn.style.display='none';
+    if(moreSchItem) moreSchItem.style.display='none';
+  } else {
+    // Employees: Report in nav, Schedule in More
+    if(repBtn) repBtn.style.display='flex';
+    if(moreSchItem) moreSchItem.style.display='flex';
+    if(schBtn) schBtn.style.display='none';
+    if(moreRepItem) moreRepItem.style.display='none';
+  }
+}
+
 /* --- 8. APP INIT ------------------------------------- */
 async function initApp(u){
   ME=u;
@@ -890,6 +911,7 @@ async function initApp(u){
   if(roleEl) roleEl.textContent=MY_ROLE;
   hideAuth();
   showApp();
+  switchNavForRole();
   await loadWk(wkDates(logOff));
   await loadLocKeys();
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -1094,17 +1116,19 @@ async function renderKeysOverview(){
   if(!el) return;
   el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">Loading...</div>';
   const all=await loadLocKeys();
+  el.innerHTML='';
   LOCS.forEach(loc=>{
-    const holder=all[loc.id]||null;
+    const keyData=all[loc.id]||null;
+    const holderName=keyData?.name||null;
     const row=document.createElement('div');
     row.className='key-row';
-    row.onclick=()=>openKeyModal(loc.id,loc.name,holder);
+    row.onclick=()=>openKeyModal(loc.id,loc.name);
     row.innerHTML=`
       <div style="display:flex;align-items:center;gap:6px">
         <svg class="key-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
         <div class="key-loc-name">${loc.name}</div>
       </div>
-      ${holder?`<span class="key-holder-name">[key] ${holder}</span>`:'<span class="key-unassigned">Unassigned</span>'}
+      ${holderName?`<span class="key-holder-name">[key] ${holderName}</span>`:'<span class="key-unassigned">Unassigned</span>'}
     `;
     el.appendChild(row);
   });
