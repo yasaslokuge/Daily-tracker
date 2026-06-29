@@ -1050,6 +1050,11 @@ function sv(name){
   const inMore=['rep','req','set'].includes(name);
   const moreBadge=document.getElementById('more-badge');
   if(moreBadge) moreBadge.style.display=inMore?'block':'none';
+  // Highlight active more-menu item
+  ['more-rep','more-req','more-set'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('on', id==='more-'+name);
+  });
   if(name==='dash') renderDash();
   if(name==='week') renderWeekView();
   if(name==='rep')  renderReport();
