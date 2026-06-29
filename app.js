@@ -1108,13 +1108,15 @@ let activeConfigDay=null;
 async function loadSchedule(dates){
   if(!ME) return[];
   const mon=dates[0], sun=dates[6];
-  let q=supabaseClient.from('schedules').select('*')
+  let q=supabaseClient.from('schedules').select('id,employee_email,work_date,locations,start_time,note,company_id')
     .gte('work_date',mon).lte('work_date',sun);
-  if(COMPANY) q=q.eq('company_id',COMPANY.id);
   if(!isManager()) q=q.eq('employee_email',ME.email);
   const{data,error}=await q;
   if(error){console.error('loadSchedule error:',error.message);return[];}
-  return data||[];
+  // Filter by company in JS to avoid RLS join issues
+  const rows=data||[];
+  if(COMPANY) return rows.filter(r=>!r.company_id||r.company_id===COMPANY.id);
+  return rows;
 }
 
 async function renderSchedule(){
@@ -1363,8 +1365,6 @@ async function saveAssignment(){
   const configured=Object.keys(dayConfigs).filter(d=>dayConfigs[d].locations&&dayConfigs[d].locations.length>0);
   if(!configured.length){showToast('Configure at least one day with locations','warn');return;}
   const rows=configured.map(d=>({
-    created_by:ME.id,
-    company_id:COMPANY?COMPANY.id:null,
     employee_email:email,
     work_date:d,
     locations:dayConfigs[d].locations,
@@ -1374,10 +1374,18 @@ async function saveAssignment(){
   const btn=document.querySelector('#assignModal .btn-modal-save');
   if(btn){btn.disabled=true;btn.textContent='Saving...';}
   try{
-    const{error}=await supabaseClient.from('schedules').upsert(rows,{onConflict:'employee_email,work_date'});
+    // Delete existing rows for these days first, then insert fresh
+    const dates=configured;
+    const{error:de}=await supabaseClient.from('schedules')
+      .delete()
+      .eq('employee_email',email)
+      .in('work_date',dates);
+    if(de){console.warn('Delete warning:',de.message);}
+
+    const{error}=await supabaseClient.from('schedules').insert(rows);
     if(btn){btn.disabled=false;btn.textContent='Assign All';}
     if(error){
-      showToast('DB error: '+error.message,'warn');
+      showToast('Error: '+error.message,'warn');
       console.error('Schedule save error:',error);
       return;
     }
