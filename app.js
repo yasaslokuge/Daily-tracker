@@ -1100,7 +1100,10 @@ function isManager(){
 
 /* --- 18. SCHEDULE ------------------------------------ */
 // -- SCHEDULE -----------------------------
-let schOff=0, schAssignments=[], modalSelDays=new Set(), modalSelLocs=new Set();
+let schOff=0, schAssignments=[];
+// Per-day schedule config: { 'YYYY-MM-DD': { locations:[], startTime:'09:00', note:'' } }
+let dayConfigs={};
+let activeConfigDay=null;
 
 async function loadSchedule(dates){
   if(!ME) return[];
@@ -1243,8 +1246,8 @@ async function navSch(dir){schOff+=dir;await renderSchedule();}
 function openModal(){
   const overlay=document.getElementById('assignModal');
   if(!overlay){showToast('Modal missing','warn');return;}
-  modalSelDays=new Set();
-  modalSelLocs=new Set();
+  dayConfigs={};
+  activeConfigDay=null;
   const emailEl=document.getElementById('assignEmail');
   if(emailEl) emailEl.value='';
   const dates=wkDates(schOff);
@@ -1252,50 +1255,134 @@ function openModal(){
   if(dc) dc.innerHTML=DABB.map((d,i)=>{
     const dt=dates[i];
     const dateNum=fd(dt).getDate();
-    return `<button class="modal-day-btn" onclick="toggleModalDay(this,'${dt}')" data-d="${dt}"><span class="modal-day-abbr">${d}</span><span style="font-size:10px;color:var(--text3);display:block;margin-top:2px">${dateNum}</span></button>`;
+    return '<button class="modal-day-btn" onclick="openDayConfig(this,\''+dt+'\',\''+d+' '+dateNum+'\')"><span class="modal-day-abbr">'+d+'</span><span style="font-size:10px;color:var(--text3);display:block;margin-top:2px">'+dateNum+'</span></button>';
   }).join('');
-  const lc=document.getElementById('modalLocs');
-  if(lc) lc.innerHTML=LOCS.map(l=>`<button class="modal-loc-btn" onclick="toggleModalLoc(this,'${l.id}')">${l.name}</button>`).join('');
+  const cfg=document.getElementById('modalDayConfig');
+  if(cfg) cfg.style.display='none';
+  const sum=document.getElementById('modalDaySummary');
+  if(sum) sum.innerHTML='';
   overlay.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
   const sheet=overlay.querySelector('.modal-sheet');
   if(sheet) sheet.scrollTop=0;
 }
+
+function openDayConfig(btn,date,label){
+  // Save previous day config if one was open
+  if(activeConfigDay) saveDayConfigSilent();
+  activeConfigDay=date;
+  // Highlight selected day button
+  document.querySelectorAll('.modal-day-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  // Set config panel title
+  const title=document.getElementById('modalDayConfigTitle');
+  if(title) title.textContent=label;
+  // Set time from existing config or default
+  const existing=dayConfigs[date]||{};
+  const timeEl=document.getElementById('modalStartTime');
+  if(timeEl) timeEl.value=existing.startTime||'09:00';
+  const noteEl=document.getElementById('modalDayNote');
+  if(noteEl) noteEl.value=existing.note||'';
+  // Build location grid for this day
+  const lc=document.getElementById('modalLocs');
+  const selLocs=existing.locations||[];
+  if(lc) lc.innerHTML=LOCS.map(l=>{
+    const isSel=selLocs.includes(l.id);
+    return '<button class="modal-loc-btn'+(isSel?' sel':'')+'" onclick="toggleModalLoc(this,\''+l.id+'\')">'+l.name+'</button>';
+  }).join('');
+  const cfg=document.getElementById('modalDayConfig');
+  if(cfg) cfg.style.display='block';
+  const sheet=document.querySelector('#assignModal .modal-sheet');
+  if(sheet) setTimeout(()=>sheet.scrollTop=sheet.scrollHeight,100);
+}
+
+function toggleModalLoc(btn,id){
+  btn.classList.toggle('sel');
+}
+
+function saveDayConfigSilent(){
+  if(!activeConfigDay) return;
+  const locs=[...document.querySelectorAll('#modalLocs .modal-loc-btn.sel')].map(b=>b.textContent.trim());
+  // Map names back to IDs
+  const locIds=locs.map(name=>LOCS.find(l=>l.name===name)?.id||name);
+  const time=document.getElementById('modalStartTime')?.value||'09:00';
+  const note=document.getElementById('modalDayNote')?.value.trim()||'';
+  dayConfigs[activeConfigDay]={locations:locIds,startTime:time,note};
+}
+
+function saveDayConfig(){
+  if(!activeConfigDay) return;
+  saveDayConfigSilent();
+  const cfg=dayConfigs[activeConfigDay];
+  // Update summary
+  renderModalSummary();
+  // Visual feedback on day button
+  document.querySelectorAll('.modal-day-btn').forEach(b=>{
+    if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes(activeConfigDay)){
+      b.style.borderColor='var(--teal)';
+      b.style.background='var(--teal-bg)';
+    }
+  });
+  showToast('Day saved - select another day or tap Assign All');
+}
+
+function renderModalSummary(){
+  const el=document.getElementById('modalDaySummary');
+  if(!el) return;
+  const keys=Object.keys(dayConfigs).filter(d=>dayConfigs[d].locations&&dayConfigs[d].locations.length>0);
+  if(!keys.length){el.innerHTML='';return;}
+  el.innerHTML='<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Configured days</div>'
+    +keys.map(d=>{
+      const cfg=dayConfigs[d];
+      const day=fd(d).toLocaleDateString('en-NZ',{weekday:'short',day:'numeric',month:'short'});
+      const locNames=cfg.locations.map(id=>LOCS.find(l=>l.id===id)?.name||id);
+      return '<div style="background:var(--card2);border-radius:8px;padding:9px 12px;margin-bottom:6px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        +'<span style="font-size:12px;font-weight:700;color:var(--text)">'+day+'</span>'
+        +'<span style="font-size:11px;color:var(--teal);font-family:monospace">'+cfg.startTime+'</span>'
+        +'</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:4px;">'
+        +locNames.map(n=>'<span style="font-size:10px;background:var(--teal-bg);color:var(--teal);border-radius:4px;padding:1px 6px">'+n+'</span>').join('')
+        +'</div>'
+        +(cfg.note?'<div style="font-size:10px;color:var(--text2);margin-top:4px;font-style:italic">"'+cfg.note+'"</div>':'')
+        +'</div>';
+    }).join('');
+}
+
 function closeModal(){
   const m=document.getElementById('assignModal');
-  if(m){m.style.display='none';m.classList.remove('open');}
-}
-function toggleModalDay(btn,d){
-  if(modalSelDays.has(d)){modalSelDays.delete(d);btn.classList.remove('sel');}
-  else{modalSelDays.add(d);btn.classList.add('sel');}
-}
-function toggleModalLoc(btn,id){
-  if(modalSelLocs.has(id)){modalSelLocs.delete(id);btn.classList.remove('sel');}
-  else{modalSelLocs.add(id);btn.classList.add('sel');}
+  if(m){m.style.display='none';}
+  activeConfigDay=null;
 }
 
 async function saveAssignment(){
+  // Save current day config if panel is open
+  if(activeConfigDay) saveDayConfigSilent();
   const emailEl=document.getElementById('assignEmail');
   const email=emailEl?emailEl.value.trim().toLowerCase():'';
   if(!email){showToast('Enter an employee email','warn');return;}
-  if(!modalSelDays.size){showToast('Select at least one day','warn');return;}
-  if(!modalSelLocs.size){showToast('Select at least one location','warn');return;}
-  const locs=[...modalSelLocs];
-  const rows=[...modalSelDays].map(d=>({
+  const configured=Object.keys(dayConfigs).filter(d=>dayConfigs[d].locations&&dayConfigs[d].locations.length>0);
+  if(!configured.length){showToast('Configure at least one day with locations','warn');return;}
+  const rows=configured.map(d=>({
     created_by:ME.id,
     company_id:COMPANY?COMPANY.id:null,
     employee_email:email,
     work_date:d,
-    locations:locs
+    locations:dayConfigs[d].locations,
+    start_time:dayConfigs[d].startTime||'09:00',
+    note:dayConfigs[d].note||''
   }));
+  const btn=document.querySelector('#assignModal .btn-modal-save');
+  if(btn){btn.disabled=true;btn.textContent='Saving...';}
   try{
     const{error}=await supabaseClient.from('schedules').upsert(rows,{onConflict:'employee_email,work_date'});
+    if(btn){btn.disabled=false;btn.textContent='Assign All';}
     if(error){
       showToast('DB error: '+error.message,'warn');
       console.error('Schedule save error:',error);
       return;
     }
     closeModal();
-    showToast('Schedule saved for '+email.split('@')[0]);
+    showToast('Schedule saved for '+email.split('@')[0]+' ('+configured.length+' days)');
     await renderSchedule();
   }catch(e){
     showToast('Error - check console','warn');
