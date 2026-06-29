@@ -346,38 +346,143 @@ async function declineKeyRequest(requestId){
 }
 
 // Load pending key requests for current user
+
+// ── KEY RETURN SYSTEM ──────────────────────────────────
+
+// Employee submits a key return request
+async function submitKeyReturn(locId, locName){
+  const myName=getMemberName(ME.email);
+  const{error}=await supabaseClient.from('key_requests').insert({
+    location_id:locId,
+    location_name:locName,
+    from_name:myName,
+    from_email:ME.email,
+    to_name:'Manager',
+    to_email:'__manager__',   // special flag — visible to all managers
+    type:'return',
+    status:'pending',
+    company_id:COMPANY?COMPANY.id:null,
+    created_at:new Date().toISOString()
+  });
+  if(error){showToast('Error submitting return: '+error.message,'warn');return false;}
+  // Write audit log as pending return
+  supabaseClient.from('key_audit_log').insert({
+    location_id:locId,location_name:locName,
+    holder_name:myName,holder_email:ME.email,
+    action:'return_requested',
+    performed_by:ME.id,performed_by_email:ME.email,
+    performed_at:new Date().toISOString()
+  }).then(()=>{});
+  return true;
+}
+
+// Manager/admin verifies and confirms a key return
+async function verifyKeyReturn(requestId, locId, locName, fromEmail, fromName){
+  if(!isManager()){showToast('Only managers can verify returns','warn');return;}
+  // Update request status
+  await supabaseClient.from('key_requests').update({
+    status:'return_verified',
+    verified_by:ME.email,
+    responded_at:new Date().toISOString()
+  }).eq('id',requestId);
+  // Clear the key from location_keys
+  await setLocKey(locId,locName,null,null);
+  // Write audit log
+  supabaseClient.from('key_audit_log').insert({
+    location_id:locId,location_name:locName,
+    holder_name:null,holder_email:null,
+    action:'return_verified',
+    performed_by:ME.id,performed_by_email:ME.email,
+    performed_at:new Date().toISOString()
+  }).then(()=>{});
+  keysCacheLoaded=false;
+  await loadLocKeys();
+  renderLocGrid();
+  renderKeysOverview();
+  loadKeyRequests();
+  showToast('Key return verified for '+locName+' from '+fromName);
+}
+
+// Reject a return request (manager can say key wasn't actually returned)
+async function rejectKeyReturn(requestId, fromName){
+  if(!isManager()){showToast('Only managers can reject returns','warn');return;}
+  await supabaseClient.from('key_requests').update({
+    status:'return_rejected',
+    verified_by:ME.email,
+    responded_at:new Date().toISOString()
+  }).eq('id',requestId);
+  loadKeyRequests();
+  showToast('Return request rejected - key remains with '+fromName);
+}
+
+// Load pending key requests - shows transfers for recipients AND returns for managers
 async function loadKeyRequests(){
   const badge=document.getElementById('keyReqBadge');
   const list=document.getElementById('keyRequestList');
   if(!list) return;
-  const{data,error}=await supabaseClient.from('key_requests')
+
+  // Build query - employees see their own pending transfers, managers see returns too
+  let allRequests=[];
+
+  // Fetch transfers addressed to me
+  const{data:myTransfers}=await supabaseClient.from('key_requests')
     .select('*').eq('to_email',ME.email).eq('status','pending')
     .order('created_at',{ascending:false});
-  if(error){console.error('Key requests error:',error);return;}
-  const requests=data||[];
-  if(badge) badge.style.display=requests.length?'flex':'none';
-  if(badge) badge.textContent=requests.length;
-  if(!requests.length){
-    list.innerHTML='<div style="text-align:center;padding:16px;font-size:12px;color:var(--text3)">No pending key requests</div>';
+  allRequests=[...(myTransfers||[])];
+
+  // Managers also see pending return requests for their company
+  if(isManager()&&COMPANY){
+    const{data:returns}=await supabaseClient.from('key_requests')
+      .select('*').eq('to_email','__manager__').eq('status','pending')
+      .eq('company_id',COMPANY.id)
+      .order('created_at',{ascending:false});
+    allRequests=[...allRequests,...(returns||[])];
+  }
+
+  const total=allRequests.length;
+  if(badge){badge.style.display=total?'flex':'none';badge.textContent=total;}
+
+  if(!total){
+    list.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:var(--text3)">No pending key requests</div>';
     return;
   }
-  list.innerHTML=requests.map(r=>`
-    <div style="background:var(--card2);border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(5,217,180,0.2)">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="width:32px;height:32px;border-radius:8px;background:var(--teal-bg);display:flex;align-items:center;justify-content:center">
-          <svg fill="none" stroke="var(--teal)" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+
+  list.innerHTML=allRequests.map(r=>{
+    const isReturn=r.type==='return';
+    const dt=new Date(r.created_at).toLocaleDateString('en-NZ',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const iconColor=isReturn?'var(--amber)':'var(--teal)';
+    const bgColor=isReturn?'var(--amber-bg)':'var(--teal-bg)';
+    const tag=isReturn
+      ?'<span style="font-size:9px;font-weight:700;background:var(--amber-bg);color:var(--amber);border-radius:4px;padding:2px 7px;letter-spacing:0.5px">RETURN REQUEST</span>'
+      :'<span style="font-size:9px;font-weight:700;background:var(--teal-bg);color:var(--teal);border-radius:4px;padding:2px 7px;letter-spacing:0.5px">KEY HANDOVER</span>';
+
+    const actions=isReturn&&isManager()
+      ?`<button onclick="verifyKeyReturn('${r.id}','${r.location_id}','${r.location_name}','${r.from_email}','${r.from_name}')" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Verify Return</button>
+        <button onclick="rejectKeyReturn('${r.id}','${r.from_name}')" style="flex:1;background:none;border:1.5px solid var(--border2);border-radius:8px;padding:10px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Reject</button>`
+      :`<button onclick="acceptKeyRequest('${r.id}','${r.location_id}','${r.location_name}','${r.from_email}')" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Accept Key</button>
+        <button onclick="declineKeyRequest('${r.id}')" style="flex:1;background:none;border:1.5px solid var(--border2);border-radius:8px;padding:10px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Decline</button>`;
+
+    const msg=isReturn
+      ?`<strong>${r.from_name}</strong> says they have returned the key for <strong>${r.location_name}</strong>`
+      :`<strong>${r.from_name}</strong> wants to hand you the key for <strong>${r.location_name}</strong>`;
+
+    return `<div style="background:var(--card2);border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1px solid ${isReturn?'rgba(245,166,35,0.25)':'rgba(5,217,180,0.2)'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;border-radius:8px;background:${bgColor};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg fill="none" stroke="${iconColor}" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${r.location_name}</div>
+            <div style="font-size:10px;color:var(--text3)">${dt}</div>
+          </div>
         </div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">${r.location_name} Key</div>
-          <div style="font-size:11px;color:var(--text3)">From: ${r.from_name} &bull; ${new Date(r.created_at).toLocaleDateString('en-NZ',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
+        ${tag}
       </div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px"><strong>${r.from_name}</strong> wants to hand you the key for <strong>${r.location_name}</strong></div>
-      <div style="display:flex;gap:8px">
-        <button onclick="acceptKeyRequest('${r.id}','${r.location_id}','${r.location_name}','${r.from_email}')" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Accept Key</button>
-        <button onclick="declineKeyRequest('${r.id}')" style="flex:1;background:none;border:1.5px solid var(--border2);border-radius:8px;padding:10px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Decline</button>
-      </div>
-    </div>`).join('');
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${msg}</div>
+      <div style="display:flex;gap:8px">${actions}</div>
+    </div>`;
+  }).join('');
 }
 
 function openKeyRequestPanel(){
@@ -390,26 +495,83 @@ function closeKeyRequestPanel(){
   if(panel) panel.style.display='none';
 }
 
-function openKeyModal(locId,locName){
+async function openKeyModal(locId,locName){
   const existing=getLocKey(locId);
   const sheet=document.getElementById('keyModal');
   if(!sheet){showToast('Key modal missing','warn');return;}
-  // Store current data
   sheet.dataset.locId=locId;
   sheet.dataset.locName=locName;
   sheet.dataset.currentHolder=existing?.name||'';
   sheet.dataset.currentEmail=existing?.email||'';
-  // Update title
   document.getElementById('keyModalTitle').textContent='Key - '+locName;
-  // Update input
-  const inp=document.getElementById('keyHolderInput');
-  if(inp) inp.value=existing?.name||'';
-  // Update current holder display
   const cur=document.getElementById('keyCurrentHolder');
-  if(cur) cur.textContent=existing?.name?('Currently: '+existing.name):'No key holder assigned';
-  // Update email field
-  const emailInp=document.getElementById('keyHolderEmail');
-  if(emailInp) emailInp.value=existing?.email||'';
+  if(cur) cur.textContent=existing?.name?'Currently: '+existing.name:'No key holder assigned';
+
+  // Build member picker
+  const members=await getCompanyMembers();
+  const picker=document.getElementById('keyMemberPicker');
+  if(picker){
+    picker.innerHTML='';
+    // Add "None / Unassigned" option
+    const noneBtn=document.createElement('button');
+    noneBtn.className='key-member-btn'+((!existing?.name)?' sel':'');
+    noneBtn.innerHTML='<span class="key-member-avatar" style="background:var(--border)">-</span><span>Unassigned</span>';
+    noneBtn.onclick=()=>{
+      picker.querySelectorAll('.key-member-btn').forEach(b=>b.classList.remove('sel'));
+      noneBtn.classList.add('sel');
+      sheet.dataset.selectedEmail='';
+      sheet.dataset.selectedName='';
+    };
+    picker.appendChild(noneBtn);
+
+    // Add "Return Key" button if current user holds this key
+    if(existing?.email===ME.email){
+      const returnBtn=document.createElement('button');
+      returnBtn.className='key-member-btn key-return-btn';
+      returnBtn.innerHTML='<span class="key-member-avatar" style="background:rgba(245,166,35,0.2);color:var(--amber)">R</span><span style="color:var(--amber)">Return Key</span>';
+      returnBtn.title='Submit a return request for manager verification';
+      returnBtn.onclick=async()=>{
+        const confirmed=confirm('Submit a key return request for '+locName+'? A manager will need to verify the return.');
+        if(!confirmed) return;
+        closeKeyModal();
+        const ok=await submitKeyReturn(locId,locName);
+        if(ok){
+          showToast('Return request submitted - awaiting manager verification');
+          // Notify managers via badge
+          const kbadge=document.getElementById('keyReqBadge');
+          if(kbadge){kbadge.style.display='flex';kbadge.textContent='!';}
+        }
+      };
+      picker.appendChild(returnBtn);
+    }
+
+    members.forEach(m=>{
+      const name=getMemberName(m.user_email);
+      const isSelected=existing?.email===m.user_email||existing?.name?.toLowerCase()===name.toLowerCase();
+      const btn=document.createElement('button');
+      btn.className='key-member-btn'+(isSelected?' sel':'');
+      btn.innerHTML='<span class="key-member-avatar">'+name.charAt(0).toUpperCase()+'</span><span>'+name+'</span>';
+      btn.dataset.email=m.user_email;
+      btn.dataset.name=name;
+      btn.onclick=()=>{
+        picker.querySelectorAll('.key-member-btn').forEach(b=>b.classList.remove('sel'));
+        btn.classList.add('sel');
+        sheet.dataset.selectedEmail=m.user_email;
+        sheet.dataset.selectedName=name;
+      };
+      picker.appendChild(btn);
+    });
+
+    // Pre-set selected data
+    if(existing?.email){
+      sheet.dataset.selectedEmail=existing.email;
+      sheet.dataset.selectedName=existing.name||'';
+    } else {
+      sheet.dataset.selectedEmail='';
+      sheet.dataset.selectedName='';
+    }
+  }
+
   sheet.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
 }
 
@@ -422,56 +584,53 @@ async function saveKeyHolder(){
   const sheet=document.getElementById('keyModal');
   const locId=sheet?.dataset.locId;
   const locName=sheet?.dataset.locName;
-  const currentHolder=sheet?.dataset.currentHolder||'';
-  const holderName=document.getElementById('keyHolderInput')?.value.trim()||'';
-  const holderEmail=document.getElementById('keyHolderEmail')?.value.trim().toLowerCase()||'';
+  const selectedEmail=sheet?.dataset.selectedEmail||'';
+  const selectedName=sheet?.dataset.selectedName||'';
   const btn=document.querySelector('.btn-key-save');
   if(!locId) return;
 
-  // CASE 1: Clearing the key
-  if(!holderName){
+  // CASE 1: None selected — clear the key
+  if(!selectedName){
     if(btn){btn.disabled=true;btn.textContent='Clearing...';}
     const ok=await setLocKey(locId,locName,null,null);
-    if(btn){btn.disabled=false;btn.textContent='Save';}
-    if(ok){closeKeyModal();renderLocGrid();renderKeysOverview();showToast('Key cleared for '+locName);}
+    if(btn){btn.disabled=false;btn.textContent='Assign';}
+    if(ok){closeKeyModal();keysCacheLoaded=false;await loadLocKeys();renderLocGrid();renderKeysOverview();showToast('Key cleared for '+locName);}
     return;
   }
 
-  // CASE 2: Assigning to self (name matches own email username)
-  const myName=ME.email.split('@')[0].toLowerCase();
-  const isSelf=holderName.toLowerCase()===myName||holderEmail===ME.email;
-
-  // CASE 3: Duplicate check - same name already on another location
+  // CASE 2: Duplicate check across other locations
   const duplicate=Object.entries(keysCache).find(([id,data])=>
-    id!==locId&&data&&data.name&&data.name.toLowerCase()===holderName.toLowerCase()
+    id!==locId&&data&&data.email&&data.email===selectedEmail
   );
   if(duplicate){
     const dupLoc=LOCS.find(l=>l.id===duplicate[0])?.name||duplicate[0];
-    const confirmed=confirm(holderName+' already holds the key for '+dupLoc+'. Assign this key too?');
+    const confirmed=confirm(selectedName+' already holds the key for '+dupLoc+'. Assign this key too?');
     if(!confirmed) return;
   }
 
-  // CASE 4: Transfer to another employee (email provided and not self)
-  if(holderEmail&&holderEmail!==ME.email){
+  // CASE 3: Assigning to someone else - send transfer request
+  if(selectedEmail&&selectedEmail!==ME.email){
     if(btn){btn.disabled=true;btn.textContent='Sending...';}
-    const ok=await sendKeyTransferRequest(locId,locName,holderName,holderEmail);
-    if(btn){btn.disabled=false;btn.textContent='Save';}
+    const ok=await sendKeyTransferRequest(locId,locName,selectedName,selectedEmail);
+    if(btn){btn.disabled=false;btn.textContent='Assign';}
     if(ok){
       closeKeyModal();
-      showToast('Transfer request sent to '+holderName+' - awaiting acceptance');
+      showToast('Transfer request sent to '+selectedName+' - awaiting acceptance');
     }
     return;
   }
 
-  // CASE 5: Direct assign (no email, or self)
+  // CASE 4: Assigning to self
   if(btn){btn.disabled=true;btn.textContent='Saving...';}
-  const ok=await setLocKey(locId,locName,holderName,isSelf?ME.email:null);
-  if(btn){btn.disabled=false;btn.textContent='Save';}
+  const ok=await setLocKey(locId,locName,selectedName,selectedEmail||ME.email);
+  if(btn){btn.disabled=false;btn.textContent='Assign';}
   if(ok){
     closeKeyModal();
+    keysCacheLoaded=false;
+    await loadLocKeys();
     renderLocGrid();
     renderKeysOverview();
-    showToast('Key assigned to '+holderName);
+    showToast('Key assigned to '+selectedName);
   }
 }
 
@@ -547,12 +706,25 @@ async function joinCompany(inviteCode){
   return{company};
 }
 
+let membersCache=[];
+let membersCacheLoaded=false;
+
 async function getCompanyMembers(){
   if(!COMPANY) return[];
+  if(membersCacheLoaded) return membersCache;
   const{data,error}=await supabaseClient.from('company_members')
     .select('*').eq('company_id',COMPANY.id).order('role');
   if(error) return[];
-  return data||[];
+  membersCache=data||[];
+  membersCacheLoaded=true;
+  return membersCache;
+}
+
+function getMemberName(email){
+  // Returns a friendly display name from email
+  const m=membersCache.find(x=>x.user_email===email);
+  if(m&&m.display_name) return m.display_name;
+  return email.split('@')[0].replace(/[._]/g,' ').replace(/\w/g,c=>c.toUpperCase());
 }
 
 async function updateMemberRole(userId,role){
