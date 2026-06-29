@@ -935,3 +935,17 @@ body.light .auth-top{background:#DFF2EE}
 /* -- KEY RETURN BUTTON -- */
 .key-return-btn{border-color:rgba(245,166,35,0.4) !important}
 .key-return-btn:hover{border-color:var(--amber) !important;background:var(--amber-bg) !important}
+
+/* -- SCHEDULE EDIT/DELETE CONTROLS -- */
+.person-day-lbl-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.person-day-actions{display:flex;gap:4px;opacity:0;transition:opacity var(--t)}
+.person-day-block:hover .person-day-actions{opacity:1}
+.person-day-block.has .person-day-actions{opacity:1}
+.sch-day-edit,.sch-day-del{width:22px;height:22px;border-radius:5px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--t);padding:0}
+.sch-day-edit{background:rgba(79,142,247,0.15);color:var(--blue)}
+.sch-day-edit:hover{background:var(--blue);color:#fff}
+.sch-day-del{background:rgba(255,87,87,0.15);color:var(--red)}
+.sch-day-del:hover{background:var(--red);color:#fff}
+.assign-del-btn.del{border-color:rgba(255,87,87,0.3);color:var(--red)}
+.assign-del-btn.del:hover{background:var(--red-bg);border-color:var(--red)}
+.person-day-meta{font-size:10px;color:var(--teal);font-family:monospace;margin-top:4px}
