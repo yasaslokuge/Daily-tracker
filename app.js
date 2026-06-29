@@ -252,18 +252,19 @@ async function saveLog(date,locs,note,sups){
 }
 function gd(d){return cache[d]||{locations:[],note:'',supplies:{}}}
 
-/* --- KEY MANAGEMENT (Supabase) ----------------------- */
-// In-memory cache so we don't re-fetch on every render
-let keysCache = {};  // { locId: holderName }
+/* --- KEY MANAGEMENT (Supabase + Transfer System) ----- */
+let keysCache = {};
 let keysCacheLoaded = false;
 
 async function loadLocKeys(){
   if(keysCacheLoaded) return keysCache;
   try{
-    const{data,error}=await supabaseClient.from('location_keys').select('location_id,holder_name');
+    const{data,error}=await supabaseClient.from('location_keys').select('location_id,holder_name,holder_email');
     if(error){console.error('Keys load error:',error);return keysCache;}
     keysCache={};
-    (data||[]).forEach(r=>{if(r.holder_name) keysCache[r.location_id]=r.holder_name;});
+    (data||[]).forEach(r=>{
+      if(r.holder_name) keysCache[r.location_id]={name:r.holder_name,email:r.holder_email||null};
+    });
     keysCacheLoaded=true;
   }catch(e){console.error(e);}
   return keysCache;
@@ -272,68 +273,205 @@ async function loadLocKeys(){
 function getLocKey(locId){
   return keysCache[locId]||null;
 }
+function getLocKeyName(locId){
+  return keysCache[locId]?.name||null;
+}
 
-async function setLocKey(locId,locName,holder){
+// Write key assignment directly (used for clear or self-assign)
+async function setLocKey(locId,locName,holderName,holderEmail){
   try{
-    // Check for duplicate - is this holder already assigned to another location?
-    if(holder){
-      const duplicate=Object.entries(keysCache).find(([id,name])=>
-        id!==locId && name&&name.toLowerCase()===holder.toLowerCase()
-      );
-      if(duplicate){
-        const dupLocName=LOCS.find(l=>l.id===duplicate[0])?.name||duplicate[0];
-        const confirmed=confirm(holder+' is already assigned to '+dupLocName+'. Assign to '+locName+' as well?');
-        if(!confirmed) return false;
-      }
-    }
     const{error}=await supabaseClient.from('location_keys').upsert(
-      {location_id:locId,location_name:locName,holder_name:holder||null,updated_by:ME.id,updated_at:new Date().toISOString()},
+      {location_id:locId,location_name:locName,
+       holder_name:holderName||null,holder_email:holderEmail||null,
+       updated_by:ME.id,updated_at:new Date().toISOString()},
       {onConflict:'location_id'}
     );
-    if(error){showToast('Error saving key: '+error.message,'warn');console.error(error);return false;}
-    // Write audit log
+    if(error){showToast('Error saving key: '+error.message,'warn');return false;}
+    // Audit log
     supabaseClient.from('key_audit_log').insert({
-      location_id:locId,
-      location_name:locName,
-      holder_name:holder||null,
-      action:holder?'assigned':'cleared',
-      performed_by:ME.id,
-      performed_by_email:ME.email,
+      location_id:locId,location_name:locName,
+      holder_name:holderName||null,holder_email:holderEmail||null,
+      action:holderName?'assigned':'cleared',
+      performed_by:ME.id,performed_by_email:ME.email,
       performed_at:new Date().toISOString()
-    }).then(({error:ae})=>{if(ae)console.warn('Key audit error:',ae);});
-    if(holder) keysCache[locId]=holder;
-    else delete keysCache[locId];
+    }).then(({error:ae})=>{if(ae)console.warn('Key audit:',ae);});
+    if(holderName){keysCache[locId]={name:holderName,email:holderEmail||null};}
+    else{delete keysCache[locId];}
     return true;
   }catch(e){console.error(e);return false;}
 }
 
-function openKeyModal(locId, locName, currentHolder){
-  const existing=currentHolder||getLocKey(locId)||'';
+// Send a key transfer request to another employee
+async function sendKeyTransferRequest(locId,locName,toName,toEmail){
+  const{error}=await supabaseClient.from('key_requests').insert({
+    location_id:locId,location_name:locName,
+    from_name:ME.email.split('@')[0],from_email:ME.email,
+    to_name:toName,to_email:toEmail,
+    status:'pending',
+    company_id:COMPANY?COMPANY.id:null,
+    created_at:new Date().toISOString()
+  });
+  if(error){showToast('Error sending request: '+error.message,'warn');console.error(error);return false;}
+  return true;
+}
+
+// Accept a key transfer request
+async function acceptKeyRequest(requestId,locId,locName,fromEmail){
+  const myName=ME.email.split('@')[0];
+  // Update request status
+  await supabaseClient.from('key_requests').update({status:'accepted',responded_at:new Date().toISOString()}).eq('id',requestId);
+  // Assign key to self
+  await setLocKey(locId,locName,myName,ME.email);
+  // Audit transfer
+  supabaseClient.from('key_audit_log').insert({
+    location_id:locId,location_name:locName,
+    holder_name:myName,holder_email:ME.email,
+    action:'transfer_accepted',
+    performed_by:ME.id,performed_by_email:ME.email,
+    performed_at:new Date().toISOString()
+  }).then(()=>{});
+  keysCacheLoaded=false;
+  await loadLocKeys();
+  renderLocGrid();
+  renderKeysOverview();
+  closeKeyRequestPanel();
+  showToast('Key accepted for '+locName);
+}
+
+// Decline a key transfer request
+async function declineKeyRequest(requestId){
+  await supabaseClient.from('key_requests').update({status:'declined',responded_at:new Date().toISOString()}).eq('id',requestId);
+  loadKeyRequests();
+  showToast('Key request declined');
+}
+
+// Load pending key requests for current user
+async function loadKeyRequests(){
+  const badge=document.getElementById('keyReqBadge');
+  const list=document.getElementById('keyRequestList');
+  if(!list) return;
+  const{data,error}=await supabaseClient.from('key_requests')
+    .select('*').eq('to_email',ME.email).eq('status','pending')
+    .order('created_at',{ascending:false});
+  if(error){console.error('Key requests error:',error);return;}
+  const requests=data||[];
+  if(badge) badge.style.display=requests.length?'flex':'none';
+  if(badge) badge.textContent=requests.length;
+  if(!requests.length){
+    list.innerHTML='<div style="text-align:center;padding:16px;font-size:12px;color:var(--text3)">No pending key requests</div>';
+    return;
+  }
+  list.innerHTML=requests.map(r=>`
+    <div style="background:var(--card2);border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(5,217,180,0.2)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--teal-bg);display:flex;align-items:center;justify-content:center">
+          <svg fill="none" stroke="var(--teal)" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${r.location_name} Key</div>
+          <div style="font-size:11px;color:var(--text3)">From: ${r.from_name} &bull; ${new Date(r.created_at).toLocaleDateString('en-NZ',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px"><strong>${r.from_name}</strong> wants to hand you the key for <strong>${r.location_name}</strong></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="acceptKeyRequest('${r.id}','${r.location_id}','${r.location_name}','${r.from_email}')" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Accept Key</button>
+        <button onclick="declineKeyRequest('${r.id}')" style="flex:1;background:none;border:1.5px solid var(--border2);border-radius:8px;padding:10px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Decline</button>
+      </div>
+    </div>`).join('');
+}
+
+function openKeyRequestPanel(){
+  const panel=document.getElementById('keyRequestPanel');
+  if(panel) panel.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
+  loadKeyRequests();
+}
+function closeKeyRequestPanel(){
+  const panel=document.getElementById('keyRequestPanel');
+  if(panel) panel.style.display='none';
+}
+
+function openKeyModal(locId,locName){
+  const existing=getLocKey(locId);
   const sheet=document.getElementById('keyModal');
   if(!sheet){showToast('Key modal missing','warn');return;}
+  // Store current data
+  sheet.dataset.locId=locId;
+  sheet.dataset.locName=locName;
+  sheet.dataset.currentHolder=existing?.name||'';
+  sheet.dataset.currentEmail=existing?.email||'';
+  // Update title
   document.getElementById('keyModalTitle').textContent='Key - '+locName;
-  document.getElementById('keyHolderInput').value=existing;
-  document.getElementById('keyModalLocId').value=locId;
+  // Update input
+  const inp=document.getElementById('keyHolderInput');
+  if(inp) inp.value=existing?.name||'';
+  // Update current holder display
+  const cur=document.getElementById('keyCurrentHolder');
+  if(cur) cur.textContent=existing?.name?('Currently: '+existing.name):'No key holder assigned';
+  // Update email field
+  const emailInp=document.getElementById('keyHolderEmail');
+  if(emailInp) emailInp.value=existing?.email||'';
   sheet.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
 }
+
 function closeKeyModal(){
   const m=document.getElementById('keyModal');
   if(m) m.style.display='none';
 }
+
 async function saveKeyHolder(){
-  const locId=document.getElementById('keyModalLocId').value;
-  const holder=document.getElementById('keyHolderInput').value.trim();
-  const loc=LOCS.find(l=>l.id===locId);
-  const locName=loc?loc.name:locId;
+  const sheet=document.getElementById('keyModal');
+  const locId=sheet?.dataset.locId;
+  const locName=sheet?.dataset.locName;
+  const currentHolder=sheet?.dataset.currentHolder||'';
+  const holderName=document.getElementById('keyHolderInput')?.value.trim()||'';
+  const holderEmail=document.getElementById('keyHolderEmail')?.value.trim().toLowerCase()||'';
   const btn=document.querySelector('.btn-key-save');
+  if(!locId) return;
+
+  // CASE 1: Clearing the key
+  if(!holderName){
+    if(btn){btn.disabled=true;btn.textContent='Clearing...';}
+    const ok=await setLocKey(locId,locName,null,null);
+    if(btn){btn.disabled=false;btn.textContent='Save';}
+    if(ok){closeKeyModal();renderLocGrid();renderKeysOverview();showToast('Key cleared for '+locName);}
+    return;
+  }
+
+  // CASE 2: Assigning to self (name matches own email username)
+  const myName=ME.email.split('@')[0].toLowerCase();
+  const isSelf=holderName.toLowerCase()===myName||holderEmail===ME.email;
+
+  // CASE 3: Duplicate check - same name already on another location
+  const duplicate=Object.entries(keysCache).find(([id,data])=>
+    id!==locId&&data&&data.name&&data.name.toLowerCase()===holderName.toLowerCase()
+  );
+  if(duplicate){
+    const dupLoc=LOCS.find(l=>l.id===duplicate[0])?.name||duplicate[0];
+    const confirmed=confirm(holderName+' already holds the key for '+dupLoc+'. Assign this key too?');
+    if(!confirmed) return;
+  }
+
+  // CASE 4: Transfer to another employee (email provided and not self)
+  if(holderEmail&&holderEmail!==ME.email){
+    if(btn){btn.disabled=true;btn.textContent='Sending...';}
+    const ok=await sendKeyTransferRequest(locId,locName,holderName,holderEmail);
+    if(btn){btn.disabled=false;btn.textContent='Save';}
+    if(ok){
+      closeKeyModal();
+      showToast('Transfer request sent to '+holderName+' - awaiting acceptance');
+    }
+    return;
+  }
+
+  // CASE 5: Direct assign (no email, or self)
   if(btn){btn.disabled=true;btn.textContent='Saving...';}
-  const ok=await setLocKey(locId,locName,holder);
+  const ok=await setLocKey(locId,locName,holderName,isSelf?ME.email:null);
   if(btn){btn.disabled=false;btn.textContent='Save';}
   if(ok){
     closeKeyModal();
     renderLocGrid();
     renderKeysOverview();
-    showToast(holder?'Key assigned to '+holder:'Key cleared');
+    showToast('Key assigned to '+holderName);
   }
 }
 
@@ -584,6 +722,7 @@ async function initApp(u){
   await loadLocKeys();
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
   setTimeout(checkUnread,2000);
+  setTimeout(loadKeyRequests,3000);
 }
 
 
@@ -661,10 +800,9 @@ async function renderLocGrid(){
     const imgHTML=loc.img
       ?`<div class="loc-img-wrap"><img class="loc-img" src="${loc.img}" alt="${loc.name}"/><div class="loc-img-overlay"></div></div>`
       :`<div class="loc-img-wrap loc-img-placeholder"><div class="loc-placeholder-bg" style="background:${loc.color||'var(--card2)'}"></div><div class="loc-placeholder-abbr" style="color:rgba(255,255,255,0.7)">${loc.abbr||'?'}</div><div class="loc-img-overlay"></div></div>`;
-    const keyHolder=getLocKey(loc.id);
-    const keyIcon=`<button class="loc-key-btn${keyHolder?' has-key':''}" onclick="event.stopPropagation();openKeyModal('${loc.id}','${loc.name}')" title="${keyHolder?'Key: '+keyHolder:'No key assigned'}">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-    </button>`;
+    const keyHolder=getLocKeyName(loc.id);
+    const keyTitle=keyHolder?'Key: '+keyHolder:'No key assigned';
+    const keyIcon=`<button class="loc-key-btn${keyHolder?' has-key':''}" onclick="event.stopPropagation();openKeyModal('${loc.id}','${loc.name}')" title="${keyTitle}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg></button>`;
     const nameEl=`<div class="loc-name-bar"><span class="loc-name-highlight">${loc.name}</span>${keyHolder?`<span class="loc-key-holder">${keyHolder}</span>`:''}</div>`;
     el.innerHTML=`${imgHTML}${keyIcon}<div class="loc-chk"><svg fill="none" stroke="#04100D" stroke-width="3" viewBox="0 0 12 12"><path stroke-linecap="round" stroke-linejoin="round" d="M2 6l3 3 5-5"/></svg></div>${nameEl}`;
     el.onclick=()=>{
