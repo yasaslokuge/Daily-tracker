@@ -529,7 +529,11 @@ async function openKeyModal(locId,locName){
     // Add "None / Unassigned" option
     const noneBtn=document.createElement('button');
     noneBtn.className='key-member-btn'+((!existing?.name)?' sel':'');
-    noneBtn.innerHTML='<span class="key-member-avatar" style="background:var(--border)">-</span><span>Unassigned</span>';
+    noneBtn.innerHTML='<span class="key-member-avatar" style="background:var(--border)">-</span>'
+      +'<span style="display:flex;flex-direction:column;gap:1px">'
+      +'<span style="font-size:13px;font-weight:700">Unassigned</span>'
+      +'<span style="font-size:9px;opacity:0.6">Clear key holder</span>'
+      +'</span>';
     noneBtn.onclick=()=>{
       picker.querySelectorAll('.key-member-btn').forEach(b=>b.classList.remove('sel'));
       noneBtn.classList.add('sel');
@@ -539,7 +543,8 @@ async function openKeyModal(locId,locName){
     picker.appendChild(noneBtn);
 
     // Add "Return Key" button if current user holds this key
-    if(existing?.email===ME.email){
+    const iHoldThisKey=existing?.email===ME.email||existing?.name===getMemberName(ME.email);
+    if(iHoldThisKey){
       const returnBtn=document.createElement('button');
       returnBtn.className='key-member-btn key-return-btn';
       returnBtn.innerHTML='<span class="key-member-avatar" style="background:rgba(245,166,35,0.2);color:var(--amber)">R</span><span style="color:var(--amber)">Return Key</span>';
@@ -622,21 +627,21 @@ async function saveKeyHolder(){
     if(!confirmed) return;
   }
 
-  // CASE 3: Assigning to someone else - send transfer request
+  // CASE 3: Assigning to another member - send transfer request, they must accept
   if(selectedEmail&&selectedEmail!==ME.email){
-    if(btn){btn.disabled=true;btn.textContent='Sending...';}
+    if(btn){btn.disabled=true;btn.textContent='Sending request...';}
     const ok=await sendKeyTransferRequest(locId,locName,selectedName,selectedEmail);
     if(btn){btn.disabled=false;btn.textContent='Assign';}
     if(ok){
       closeKeyModal();
-      showToast('Transfer request sent to '+selectedName+' - awaiting acceptance');
+      showToast(selectedName+' will get a notification to accept the '+locName+' key');
     }
     return;
   }
 
-  // CASE 4: Assigning to self
+  // CASE 4: Assigning to self - direct assign, no transfer needed
   if(btn){btn.disabled=true;btn.textContent='Saving...';}
-  const ok=await setLocKey(locId,locName,selectedName,selectedEmail||ME.email);
+  const ok=await setLocKey(locId,locName,selectedName,ME.email);
   if(btn){btn.disabled=false;btn.textContent='Assign';}
   if(ok){
     closeKeyModal();
@@ -644,7 +649,7 @@ async function saveKeyHolder(){
     await loadLocKeys();
     renderLocGrid();
     renderKeysOverview();
-    showToast('Key assigned to '+selectedName);
+    showToast('Key assigned to you for '+locName);
   }
 }
 
@@ -948,6 +953,8 @@ async function initApp(u){
   showApp();
   await loadWk(wkDates(logOff));
   await loadLocKeys();
+  // Pre-load company members for key picker (all roles need this)
+  await getCompanyMembers(true);
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
   setTimeout(checkUnread,2000);
   setTimeout(loadKeyRequests,3000);
