@@ -1,3 +1,16 @@
+async function saveMyDisplayName(){
+  const inp=document.getElementById('myDisplayName');
+  const name=inp?inp.value.trim():'';
+  if(!name){showToast('Enter your name','warn');return;}
+  const{error}=await supabaseClient.from('company_members')
+    .update({display_name:name})
+    .eq('user_id',ME.id).eq('company_id',COMPANY.id);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  const m=membersCache.find(x=>x.user_id===ME.id);
+  if(m) m.display_name=name;
+  membersCacheLoaded=false;
+  showToast('Display name saved as '+name);
+}
 // charset: utf-8
 /* =======================================================
    WorkTrace - Application Logic
@@ -676,8 +689,11 @@ async function createCompany(name,locations){
   }).select();
   if(error||!rows||!rows.length){console.error(error);return null;}
   const data=rows[0];
+  const suNameEl=document.getElementById('suName');
+  const displayName=suNameEl?suNameEl.value.trim():'';
   await supabaseClient.from('company_members').insert({
-    company_id:data.id,user_id:ME.id,user_email:ME.email,role:'admin'
+    company_id:data.id,user_id:ME.id,user_email:ME.email,role:'admin',
+    display_name:displayName||null
   });
   return data;
 }
@@ -698,8 +714,11 @@ async function joinCompany(inviteCode){
     .select('id').eq('company_id',company.id).eq('user_id',ME.id).limit(1);
   if(existing&&existing.length>0) return{error:'You are already a member of '+company.name};
   // Join as employee
+  const suNameEl2=document.getElementById('suName');
+  const joinDisplayName=suNameEl2?suNameEl2.value.trim():'';
   const{error:je}=await supabaseClient.from('company_members').insert({
-    company_id:company.id,user_id:ME.id,user_email:ME.email,role:'employee'
+    company_id:company.id,user_id:ME.id,user_email:ME.email,role:'employee',
+    display_name:joinDisplayName||null
   });
   console.log('Join result error:',je);
   if(je) return{error:'Could not join: '+je.message};
@@ -831,27 +850,46 @@ async function renderCompanySettings(){
   if(!el||!COMPANY) return;
   const members=await getCompanyMembers();
   const isAdmin=MY_ROLE==='admin';
+  // Build member rows with editable display names for admins
+  const memberRows=members.map((m,idx)=>{
+    const isMe=m.user_id===ME.id;
+    const displayName=m.display_name||m.user_email.split('@')[0];
+    const nameField=isAdmin
+      ?`<input id="memName${idx}" value="${displayName}" style="background:var(--bg);border:1.5px solid var(--border2);border-radius:7px;color:var(--text);font-size:12px;font-weight:700;padding:5px 8px;outline:none;width:100%;margin-bottom:4px;font-family:Inter,sans-serif" placeholder="Display name" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'"/>`
+      :`<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px">${displayName}</div>`;
+    const roleField=isAdmin&&!isMe
+      ?`<select onchange="updateMemberRole('${m.user_id}',this.value)" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:4px 8px;cursor:pointer">
+          <option value="employee"${m.role==='employee'?' selected':''}>Employee</option>
+          <option value="employer"${m.role==='employer'?' selected':''}>Employer</option>
+          <option value="admin"${m.role==='admin'?' selected':''}>Admin</option>
+        </select>`
+      :`<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;background:var(--teal-bg);color:var(--teal)">${m.role}${isMe?' (you)':''}</span>`;
+    const saveBtn=isAdmin
+      ?`<button onclick="saveMemberName('${m.user_id}',document.getElementById('memName${idx}').value)" style="font-size:11px;font-weight:700;background:var(--teal);color:#04100D;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">Save</button>`
+      :'';
+    return '<div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-bottom:6px">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      +'<div style="width:30px;height:30px;border-radius:50%;background:var(--teal-bg);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">'+displayName.charAt(0).toUpperCase()+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +nameField
+      +'<div style="font-size:10px;color:var(--text3);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.user_email+'</div>'
+      +'</div>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+      +roleField
+      +saveBtn
+      +'</div>'
+      +'</div>';
+  }).join('');
+
   el.innerHTML=
-    '<div style="margin-bottom:12px">'
+    '<div style="margin-bottom:14px">'
     +'<div style="font-size:14px;font-weight:700;color:var(--text)">'+COMPANY.name+'</div>'
     +'<div style="font-size:11px;color:var(--text3);font-family:monospace;margin-top:3px">Invite code: <span style="color:var(--teal);font-weight:700;letter-spacing:2px">'+COMPANY.invite_code+'</span></div>'
     +'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+members.length+' member'+(members.length!==1?'s':'')+'</div>'
     +'</div>'
-    +'<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Team</div>'
-    +members.map(m=>{
-      const isMe=m.user_id===ME.id;
-      return '<div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
-        +'<div><div style="font-size:12px;font-weight:700;color:var(--text)">'+m.user_email.split('@')[0]+'</div>'
-        +'<div style="font-size:10px;color:var(--text3);font-family:monospace">'+m.user_email+'</div></div>'
-        +(isAdmin&&!isMe
-          ?('<select onchange="updateMemberRole(\'' + m.user_id + '\',this.value)" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:4px 8px;cursor:pointer">'
-            +'<option value="employee"'+(m.role==='employee'?' selected':'')+'>Employee</option>'
-            +'<option value="employer"'+(m.role==='employer'?' selected':'')+'>Employer</option>'
-            +'<option value="admin"'+(m.role==='admin'?' selected':'')+'>Admin</option>'
-            +'</select>')
-          :'<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;background:var(--teal-bg);color:var(--teal)">'+m.role+'</span>')
-        +'</div>';
-    }).join('')
+    +'<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Team Members</div>'
+    +memberRows
     +(isAdmin
       ?'<div style="margin-top:14px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Locations</div>'
        +'<div id="coLocEditList">'
@@ -861,6 +899,21 @@ async function renderCompanySettings(){
        +'</div>'
        +'<button onclick="saveCoLocations()" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-top:6px">Save Locations</button>'
       :'');
+}
+
+async function saveMemberName(userId, name){
+  const trimmed=name.trim();
+  if(!trimmed){showToast('Enter a name','warn');return;}
+  const{error}=await supabaseClient.from('company_members')
+    .update({display_name:trimmed})
+    .eq('user_id',userId).eq('company_id',COMPANY.id);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  // Update local cache
+  const m=membersCache.find(x=>x.user_id===userId);
+  if(m) m.display_name=trimmed;
+  showToast('Name updated to '+trimmed);
+  // Refresh key picker cache
+  membersCacheLoaded=false;
 }
 
 async function saveCoLocations(){
@@ -1072,6 +1125,10 @@ function sv(name){
       const se=document.getElementById('setEmail');if(se)se.textContent=ME.email;
       const role=getRole(ME.email);
       const sr=document.getElementById('setRole');if(sr)sr.textContent='Cannot be changed here';
+      // Show current display name
+      const myMember=membersCache.find(x=>x.user_id===ME.id);
+      const nameDisp=document.getElementById('myDisplayName');
+      if(nameDisp) nameDisp.value=myMember?.display_name||ME.email.split('@')[0];
       const rb=document.getElementById('setRoleBadge');
       if(rb){
         rb.textContent=role.charAt(0).toUpperCase()+role.slice(1);
