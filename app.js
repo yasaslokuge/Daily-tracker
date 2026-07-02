@@ -65,7 +65,7 @@ const DEFAULT_LOCS=[
 ];
 let LOCS=[...DEFAULT_LOCS];
 
-const SUPS=[
+let SUPS=[
   {id:'bio',name:'Bio Tabs',svg:'<path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6m-6 0v6l-4 9a1 1 0 00.9 1.45h12.2A1 1 0 0019 18l-4-9V3"/>'},
   {id:'tp',name:'Toilet Paper',svg:'<path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>'},
   {id:'paper',name:'Paper Towels',svg:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>'},
@@ -978,11 +978,23 @@ async function initApp(u){
   await loadLocKeys();
   // Pre-load company members for key picker (all roles need this)
   await getCompanyMembers(true);
-  // Load company supplies if set
-  if(COMPANY&&COMPANY.supplies&&COMPANY.supplies.length){
-    SUPS=COMPANY.supplies.map((name,i)=>({id:'sup'+i,name}));
+  // Load company supplies if set - preserve SVG icons from default SUPS
+  if(COMPANY&&COMPANY.supplies&&Array.isArray(COMPANY.supplies)&&COMPANY.supplies.length>0){
+    const defaultSvgs=SUPS.map(s=>s.svg);
+    SUPS=COMPANY.supplies.map((name,i)=>({
+      id:'sup'+i,
+      name:typeof name==='string'?name:String(name),
+      svg:defaultSvgs[i%defaultSvgs.length]||''
+    }));
+    console.log('SUPS loaded from company:',SUPS.map(s=>s.name));
   }
+  // Small delay to ensure DOM is ready then render
+  await new Promise(r=>setTimeout(r,50));
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
+  // Force re-render after 500ms in case first render was too early
+  setTimeout(async()=>{
+    if(LOCS.length>0) await renderLocGrid();
+  }, 500);
   setTimeout(checkUnread,2000);
   setTimeout(loadKeyRequests,3000);
 }
@@ -2322,10 +2334,10 @@ async function saveSuppliesSettings(){
     .update({supplies}).eq('id',COMPANY.id);
   if(btn){btn.disabled=false;btn.textContent='Save Supplies';}
   if(error){showToast('Error: '+error.message,'warn');return;}
-  // Update SUPS in memory
   COMPANY.supplies=supplies;
-  // Rebuild SUPS array
-  SUPS=supplies.map((name,i)=>({id:'sup'+i,name}));
+  // Rebuild SUPS preserving SVG icons
+  const defaultSvgs=SUPS.map(s=>s.svg);
+  SUPS=supplies.map((name,i)=>({id:'sup'+i,name,svg:defaultSvgs[i]||defaultSvgs[0]||''}));
   showToast('Supplies updated');
   renderSupGrid();
 }
