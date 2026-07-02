@@ -993,6 +993,18 @@ async function initApp(u){
     }));
     console.log('SUPS loaded from company:',SUPS.map(s=>s.name));
   }
+  // Identify user in Hotjar for filtered recordings
+  try{
+    if(window.hj){
+      window.hj('identify', ME.id, {
+        email: ME.email,
+        name: getMemberName(ME.email),
+        role: MY_ROLE,
+        company: COMPANY?.name||'Unknown'
+      });
+    }
+  }catch(e){}
+
   // Small delay to ensure DOM is ready then render
   await new Promise(r=>setTimeout(r,50));
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -2259,12 +2271,16 @@ async function submitBugReport(){
   if(btn){btn.disabled=true;btn.textContent='Sending...';}
 
   const templateParams={
+    // Standard EmailJS Contact Us template variables
+    name:getMemberName(ME?.email||'unknown'),
+    email:ME?.email||'unknown',
+    message:'Category: '+cat+'\n\nDescription:\n'+desc+'\n\nCompany: '+(COMPANY?.name||'Unknown')+'\nRole: '+(MY_ROLE||'unknown')+'\nApp: v2.1\nDevice: '+navigator.userAgent.slice(0,100),
+    title:'[WorkTrace] '+cat+' - '+title,
+    // Extra fields
     user_email:ME?.email||'unknown',
-    title,
     category:cat,
     description:desc,
     app_version:'2.1',
-    user_agent:navigator.userAgent.slice(0,200),
     company:COMPANY?.name||'Unknown',
     role:MY_ROLE||'unknown'
   };
@@ -2294,6 +2310,7 @@ async function submitBugReport(){
 
   }catch(e){
     console.error('Bug report error:',e);
+    console.error('EmailJS error details:',JSON.stringify(e));
     // Still try Supabase even if email fails
     try{
       await supabaseClient.from('bug_reports').insert({
@@ -2302,7 +2319,7 @@ async function submitBugReport(){
         title,description:desc,category:cat,
         app_version:'2.1',user_agent:navigator.userAgent.slice(0,200)
       });
-      showToast('Report saved (email delivery failed)');
+      showToast('Report saved to database (email failed - check console)');
     }catch(e2){
       showToast('Error sending report - try again','warn');
     }
