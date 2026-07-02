@@ -118,10 +118,14 @@
 <!-- COMPANY SETUP SCREEN -->
 <div id="companySetup" style="display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:20px;background:var(--bg);position:relative;overflow:hidden">
   <div style="width:100%;max-width:420px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div style="width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 18px var(--teal)"></div>
-      <div style="font-size:22px;font-weight:700;letter-spacing:-0.5px">Work<span style="color:var(--teal)">Trace</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 18px var(--teal)"></div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-0.5px">Work<span style="color:var(--teal)">Trace</span></div>
+      </div>
+      <button onclick="doSignOut()" style="background:none;border:1px solid var(--border2);border-radius:8px;color:var(--text3);font-size:11px;padding:5px 10px;cursor:pointer;font-family:Inter,sans-serif">Sign out</button>
     </div>
+    <div id="coSetupWho" style="font-size:11px;color:var(--text3);font-family:monospace;margin-bottom:4px"></div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:24px">Set up your workspace to get started</div>
 
     <!-- Tabs -->
