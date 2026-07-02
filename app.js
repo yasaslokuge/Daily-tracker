@@ -974,6 +974,10 @@ async function initApp(u){
   await loadLocKeys();
   // Pre-load company members for key picker (all roles need this)
   await getCompanyMembers(true);
+  // Load company supplies if set
+  if(COMPANY&&COMPANY.supplies&&COMPANY.supplies.length){
+    SUPS=COMPANY.supplies.map((name,i)=>({id:'sup'+i,name}));
+  }
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
   setTimeout(checkUnread,2000);
   setTimeout(loadKeyRequests,3000);
@@ -1149,6 +1153,7 @@ function sv(name){
     switchReqTab(isM?'inbox':'send');
   }
   if(name==='set'){
+    loadSuppliesSettings();
     if(ME){
       const se=document.getElementById('setEmail');if(se)se.textContent=ME.email;
       const role=getRole(ME.email);
@@ -2221,6 +2226,105 @@ function updateReqBadge(){
   }
 }
 
+
+/* --- BUG REPORTS ------------------------------------ */
+async function submitBugReport(){
+  const title=document.getElementById('bugTitle')?.value.trim();
+  const desc=document.getElementById('bugDesc')?.value.trim();
+  const cat=document.getElementById('bugCategory')?.value||'bug';
+  if(!title){showToast('Enter a title','warn');return;}
+  if(!desc){showToast('Describe the issue','warn');return;}
+  const btn=document.getElementById('btnSubmitBug');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+  try{
+    const{error}=await supabaseClient.from('bug_reports').insert({
+      user_id:ME?.id||null,
+      user_email:ME?.email||'unknown',
+      title,
+      description:desc,
+      category:cat,
+      app_version:'2.1',
+      user_agent:navigator.userAgent.slice(0,200)
+    });
+    if(error){
+      console.error('Bug report error:',error);
+      showToast('Error: '+error.message,'warn');
+    } else {
+      showToast('Report sent - thank you!');
+      const titleEl=document.getElementById('bugTitle');
+      const descEl=document.getElementById('bugDesc');
+      if(titleEl) titleEl.value='';
+      if(descEl) descEl.value='';
+    }
+  }catch(e){
+    console.error(e);
+    showToast('Failed to send report','warn');
+  }
+  if(btn){btn.disabled=false;btn.textContent='Send Report';}
+}
+
+/* --- SUPPLIES MANAGEMENT ----------------------------- */
+async function loadSuppliesSettings(){
+  const el=document.getElementById('suppliesSettingsList');
+  if(!el||!COMPANY) return;
+  // Load company supplies from Supabase
+  const{data,error}=await supabaseClient.from('companies')
+    .select('supplies').eq('id',COMPANY.id).limit(1);
+  if(error||!data||!data.length) return;
+  const supplies=data[0].supplies||SUPS.map(s=>s.name);
+  renderSuppliesSettings(supplies);
+}
+
+function renderSuppliesSettings(supplies){
+  const el=document.getElementById('suppliesSettingsList');
+  if(!el) return;
+  el.innerHTML='';
+  supplies.forEach((name,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center';
+    row.innerHTML=`<input value="${name}" id="sup${i}" style="flex:1;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:10px 13px;outline:none"/>`
+      +`<button onclick="removeSupplySetting(${i})" style="background:none;border:1.5px solid rgba(255,87,87,0.3);border-radius:8px;color:var(--red);width:36px;height:36px;cursor:pointer;font-size:16px;flex-shrink:0">x</button>`;
+    el.appendChild(row);
+  });
+}
+
+function removeSupplySetting(idx){
+  const inputs=document.querySelectorAll('#suppliesSettingsList input');
+  const arr=[...inputs].map(i=>i.value.trim()).filter(Boolean);
+  arr.splice(idx,1);
+  renderSuppliesSettings(arr);
+}
+
+function addSupplySetting(){
+  const el=document.getElementById('suppliesSettingsList');
+  if(!el) return;
+  const i=el.children.length;
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center';
+  row.innerHTML=`<input placeholder="e.g. Glass Cleaner" id="sup${i}" style="flex:1;background:var(--bg);border:1.5px solid var(--teal);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:10px 13px;outline:none"/>`
+    +`<button onclick="this.parentElement.remove()" style="background:none;border:1.5px solid rgba(255,87,87,0.3);border-radius:8px;color:var(--red);width:36px;height:36px;cursor:pointer;font-size:16px;flex-shrink:0">x</button>`;
+  el.appendChild(row);
+  row.querySelector('input').focus();
+}
+
+async function saveSuppliesSettings(){
+  if(!COMPANY){showToast('No company loaded','warn');return;}
+  const inputs=document.querySelectorAll('#suppliesSettingsList input');
+  const supplies=[...inputs].map(i=>i.value.trim()).filter(Boolean);
+  if(!supplies.length){showToast('Add at least one supply','warn');return;}
+  const btn=document.getElementById('btnSaveSupplies');
+  if(btn){btn.disabled=true;btn.textContent='Saving...';}
+  const{error}=await supabaseClient.from('companies')
+    .update({supplies}).eq('id',COMPANY.id);
+  if(btn){btn.disabled=false;btn.textContent='Save Supplies';}
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  // Update SUPS in memory
+  COMPANY.supplies=supplies;
+  // Rebuild SUPS array
+  SUPS=supplies.map((name,i)=>({id:'sup'+i,name}));
+  showToast('Supplies updated');
+  renderSupGrid();
+}
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */
 // -- BOOT ----------------------------------
