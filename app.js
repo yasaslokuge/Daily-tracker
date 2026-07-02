@@ -520,8 +520,9 @@ async function openKeyModal(locId,locName){
   const cur=document.getElementById('keyCurrentHolder');
   if(cur) cur.textContent=existing?.name?'Currently: '+existing.name:'No key holder assigned';
 
-  // Build member picker
-  const members=await getCompanyMembers();
+  // Always fetch fresh members so new users appear
+  const members=await getCompanyMembers(true);
+  console.log('Key modal members:',members.length);
   const picker=document.getElementById('keyMemberPicker');
   if(picker){
     picker.innerHTML='';
@@ -728,14 +729,15 @@ async function joinCompany(inviteCode){
 let membersCache=[];
 let membersCacheLoaded=false;
 
-async function getCompanyMembers(){
+async function getCompanyMembers(forceRefresh=false){
   if(!COMPANY) return[];
-  if(membersCacheLoaded) return membersCache;
+  if(membersCacheLoaded&&!forceRefresh) return membersCache;
   const{data,error}=await supabaseClient.from('company_members')
-    .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id).order('role');
-  if(error) return[];
+    .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id).order('display_name');
+  if(error){console.error('getCompanyMembers error:',error);return membersCache;}
   membersCache=data||[];
   membersCacheLoaded=true;
+  console.log('Members loaded:',membersCache.length,membersCache.map(m=>m.display_name||m.user_email));
   return membersCache;
 }
 
