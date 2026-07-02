@@ -40,6 +40,11 @@ async function saveMyDisplayName(){
 ======================================================= */
 
 /* --- 1. CONFIG --------------------------------------- */
+// ── EMAILJS CONFIG ──
+const EMAILJS_SERVICE_ID  = 'service_1i3ui9c';
+const EMAILJS_TEMPLATE_ID = 'template_6hbwth5';
+const EMAILJS_PUBLIC_KEY  = 'Ta3kamz3gnz2F3zsu';
+
 const SUPABASE_URL='https://vwoylscgfhuzmsnkjdlu.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3b3lsc2NnZmh1em1zbmtqZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDY0OTUsImV4cCI6MjA5NzcyMjQ5NX0.ci08mxviFw5le494yUUE70fTRnWi6TqqC1Rjk971k_s';
 const{createClient}=window.supabase||supabase;
@@ -2252,8 +2257,26 @@ async function submitBugReport(){
   if(!desc){showToast('Describe the issue','warn');return;}
   const btn=document.getElementById('btnSubmitBug');
   if(btn){btn.disabled=true;btn.textContent='Sending...';}
+
+  const templateParams={
+    user_email:ME?.email||'unknown',
+    title,
+    category:cat,
+    description:desc,
+    app_version:'2.1',
+    user_agent:navigator.userAgent.slice(0,200),
+    company:COMPANY?.name||'Unknown',
+    role:MY_ROLE||'unknown'
+  };
+
   try{
-    const{error}=await supabaseClient.from('bug_reports').insert({
+    // Send email via EmailJS
+    if(EMAILJS_PUBLIC_KEY!=='YOUR_PUBLIC_KEY'){
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+    }
+
+    // Also save to Supabase as backup
+    await supabaseClient.from('bug_reports').insert({
       user_id:ME?.id||null,
       user_email:ME?.email||'unknown',
       title,
@@ -2262,20 +2285,29 @@ async function submitBugReport(){
       app_version:'2.1',
       user_agent:navigator.userAgent.slice(0,200)
     });
-    if(error){
-      console.error('Bug report error:',error);
-      showToast('Error: '+error.message,'warn');
-    } else {
-      showToast('Report sent - thank you!');
-      const titleEl=document.getElementById('bugTitle');
-      const descEl=document.getElementById('bugDesc');
-      if(titleEl) titleEl.value='';
-      if(descEl) descEl.value='';
-    }
+
+    showToast('Report sent - thank you!');
+    const titleEl=document.getElementById('bugTitle');
+    const descEl=document.getElementById('bugDesc');
+    if(titleEl) titleEl.value='';
+    if(descEl) descEl.value='';
+
   }catch(e){
-    console.error(e);
-    showToast('Failed to send report','warn');
+    console.error('Bug report error:',e);
+    // Still try Supabase even if email fails
+    try{
+      await supabaseClient.from('bug_reports').insert({
+        user_id:ME?.id||null,
+        user_email:ME?.email||'unknown',
+        title,description:desc,category:cat,
+        app_version:'2.1',user_agent:navigator.userAgent.slice(0,200)
+      });
+      showToast('Report saved (email delivery failed)');
+    }catch(e2){
+      showToast('Error sending report - try again','warn');
+    }
   }
+
   if(btn){btn.disabled=false;btn.textContent='Send Report';}
 }
 
