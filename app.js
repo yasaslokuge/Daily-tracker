@@ -683,6 +683,10 @@ async function loadMyCompany(){
     COMPANY=company;
     if(company.locations&&company.locations.length>0){
       LOCS=company.locations.map(l=>({...l,keys:[]}));
+      console.log('LOCS set from company:',LOCS.length,'locations:',LOCS.map(l=>l.name).join(', '));
+    } else {
+      LOCS=[...DEFAULT_LOCS];
+      console.log('LOCS fallback to DEFAULT_LOCS:',LOCS.length);
     }
     console.log('Company loaded:',company.name,'Role:',MY_ROLE);
     return company;
