@@ -659,10 +659,13 @@ async function saveKeyHolder(){
 
 async function loadMyCompany(){
   try{
-    // Use limit(1) to handle duplicate rows gracefully
     const{data:memberships,error:me}=await supabaseClient
       .from('company_members').select('*').eq('user_id',ME.id).limit(1);
-    if(me){console.error('company_members error:',me.message);return null;}
+    if(me){
+      console.error('company_members error:',me.message,me.code);
+      // If it's a network error, propagate null to trigger retry
+      return null;
+    }
     if(!memberships||!memberships.length){
       console.log('No company membership found for',ME.email);
       return null;
@@ -775,6 +778,9 @@ function showCompanySetup(){
   hideApp();
   const authWrap=document.getElementById('authWrap');
   if(authWrap) authWrap.style.display='none';
+  // Show who is logged in at top of setup screen
+  const coWho=document.getElementById('coSetupWho');
+  if(coWho&&ME) coWho.textContent='Signed in as '+ME.email;
 }
 function hideCompanySetup(){
   const setup=document.getElementById('companySetup');
@@ -938,9 +944,22 @@ async function initApp(u){
   ME=u;
   document.getElementById('tbUser').textContent=u.email;
   hideLoader();
-  // Load company first
-  const company=await loadMyCompany();
+  // Load company first - retry once on failure
+  let company=await loadMyCompany();
   if(!company){
+    console.log('First company load failed, retrying...');
+    await new Promise(r=>setTimeout(r,1500));
+    company=await loadMyCompany();
+  }
+  if(!company){
+    // Genuinely not in a company - check if it's a network issue
+    const online=navigator.onLine;
+    if(!online){
+      showToast('No internet connection. Please reconnect and refresh.','warn');
+      hideLoader();
+      showAuth();
+      return;
+    }
     // User not in a company yet - show company setup
     hideAuth();
     showCompanySetup();
@@ -2219,7 +2238,13 @@ function boot(session) {
   }
 }
 
-// Hard timeout - always show something within 4 seconds no matter what
+// Soft timeout - show loader message first, then auth after longer wait
+setTimeout(() => {
+  if (!booted) {
+    const lt=document.getElementById('ldTxt');
+    if(lt) lt.textContent='Still connecting...';
+  }
+}, 3000);
 setTimeout(() => {
   if (!booted) {
     booted = true;
@@ -2227,7 +2252,7 @@ setTimeout(() => {
     hideApp();
     showAuth();
   }
-}, 4000);
+}, 8000);
 
 // 1. Try getSession first (fastest path)
 try {
