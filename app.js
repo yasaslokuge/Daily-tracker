@@ -253,7 +253,21 @@ async function saveLog(date,locs,note,sups,startTime,endTime){
      start_time:startTime||null,end_time:endTime||null,updated_at:new Date().toISOString()},
     {onConflict:'user_id,log_date'}
   );
-  if(error){console.error(error);return false}
+  if(error){
+    console.error('saveLog error:',error.message,error.code,error.details);
+    // If column doesn't exist, save without time fields
+    if(error.code==='42703'||error.message?.includes('column')){
+      console.warn('Saving without time fields (columns may not exist yet)');
+      const{error:e2}=await sb.from('work_logs').upsert(
+        {user_id:ME.id,company_id:COMPANY?.id||null,log_date:date,locations:locs,note,supplies:sups,updated_at:new Date().toISOString()},
+        {onConflict:'user_id,log_date'}
+      );
+      if(e2){console.error('Fallback save error:',e2.message);return false;}
+      cache[date]={locations:locs,note,supplies:sups,start_time:startTime||'',end_time:endTime||''};
+      return true;
+    }
+    return false;
+  }
   cache[date]={locations:locs,note,supplies:sups,start_time:startTime||'',end_time:endTime||''};
   // Write backup to history table (non-blocking)
   sb.from('work_logs_history').insert({
