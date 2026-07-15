@@ -233,32 +233,26 @@
         </div>
         <div class="time-duration" id="timeDuration"></div>
       </div>
-      <!-- Quick presets -->
-      <div class="time-presets" id="timePresets" style="display:none">
-        <div class="time-preset-label" id="timePresetLabel">Set start time</div>
-        <div class="time-preset-grid">
-          <button class="time-preset-btn" onclick="setTimePreset('06:00')">6:00 AM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('07:00')">7:00 AM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('08:00')">8:00 AM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('08:30')">8:30 AM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('09:00')">9:00 AM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('10:00')">10:00 AM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('12:00')">12:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('13:00')">1:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('14:00')">2:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('15:00')">3:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('16:00')">4:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('17:00')">5:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('18:00')">6:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('19:00')">7:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('20:00')">8:00 PM</button>
-          <button class="time-preset-btn" onclick="setTimePreset('21:00')">9:00 PM</button>
+    </div>
+
+    <!-- SCROLL WHEEL TIME PICKER MODAL -->
+    <div id="timePickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:950;align-items:flex-end;justify-content:center">
+      <div class="tpm-sheet">
+        <div class="tpm-header">
+          <button onclick="clearTimePickerModal()" class="tpm-clear">Clear</button>
+          <div class="tpm-title" id="tpmTitle">Start time</div>
+          <button onclick="confirmTimePicker()" class="tpm-done">Done</button>
         </div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button onclick="setTimeNow()" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Use Current Time</button>
-          <button onclick="clearTimePicker()" style="flex:1;background:none;border:1.5px solid var(--border2);border-radius:8px;padding:10px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Clear</button>
-          <button onclick="closeTimePicker()" style="background:none;border:1.5px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Done</button>
+        <div class="tpm-now-btn-wrap">
+          <button onclick="setTimeNow()" class="tpm-now-btn">Use current time</button>
         </div>
+        <div class="tpm-wheels">
+          <div class="tpm-wheel-col" id="tpmHourCol"></div>
+          <div class="tpm-sep">:</div>
+          <div class="tpm-wheel-col" id="tpmMinCol"></div>
+          <div class="tpm-wheel-col" id="tpmAmpmCol"></div>
+        </div>
+        <div class="tpm-selector"></div>
       </div>
     </div>
 

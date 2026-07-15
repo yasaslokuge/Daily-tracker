@@ -2394,7 +2394,7 @@ async function saveSuppliesSettings(){
   renderSupGrid();
 }
 
-/* --- SHIFT TIME PICKER ------------------------------- */
+/* --- SHIFT TIME PICKER (scroll wheel) ---------------- */
 function formatTime12(t24){
   if(!t24) return '--:--';
   const[h,m]=t24.split(':').map(Number);
@@ -2408,9 +2408,18 @@ function calcDuration(start,end){
   const[sh,sm]=start.split(':').map(Number);
   const[eh,em]=end.split(':').map(Number);
   let mins=(eh*60+em)-(sh*60+sm);
-  if(mins<=0) mins+=24*60; // overnight shift
+  if(mins<=0) mins+=24*60;
   const h=Math.floor(mins/60), m=mins%60;
   return h+'h'+(m>0?' '+m+'m':'');
+}
+
+function calcDurationMins(start,end){
+  if(!start||!end) return 0;
+  const[sh,sm]=start.split(':').map(Number);
+  const[eh,em]=end.split(':').map(Number);
+  let mins=(eh*60+em)-(sh*60+sm);
+  if(mins<=0) mins+=24*60;
+  return mins;
 }
 
 function renderTimePicker(){
@@ -2419,72 +2428,158 @@ function renderTimePicker(){
   const sb=document.getElementById('timeStartBlock');
   const eb=document.getElementById('timeEndBlock');
   const dur=document.getElementById('timeDuration');
+  const wrap=document.getElementById('timePickerWrap');
   if(sv) sv.textContent=formatTime12(shiftStart);
   if(ev) ev.textContent=formatTime12(shiftEnd);
   if(sb) sb.classList.toggle('has-time',!!shiftStart);
   if(eb) eb.classList.toggle('has-time',!!shiftEnd);
   const d=calcDuration(shiftStart,shiftEnd);
+  const totalMins=calcDurationMins(shiftStart,shiftEnd);
+  const isLong=totalMins>480; // over 8 hours
+  const isVeryLong=totalMins>600; // over 10 hours
+
   if(dur){
-    dur.textContent=d?d+' shift':'';
-    dur.style.display=d?'flex':'none';
+    if(d){
+      dur.style.display='flex';
+      if(isVeryLong){
+        dur.textContent=d+' - Consider a break';
+        dur.className='time-duration fatigue-high';
+      } else if(isLong){
+        dur.textContent=d+' - Long shift';
+        dur.className='time-duration fatigue-warn';
+      } else {
+        dur.textContent=d+' shift';
+        dur.className='time-duration';
+      }
+    } else {
+      dur.style.display='none';
+      dur.className='time-duration';
+    }
   }
-  // Update hint text
+
+  // Colour the time blocks on long shifts
+  if(sb) sb.classList.toggle('fatigue',isLong);
+  if(eb) eb.classList.toggle('fatigue',isLong);
+  if(sb) sb.classList.toggle('fatigue-high',isVeryLong);
+  if(eb) eb.classList.toggle('fatigue-high',isVeryLong);
+
   const sh=document.getElementById('timeStartBlock')?.querySelector('.time-block-hint');
   const eh=document.getElementById('timeEndBlock')?.querySelector('.time-block-hint');
   if(sh) sh.textContent=shiftStart?'tap to change':'tap to set';
   if(eh) eh.textContent=shiftEnd?'tap to change':'tap to set';
 }
 
+// Scroll wheel state
+let tpmSelHour=8,tpmSelMin=0,tpmSelAmpm='AM';
+const TPM_ITEM_H=44;
+
+function buildWheelCol(el,items,selIdx,onChange){
+  el.innerHTML='';
+  const wrap=document.createElement('div');
+  wrap.className='tpm-wheel-inner';
+  // Padding items top/bottom for centering
+  [null,null].forEach(()=>{const p=document.createElement('div');p.className='tpm-item tpm-pad';p.textContent='';wrap.appendChild(p);});
+  items.forEach((v,i)=>{
+    const d=document.createElement('div');
+    d.className='tpm-item'+(i===selIdx?' tpm-sel':'');
+    d.textContent=v;
+    d.onclick=()=>{onChange(i);buildWheelCol(el,items,i,onChange);scrollWheelTo(el,i);};
+    wrap.appendChild(d);
+  });
+  [null,null].forEach(()=>{const p=document.createElement('div');p.className='tpm-item tpm-pad';p.textContent='';wrap.appendChild(p);});
+  el.appendChild(wrap);
+  scrollWheelTo(el,selIdx);
+  // Touch/mouse drag scroll
+  let startY=0,startSel=selIdx;
+  const onStart=e=>{startY=e.touches?e.touches[0].clientY:e.clientY;startSel=selIdx;};
+  const onMove=e=>{
+    e.preventDefault();
+    const y=e.touches?e.touches[0].clientY:e.clientY;
+    const delta=Math.round((startY-y)/TPM_ITEM_H);
+    const ni=Math.max(0,Math.min(items.length-1,startSel+delta));
+    if(ni!==selIdx){onChange(ni);buildWheelCol(el,items,ni,onChange);}
+  };
+  el.addEventListener('touchstart',onStart,{passive:true});
+  el.addEventListener('touchmove',onMove,{passive:false});
+  el.addEventListener('mousedown',onStart);
+  el.addEventListener('mousemove',e=>{if(e.buttons)onMove(e);});
+}
+
+function scrollWheelTo(el,idx){
+  const inner=el.querySelector('.tpm-wheel-inner');
+  if(inner) inner.style.transform='translateY('+(-idx*TPM_ITEM_H)+'px)';
+}
+
+function buildWheels(){
+  const hours=Array.from({length:12},(_,i)=>String(i+1));
+  const mins=['00','05','10','15','20','25','30','35','40','45','50','55'];
+  const ampms=['AM','PM'];
+  buildWheelCol(document.getElementById('tpmHourCol'),hours,tpmSelHour-1,i=>{tpmSelHour=i+1;});
+  buildWheelCol(document.getElementById('tpmMinCol'),mins,Math.round(tpmSelMin/5),i=>{tpmSelMin=i*5;});
+  buildWheelCol(document.getElementById('tpmAmpmCol'),ampms,tpmSelAmpm==='AM'?0:1,i=>{tpmSelAmpm=i===0?'AM':'PM';});
+}
+
 function openTimePicker(type){
   activeTimePicker=type;
-  const presets=document.getElementById('timePresets');
-  const label=document.getElementById('timePresetLabel');
-  if(presets) presets.style.display='block';
-  if(label) label.textContent=type==='start'?'Set start time':'Set finish time';
-  // Highlight the active block
+  // Parse existing time
+  const existing=type==='start'?shiftStart:shiftEnd;
+  if(existing){
+    const[h,m]=existing.split(':').map(Number);
+    tpmSelAmpm=h>=12?'PM':'AM';
+    tpmSelHour=h%12||12;
+    tpmSelMin=Math.round(m/5)*5;
+  } else {
+    const now=new Date();
+    tpmSelHour=now.getHours()%12||12;
+    tpmSelMin=Math.round(now.getMinutes()/5)*5%60;
+    tpmSelAmpm=now.getHours()>=12?'PM':'AM';
+  }
+  const modal=document.getElementById('timePickerModal');
+  const title=document.getElementById('tpmTitle');
+  if(title) title.textContent=type==='start'?'Start time':'Finish time';
+  buildWheels();
+  if(modal) modal.style.display='flex';
   document.getElementById('timeStartBlock')?.classList.toggle('active',type==='start');
   document.getElementById('timeEndBlock')?.classList.toggle('active',type==='end');
-  // Scroll into view
-  setTimeout(()=>presets?.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 }
 
 function closeTimePicker(){
-  const presets=document.getElementById('timePresets');
-  if(presets) presets.style.display='none';
+  const modal=document.getElementById('timePickerModal');
+  if(modal) modal.style.display='none';
   document.getElementById('timeStartBlock')?.classList.remove('active');
   document.getElementById('timeEndBlock')?.classList.remove('active');
-  activeTimePicker=null;
 }
 
-function setTimePreset(t){
-  if(!activeTimePicker) return;
+function confirmTimePicker(){
+  // Convert to 24h
+  let h=tpmSelHour;
+  if(tpmSelAmpm==='PM'&&h!==12) h+=12;
+  if(tpmSelAmpm==='AM'&&h===12) h=0;
+  const t=h.toString().padStart(2,'0')+':'+(tpmSelMin.toString().padStart(2,'0'));
   if(activeTimePicker==='start') shiftStart=t;
   else shiftEnd=t;
   renderTimePicker();
-  // Auto-advance to end picker if start was just set
+  closeTimePicker();
+  // Auto-open finish if start was just set and finish is empty
   if(activeTimePicker==='start'&&!shiftEnd){
-    activeTimePicker='end';
-    const label=document.getElementById('timePresetLabel');
-    if(label) label.textContent='Set finish time';
-    document.getElementById('timeStartBlock')?.classList.remove('active');
-    document.getElementById('timeEndBlock')?.classList.add('active');
-  } else {
-    closeTimePicker();
+    setTimeout(()=>openTimePicker('end'),200);
   }
+  activeTimePicker=null;
 }
 
-function setTimeNow(){
-  const now=new Date();
-  const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-  setTimePreset(t);
-}
-
-function clearTimePicker(){
-  if(!activeTimePicker) return;
+function clearTimePickerModal(){
   if(activeTimePicker==='start') shiftStart='';
   else shiftEnd='';
   renderTimePicker();
   closeTimePicker();
+}
+
+function setTimeNow(){
+  const now=new Date();
+  tpmSelHour=now.getHours()%12||12;
+  tpmSelMin=Math.round(now.getMinutes()/5)*5%60;
+  tpmSelAmpm=now.getHours()>=12?'PM':'AM';
+  buildWheels();
 }
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */
