@@ -84,7 +84,7 @@ const DFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sund
 
 
 /* --- 3. STATE VARIABLES ------------------------------ */
-let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set();
+let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null;
 
 
 /* --- 4. DATE UTILITIES ------------------------------- */
@@ -241,20 +241,20 @@ async function loadWk(dates){
   if(!ME)return;
   const{data,error}=await sb.from('work_logs').select('*').eq('user_id',ME.id).in('log_date',dates);
   if(error){console.error(error);return}
-  dates.forEach(d=>{if(!cache[d])cache[d]={locations:[],note:'',supplies:{}}});
-  (data||[]).forEach(r=>{cache[r.log_date]={locations:r.locations||[],note:r.note||'',supplies:r.supplies||{}}});
+  dates.forEach(d=>{if(!cache[d])cache[d]={locations:[],note:'',supplies:{},start_time:'',end_time:''}});
+  (data||[]).forEach(r=>{cache[r.log_date]={locations:r.locations||[],note:r.note||'',supplies:r.supplies||{},start_time:r.start_time||'',end_time:r.end_time||''}});
 }
-async function saveLog(date,locs,note,sups){
+async function saveLog(date,locs,note,sups,startTime,endTime){
   if(!ME)return false;
-  // Check if updating existing record
   const existing=cache[date];
   const action=existing&&existing.locations&&existing.locations.length>0?'update':'save';
   const{error}=await sb.from('work_logs').upsert(
-    {user_id:ME.id,company_id:COMPANY?.id||null,log_date:date,locations:locs,note,supplies:sups,updated_at:new Date().toISOString()},
+    {user_id:ME.id,company_id:COMPANY?.id||null,log_date:date,locations:locs,note,supplies:sups,
+     start_time:startTime||null,end_time:endTime||null,updated_at:new Date().toISOString()},
     {onConflict:'user_id,log_date'}
   );
   if(error){console.error(error);return false}
-  cache[date]={locations:locs,note,supplies:sups};
+  cache[date]={locations:locs,note,supplies:sups,start_time:startTime||'',end_time:endTime||''};
   // Write backup to history table (non-blocking)
   sb.from('work_logs_history').insert({
     user_id:ME.id,
@@ -1123,6 +1123,9 @@ async function loadDayUI(date){
   tempL=new Set(d.locations||[]);
   tempS=new Set(Object.keys(d.supplies||{}).filter(k=>d.supplies[k]));
   document.getElementById('notesTA').value=d.note||'';
+  shiftStart=d.start_time||'';
+  shiftEnd=d.end_time||'';
+  renderTimePicker();
   await renderLocGrid();renderSupGrid();
   document.getElementById('selLbl').textContent=fd(date).toLocaleDateString('en-NZ',{weekday:'short',day:'numeric',month:'short'});
   renderHero();setSaved('');
@@ -2389,6 +2392,99 @@ async function saveSuppliesSettings(){
   SUPS=supplies.map((name,i)=>({id:'sup'+i,name,svg:defaultSvgs[i]||defaultSvgs[0]||''}));
   showToast('Supplies updated');
   renderSupGrid();
+}
+
+/* --- SHIFT TIME PICKER ------------------------------- */
+function formatTime12(t24){
+  if(!t24) return '--:--';
+  const[h,m]=t24.split(':').map(Number);
+  const ampm=h>=12?'PM':'AM';
+  const h12=h%12||12;
+  return h12+':'+(m<10?'0':'')+m+' '+ampm;
+}
+
+function calcDuration(start,end){
+  if(!start||!end) return '';
+  const[sh,sm]=start.split(':').map(Number);
+  const[eh,em]=end.split(':').map(Number);
+  let mins=(eh*60+em)-(sh*60+sm);
+  if(mins<=0) mins+=24*60; // overnight shift
+  const h=Math.floor(mins/60), m=mins%60;
+  return h+'h'+(m>0?' '+m+'m':'');
+}
+
+function renderTimePicker(){
+  const sv=document.getElementById('timeStartVal');
+  const ev=document.getElementById('timeEndVal');
+  const sb=document.getElementById('timeStartBlock');
+  const eb=document.getElementById('timeEndBlock');
+  const dur=document.getElementById('timeDuration');
+  if(sv) sv.textContent=formatTime12(shiftStart);
+  if(ev) ev.textContent=formatTime12(shiftEnd);
+  if(sb) sb.classList.toggle('has-time',!!shiftStart);
+  if(eb) eb.classList.toggle('has-time',!!shiftEnd);
+  const d=calcDuration(shiftStart,shiftEnd);
+  if(dur){
+    dur.textContent=d?d+' shift':'';
+    dur.style.display=d?'flex':'none';
+  }
+  // Update hint text
+  const sh=document.getElementById('timeStartBlock')?.querySelector('.time-block-hint');
+  const eh=document.getElementById('timeEndBlock')?.querySelector('.time-block-hint');
+  if(sh) sh.textContent=shiftStart?'tap to change':'tap to set';
+  if(eh) eh.textContent=shiftEnd?'tap to change':'tap to set';
+}
+
+function openTimePicker(type){
+  activeTimePicker=type;
+  const presets=document.getElementById('timePresets');
+  const label=document.getElementById('timePresetLabel');
+  if(presets) presets.style.display='block';
+  if(label) label.textContent=type==='start'?'Set start time':'Set finish time';
+  // Highlight the active block
+  document.getElementById('timeStartBlock')?.classList.toggle('active',type==='start');
+  document.getElementById('timeEndBlock')?.classList.toggle('active',type==='end');
+  // Scroll into view
+  setTimeout(()=>presets?.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+function closeTimePicker(){
+  const presets=document.getElementById('timePresets');
+  if(presets) presets.style.display='none';
+  document.getElementById('timeStartBlock')?.classList.remove('active');
+  document.getElementById('timeEndBlock')?.classList.remove('active');
+  activeTimePicker=null;
+}
+
+function setTimePreset(t){
+  if(!activeTimePicker) return;
+  if(activeTimePicker==='start') shiftStart=t;
+  else shiftEnd=t;
+  renderTimePicker();
+  // Auto-advance to end picker if start was just set
+  if(activeTimePicker==='start'&&!shiftEnd){
+    activeTimePicker='end';
+    const label=document.getElementById('timePresetLabel');
+    if(label) label.textContent='Set finish time';
+    document.getElementById('timeStartBlock')?.classList.remove('active');
+    document.getElementById('timeEndBlock')?.classList.add('active');
+  } else {
+    closeTimePicker();
+  }
+}
+
+function setTimeNow(){
+  const now=new Date();
+  const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  setTimePreset(t);
+}
+
+function clearTimePicker(){
+  if(!activeTimePicker) return;
+  if(activeTimePicker==='start') shiftStart='';
+  else shiftEnd='';
+  renderTimePicker();
+  closeTimePicker();
 }
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */

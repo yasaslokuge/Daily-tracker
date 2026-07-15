@@ -214,6 +214,54 @@
     <div class="divl"></div>
     <div class="sec-head"><span class="sec-title">Locations worked</span><span class="sec-badge" id="selLbl"></span></div>
     <div class="loc-grid" id="locGrid"></div>
+    <!-- SHIFT TIME PICKER -->
+    <div class="time-wrap">
+      <div class="time-lbl">Shift hours</div>
+      <div class="time-picker-row">
+        <div class="time-block" id="timeStartBlock" onclick="openTimePicker('start')">
+          <div class="time-block-lbl">Start</div>
+          <div class="time-block-val" id="timeStartVal">--:--</div>
+          <div class="time-block-hint">tap to set</div>
+        </div>
+        <div class="time-arrow">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        </div>
+        <div class="time-block" id="timeEndBlock" onclick="openTimePicker('end')">
+          <div class="time-block-lbl">Finish</div>
+          <div class="time-block-val" id="timeEndVal">--:--</div>
+          <div class="time-block-hint">tap to set</div>
+        </div>
+        <div class="time-duration" id="timeDuration"></div>
+      </div>
+      <!-- Quick presets -->
+      <div class="time-presets" id="timePresets" style="display:none">
+        <div class="time-preset-label" id="timePresetLabel">Set start time</div>
+        <div class="time-preset-grid">
+          <button class="time-preset-btn" onclick="setTimePreset('06:00')">6:00 AM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('07:00')">7:00 AM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('08:00')">8:00 AM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('08:30')">8:30 AM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('09:00')">9:00 AM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('10:00')">10:00 AM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('12:00')">12:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('13:00')">1:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('14:00')">2:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('15:00')">3:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('16:00')">4:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('17:00')">5:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('18:00')">6:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('19:00')">7:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('20:00')">8:00 PM</button>
+          <button class="time-preset-btn" onclick="setTimePreset('21:00')">9:00 PM</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="setTimeNow()" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Use Current Time</button>
+          <button onclick="clearTimePicker()" style="flex:1;background:none;border:1.5px solid var(--border2);border-radius:8px;padding:10px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Clear</button>
+          <button onclick="closeTimePicker()" style="background:none;border:1.5px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Done</button>
+        </div>
+      </div>
+    </div>
+
     <div class="notes-wrap">
       <div class="notes-lbl">Notes</div>
       <textarea class="notes-ta" id="notesTA" placeholder="Anything notable about today…" rows="3"></textarea>
