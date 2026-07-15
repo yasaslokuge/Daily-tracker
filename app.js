@@ -1138,7 +1138,7 @@ async function saveDay(){
   const locs=[...tempL];
   const sups={};tempS.forEach(s=>sups[s]=true);
   const b=document.getElementById('btnSave');b.disabled=true;setSaved('saving');
-  const ok=await saveLog(selDate,locs,note,sups);
+  const ok=await saveLog(selDate,locs,note,sups,shiftStart,shiftEnd);
   b.disabled=false;
   if(ok){
     setSaved('saved');
@@ -2537,8 +2537,15 @@ function openTimePicker(type){
   const modal=document.getElementById('timePickerModal');
   const title=document.getElementById('tpmTitle');
   if(title) title.textContent=type==='start'?'Start time':'Finish time';
+  if(modal){
+    modal.style.display='flex';
+    modal.style.alignItems='flex-start'; // position at top
+    // Scroll the log view to top so modal is visible
+    const logView=document.getElementById('v-log');
+    if(logView) logView.scrollTo({top:0,behavior:'smooth'});
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
   buildWheels();
-  if(modal) modal.style.display='flex';
   document.getElementById('timeStartBlock')?.classList.toggle('active',type==='start');
   document.getElementById('timeEndBlock')?.classList.toggle('active',type==='end');
 }
