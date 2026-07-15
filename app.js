@@ -390,7 +390,7 @@ async function submitKeyReturn(locId, locName){
     from_name:myName,
     from_email:ME.email,
     to_name:'Manager',
-    to_email:'__manager__',   // special flag — visible to all managers
+    to_email:'__manager__',   // special flag  -  visible to all managers
     type:'return',
     status:'pending',
     company_id:COMPANY?COMPANY.id:null,
@@ -627,7 +627,7 @@ async function saveKeyHolder(){
   const btn=document.querySelector('.btn-key-save');
   if(!locId) return;
 
-  // CASE 1: None selected — clear the key
+  // CASE 1: None selected  -  clear the key
   if(!selectedName){
     if(btn){btn.disabled=true;btn.textContent='Clearing...';}
     const ok=await setLocKey(locId,locName,null,null);
@@ -1164,7 +1164,7 @@ async function saveDay(){
     setSaved('');showToast('Error saving - try again','warn');
   }
 }
-function clearDay(){tempL.clear();tempS.clear();document.getElementById('notesTA').value='';renderLocGrid();renderSupGrid();setSaved('')}
+function clearDay(){tempL.clear();tempS.clear();shiftStart='';shiftEnd='';document.getElementById('notesTA').value='';renderLocGrid();renderSupGrid();renderTimePicker();setSaved('')}
 
 function showToast(txt,t=''){
   const el=document.getElementById('toast');
@@ -1315,7 +1315,7 @@ async function renderWeekView(){
     const supNames=Object.keys(dd.supplies||{}).filter(k=>dd.supplies[k]).map(k=>SUPS.find(s=>s.id===k)?.name||k);
     const el=document.createElement('div');el.className=`wde${has?' has':''}`;
     el.innerHTML=`<div class="wde-h"><div><div class="wde-dn">${DFULL[i]}</div><div class="wde-dd">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div></div><div class="wde-r">${hasSup?'<div class="wde-sdot"></div>':''}<div class="wde-cnt${has?' has':''}">${has?dd.locations.length+' loc':'-'}</div><button class="wde-edit-btn" onclick="editDay('${d}')">Edit</button></div></div>
-    ${(dd.start_time||dd.end_time)?`<div class="wde-time" style="color:${calcDurationMins(dd.start_time||'',dd.end_time||'')>600?'var(--red)':calcDurationMins(dd.start_time||'',dd.end_time||'')>480?'var(--amber)':'var(--teal)'}">${formatTime12(dd.start_time||'')}${dd.end_time?' - '+formatTime12(dd.end_time):''}${dd.start_time&&dd.end_time?' · '+calcDuration(dd.start_time,dd.end_time):''}</div>`:''}
+    ${(dd.start_time||dd.end_time)?`<div class="wde-time" style="color:${calcDurationMins(dd.start_time||'',dd.end_time||'')>600?'var(--red)':calcDurationMins(dd.start_time||'',dd.end_time||'')>480?'var(--amber)':'var(--teal)'}">${formatTime12(dd.start_time||'')}${dd.end_time?' - '+formatTime12(dd.end_time):''}${dd.start_time&&dd.end_time?' - '+calcDuration(dd.start_time,dd.end_time):''}</div>`:''}
     ${has?`<div class="wde-locs">${locNames.map(n=>`<span class="wde-lt">${n}</span>`).join('')}</div>`:'<div class="wde-empty">Nothing logged</div>'}
     ${supNames.length?`<div class="wde-sups">${supNames.map(n=>`<span class="wde-st">! ${n}</span>`).join('')}</div>`:''}
     ${dd.note?`<div class="wde-note">"${dd.note}"</div>`:''}`;
@@ -1673,7 +1673,7 @@ function renderManagerSchedule(dates, rows){
             ?locs.map(l=>`<span class="person-loc-tag">${LOCS.find(x=>x.id===l)?.name||l}</span>`).join('')
             :'<span class="person-loc-tag empty">-</span>'}
         </div>
-        ${startTime?`<div class="person-day-meta">${startTime}${note?' · '+note:''}</div>`:''}
+        ${startTime?`<div class="person-day-meta">${startTime}${note?' - '+note:''}</div>`:''}
       </div>`;
     });
 
