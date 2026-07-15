@@ -1301,6 +1301,7 @@ async function renderWeekView(){
     const supNames=Object.keys(dd.supplies||{}).filter(k=>dd.supplies[k]).map(k=>SUPS.find(s=>s.id===k)?.name||k);
     const el=document.createElement('div');el.className=`wde${has?' has':''}`;
     el.innerHTML=`<div class="wde-h"><div><div class="wde-dn">${DFULL[i]}</div><div class="wde-dd">${fd(d).toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}</div></div><div class="wde-r">${hasSup?'<div class="wde-sdot"></div>':''}<div class="wde-cnt${has?' has':''}">${has?dd.locations.length+' loc':'-'}</div><button class="wde-edit-btn" onclick="editDay('${d}')">Edit</button></div></div>
+    ${(dd.start_time||dd.end_time)?`<div class="wde-time" style="color:${calcDurationMins(dd.start_time||'',dd.end_time||'')>600?'var(--red)':calcDurationMins(dd.start_time||'',dd.end_time||'')>480?'var(--amber)':'var(--teal)'}">${formatTime12(dd.start_time||'')}${dd.end_time?' - '+formatTime12(dd.end_time):''}${dd.start_time&&dd.end_time?' · '+calcDuration(dd.start_time,dd.end_time):''}</div>`:''}
     ${has?`<div class="wde-locs">${locNames.map(n=>`<span class="wde-lt">${n}</span>`).join('')}</div>`:'<div class="wde-empty">Nothing logged</div>'}
     ${supNames.length?`<div class="wde-sups">${supNames.map(n=>`<span class="wde-st">! ${n}</span>`).join('')}</div>`:''}
     ${dd.note?`<div class="wde-note">"${dd.note}"</div>`:''}`;
@@ -1325,7 +1326,13 @@ async function renderReport(){
     const locNames=locs.map(id=>LOCS.find(l=>l.id===id)?.name||id);
     const supNames=supNeeded.map(k=>SUPS.find(s=>s.id===k)?.name||k);
     lines.push('');
-    lines.push(fd(d).toLocaleDateString('en-NZ',{weekday:'long',day:'numeric',month:'long'}));
+    const repDayLabel=fd(d).toLocaleDateString('en-NZ',{weekday:'long',day:'numeric',month:'long'});
+    const repTimeStr=(dd.start_time||dd.end_time)
+      ?' ['+formatTime12(dd.start_time||'')+(dd.end_time?' - '+formatTime12(dd.end_time):'')
+        +(dd.start_time&&dd.end_time?' | '+calcDuration(dd.start_time,dd.end_time):'')
+        +']'
+      :'';
+    lines.push(repDayLabel+repTimeStr);
     if(locs.length){dw++;tl+=locs.length;locNames.forEach(n=>lines.push(`  * ${n}`));
       if(dd.note)lines.push(`  Note: ${dd.note}`);
       if(supNames.length){sc+=supNames.length;lines.push(`  ! Supplies needed: ${supNames.join(', ')}`)}}
@@ -2477,37 +2484,79 @@ function buildWheelCol(el,items,selIdx,onChange){
   el.innerHTML='';
   const wrap=document.createElement('div');
   wrap.className='tpm-wheel-inner';
-  // Padding items top/bottom for centering
-  [null,null].forEach(()=>{const p=document.createElement('div');p.className='tpm-item tpm-pad';p.textContent='';wrap.appendChild(p);});
+  // 2 padding items so selected item centres in the 5-visible window
+  for(let i=0;i<2;i++){const p=document.createElement('div');p.className='tpm-item tpm-pad';p.innerHTML='&nbsp;';wrap.appendChild(p);}
   items.forEach((v,i)=>{
     const d=document.createElement('div');
     d.className='tpm-item'+(i===selIdx?' tpm-sel':'');
     d.textContent=v;
-    d.onclick=()=>{onChange(i);buildWheelCol(el,items,i,onChange);scrollWheelTo(el,i);};
+    d.onclick=()=>{onChange(i);buildWheelCol(el,items,i,onChange);};
     wrap.appendChild(d);
   });
-  [null,null].forEach(()=>{const p=document.createElement('div');p.className='tpm-item tpm-pad';p.textContent='';wrap.appendChild(p);});
+  for(let i=0;i<2;i++){const p=document.createElement('div');p.className='tpm-item tpm-pad';p.innerHTML='&nbsp;';wrap.appendChild(p);}
   el.appendChild(wrap);
-  scrollWheelTo(el,selIdx);
-  // Touch/mouse drag scroll
-  let startY=0,startSel=selIdx;
-  const onStart=e=>{startY=e.touches?e.touches[0].clientY:e.clientY;startSel=selIdx;};
+  // Set position instantly (no animation on build)
+  const inner=wrap;
+  inner.style.transition='none';
+  inner.style.transform='translateY('+(-(selIdx)*TPM_ITEM_H)+'px)';
+  requestAnimationFrame(()=>{inner.style.transition='';});
+
+  // Touch drag with momentum
+  let startY=0,startSel=selIdx,isDragging=false,lastY=0,velocity=0,raf=0;
+  const snapToNearest=(curSel)=>{
+    const ni=Math.max(0,Math.min(items.length-1,Math.round(curSel)));
+    selIdx=ni;
+    onChange(ni);
+    inner.style.transition='transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)';
+    inner.style.transform='translateY('+(-(ni)*TPM_ITEM_H)+'px)';
+    // Update selected class
+    wrap.querySelectorAll('.tpm-item').forEach((d,i)=>{
+      if(i>=2&&i<items.length+2) d.className='tpm-item'+(i-2===ni?' tpm-sel':'');
+    });
+  };
+  const onStart=e=>{
+    cancelAnimationFrame(raf);
+    startY=e.touches?e.touches[0].clientY:e.clientY;
+    lastY=startY;velocity=0;
+    startSel=selIdx;isDragging=true;
+    inner.style.transition='none';
+  };
   const onMove=e=>{
+    if(!isDragging)return;
     e.preventDefault();
     const y=e.touches?e.touches[0].clientY:e.clientY;
-    const delta=Math.round((startY-y)/TPM_ITEM_H);
-    const ni=Math.max(0,Math.min(items.length-1,startSel+delta));
-    if(ni!==selIdx){onChange(ni);buildWheelCol(el,items,ni,onChange);}
+    velocity=y-lastY;lastY=y;
+    const drag=(startY-y)/TPM_ITEM_H;
+    const live=startSel+drag;
+    const clamped=Math.max(-0.5,Math.min(items.length-0.5,live));
+    inner.style.transform='translateY('+(-(clamped)*TPM_ITEM_H)+'px)';
+    // Update selected class live
+    const nearest=Math.round(clamped);
+    wrap.querySelectorAll('.tpm-item').forEach((d,i)=>{
+      if(i>=2&&i<items.length+2) d.className='tpm-item'+(i-2===nearest?' tpm-sel':'');
+    });
+  };
+  const onEnd=e=>{
+    if(!isDragging)return;
+    isDragging=false;
+    const y=e.changedTouches?e.changedTouches[0].clientY:(e.clientY||lastY);
+    const drag=(startY-y)/TPM_ITEM_H;
+    // Apply momentum
+    const momentum=-(velocity/TPM_ITEM_H)*2.5;
+    const targetSel=startSel+drag+momentum;
+    snapToNearest(targetSel);
   };
   el.addEventListener('touchstart',onStart,{passive:true});
   el.addEventListener('touchmove',onMove,{passive:false});
+  el.addEventListener('touchend',onEnd,{passive:true});
   el.addEventListener('mousedown',onStart);
-  el.addEventListener('mousemove',e=>{if(e.buttons)onMove(e);});
+  window.addEventListener('mousemove',e=>{if(isDragging)onMove(e);});
+  window.addEventListener('mouseup',e=>{if(isDragging)onEnd(e);});
 }
 
 function scrollWheelTo(el,idx){
   const inner=el.querySelector('.tpm-wheel-inner');
-  if(inner) inner.style.transform='translateY('+(-idx*TPM_ITEM_H)+'px)';
+  if(inner) inner.style.transform='translateY('+(-(idx)*TPM_ITEM_H)+'px)';
 }
 
 function buildWheels(){
