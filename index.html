@@ -695,11 +695,13 @@
     <div style="background:var(--card2);border-radius:12px;padding:14px;margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Request to borrow</div>
       <input id="borrowItem" type="text" placeholder="Item name (e.g. Extension cord, Mop)" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:11px 13px;outline:none;margin-bottom:10px"/>
-      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Borrow from</div>
-      <div class="key-member-picker" id="borrowPersonPicker" style="margin-bottom:10px"></div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Borrow from — team members</div>
+      <div class="key-member-picker" id="borrowPersonPicker" style="margin-bottom:8px"></div>
       <div id="borrowToEmail" data-email="" data-name="" style="font-size:11px;color:var(--teal);font-weight:600;margin-bottom:10px;min-height:16px"></div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Or enter a name (not on app)</div>
+      <input id="borrowManualName" type="text" placeholder="e.g. John from another team" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;padding:10px 13px;outline:none;margin-bottom:10px"/>
       <input id="borrowNote" type="text" placeholder="Note (optional)" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;padding:10px 13px;outline:none;margin-bottom:10px"/>
-      <button onclick="sendBorrowRequest()" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:12px;font-family:Inter,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Send Request</button>
+      <button onclick="sendBorrowRequest()" class="borrow-send-btn" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:12px;font-family:Inter,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Send Request</button>
     </div>
 
     <!-- Pending requests -->

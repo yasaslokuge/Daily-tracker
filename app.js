@@ -1341,26 +1341,43 @@ async function navWeek(d){weekOff+=d;await renderWeekView()}
 
 
 /* --- 15. REPORT -------------------------------------- */
+// Month helper functions (defined before renderReport)
+function getMonthDates(off=0){
+  const now=new Date();
+  const first=new Date(now.getFullYear(),now.getMonth()+off,1);
+  const last=new Date(now.getFullYear(),now.getMonth()+off+1,0);
+  const dates=[];
+  for(let d=new Date(first);d<=last;d.setDate(d.getDate()+1)) dates.push(ds(new Date(d)));
+  return dates;
+}
+function getMonthLabel(off=0){
+  const now=new Date();
+  return new Date(now.getFullYear(),now.getMonth()+off,1).toLocaleDateString('en-NZ',{month:'long',year:'numeric'});
+}
+
 async function renderReport(){
-  let dates,titleStr;
+  let dates,titleStr,rangeStr;
   if(repMode==='month'){
     dates=getMonthDates(repMonthOff);
     titleStr=getMonthLabel(repMonthOff);
-    // Load all weeks in month
+    rangeStr=titleStr;
     const chunks=[];
     for(let i=0;i<dates.length;i+=7) chunks.push(dates.slice(i,i+7));
     for(const chunk of chunks) await loadWk(chunk);
   } else {
     dates=wkDates(repOff);
-    const m=fd(dates[0]),sun=fd(dates[6]);
-    titleStr=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
+    const mDate=fd(dates[0]),sunDate=fd(dates[6]);
+    titleStr=mDate.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})+' - '+sunDate.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'});
+    rangeStr=mDate.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric'})+' - '+sunDate.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
     await loadWk(dates);
   }
   document.getElementById('rvTitle').textContent=titleStr;
-  let dw=0,tl=0,sc=0,lines=['WORK LOCATION REPORT',
-    `Week of ${m.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})}`,
+  const firstDate=fd(dates[0]),lastDate=fd(dates[dates.length-1]);
+  let dw=0,tl=0,sc=0;
+  const lines=['WORK LOCATION REPORT',
+    titleStr,
     '-'.repeat(44)];
-  dates.forEach((d,i)=>{
+  dates.forEach(d=>{
     const dd=gd(d),locs=dd.locations||[];
     const supNeeded=Object.keys(dd.supplies||{}).filter(k=>dd.supplies[k]);
     const locNames=locs.map(id=>LOCS.find(l=>l.id===id)?.name||id);
@@ -1373,17 +1390,25 @@ async function renderReport(){
         +']'
       :'';
     lines.push(repDayLabel+repTimeStr);
-    if(locs.length){dw++;tl+=locs.length;locNames.forEach(n=>lines.push(`  * ${n}`));
-      if(dd.note)lines.push(`  Note: ${dd.note}`);
-      if(supNames.length){sc+=supNames.length;lines.push(`  ! Supplies needed: ${supNames.join(', ')}`)}}
-    else lines.push('  - No locations logged');
+    if(locs.length){
+      dw++;tl+=locs.length;
+      locNames.forEach(n=>lines.push('  * '+n));
+      if(dd.note)lines.push('  Note: '+dd.note);
+      if(supNames.length){sc+=supNames.length;lines.push('  ! Supplies needed: '+supNames.join(', '));}
+    } else {
+      lines.push('  - No locations logged');
+    }
   });
   lines.push('');lines.push('-'.repeat(44));
-  lines.push(`Days worked: ${dw} / 7`);lines.push(`Total locations: ${tl}`);
-  if(sc)lines.push(`Supply items flagged: ${sc}`);
+  lines.push('Days worked: '+dw+' / '+dates.length);
+  lines.push('Total locations: '+tl);
+  if(sc) lines.push('Supply items flagged: '+sc);
   document.getElementById('rvText').textContent=lines.join('\n');
-  document.getElementById('rvRange').textContent=`${m.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}`;
-  document.getElementById('rvStats').innerHTML=`<div class="rv-stat"><div class="rv-val">${dw}</div><div class="rv-lbl">Days worked</div></div><div class="rv-stat"><div class="rv-val">${tl}</div><div class="rv-lbl">Locations</div></div><div class="rv-stat"><div class="rv-val">${sc}</div><div class="rv-lbl">Supply alerts</div></div>`;
+  document.getElementById('rvRange').textContent=rangeStr;
+  document.getElementById('rvStats').innerHTML=
+    '<div class="rv-stat"><div class="rv-val">'+dw+'</div><div class="rv-lbl">Days worked</div></div>'
+    +'<div class="rv-stat"><div class="rv-val">'+tl+'</div><div class="rv-lbl">Locations</div></div>'
+    +'<div class="rv-stat"><div class="rv-val">'+sc+'</div><div class="rv-lbl">Supply alerts</div></div>';
 }
 function setRepMode(mode){
   repMode=mode;
@@ -2723,23 +2748,47 @@ async function loadBorrowRequests(){
 
 async function sendBorrowRequest(){
   const item=document.getElementById('borrowItem')?.value.trim();
-  const toEmail=document.getElementById('borrowToEmail');
-  const to=toEmail?.dataset.email||'';
-  const toName=toEmail?.dataset.name||'';
+  const toEmailEl=document.getElementById('borrowToEmail');
+  const manualNameEl=document.getElementById('borrowManualName');
+  // Check if a member was selected OR a manual name entered
+  let to=toEmailEl?.dataset.email||'';
+  let toName=toEmailEl?.dataset.name||'';
+  const manualName=manualNameEl?.value.trim()||'';
+  // If no member selected, use manual name
+  if(!to&&manualName){
+    to='external';
+    toName=manualName;
+  }
   const note=document.getElementById('borrowNote')?.value.trim()||'';
   if(!item){showToast('Enter item name','warn');return;}
-  if(!to){showToast('Select a person','warn');return;}
+  if(!toName){showToast('Select a person or enter a name','warn');return;}
   const myName=getMemberName(ME.email);
-  const{error}=await supabaseClient.from('borrow_requests').insert({
-    from_email:ME.email,from_name:myName,
-    to_email:to,to_name:toName,
-    item,note,status:'pending',
-    company_id:COMPANY?.id||null,
-    created_at:new Date().toISOString()
-  });
-  if(error){showToast('Error: '+error.message,'warn');return;}
-  showToast('Request sent to '+toName);
-  closeBorrowModal();
+  const btn=document.querySelector('#borrowModal .borrow-send-btn');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+  try{
+    const{error}=await supabaseClient.from('borrow_requests').insert({
+      from_email:ME.email,from_name:myName,
+      to_email:to,to_name:toName,
+      item,note,status:to==='external'?'approved':'pending',
+      company_id:COMPANY?.id||null,
+      created_at:new Date().toISOString()
+    });
+    if(error){showToast('Error: '+error.message,'warn');console.error(error);return;}
+    if(to==='external'){
+      showToast('Logged borrow to '+toName+' (not on app)');
+    } else {
+      showToast('Request sent to '+toName);
+    }
+    // Clear form
+    if(document.getElementById('borrowItem')) document.getElementById('borrowItem').value='';
+    if(manualNameEl) manualNameEl.value='';
+    if(toEmailEl){toEmailEl.dataset.email='';toEmailEl.dataset.name='';toEmailEl.textContent='';}
+    document.querySelectorAll('#borrowPersonPicker .key-member-btn').forEach(b=>b.classList.remove('sel'));
+    renderBorrowLog();
+  }catch(e){
+    console.error(e);showToast('Failed to send','warn');
+  }
+  if(btn){btn.disabled=false;btn.textContent='Send Request';}
 }
 
 async function markItemReturned(requestId,toEmail,toName,item){
