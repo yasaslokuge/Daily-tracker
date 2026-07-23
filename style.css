@@ -79,7 +79,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 
 
 
-#app{display:none;flex-direction:column;min-height:100vh;min-height:-webkit-fill-available;width:100%;max-width:600px;margin:0 auto;padding-bottom:calc(var(--nav-h) + var(--safe-bottom))}
+#app{display:none;flex-direction:column;min-height:100vh;min-height:-webkit-fill-available;width:100%;max-width:600px;margin:0 auto;padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 4px)}
 /* Tablet/desktop centering */
 @media(min-width:600px){
   #app{border-left:1px solid var(--border);border-right:1px solid var(--border)}
@@ -96,7 +96,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .btn-so{background:none;border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;padding:5px 10px;cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t)}
 .btn-so:hover{border-color:var(--red);color:var(--red)}
 
-.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:rgba(8,14,20,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:none;z-index:80;padding-bottom:var(--safe-bottom)}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:rgba(8,14,20,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:none;z-index:80;padding-bottom:var(--safe-bottom);padding-bottom:max(var(--safe-bottom),env(safe-area-inset-bottom,0px))}
 .bnav-i{display:flex;align-items:stretch;width:100%}
 .nb{flex:1;min-width:0;background:none;border:none;color:var(--text3);padding:9px 2px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:'Inter',sans-serif;font-size:8.5px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;transition:color var(--t);-webkit-tap-highlight-color:transparent;position:relative;white-space:nowrap}
 .nb svg{width:20px;height:20px;flex-shrink:0}
@@ -199,7 +199,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .btn-save:disabled{background:var(--card2);color:var(--text3);cursor:default}
 .btn-clr{background:none;border:1.5px solid var(--border2);border-radius:var(--radius);color:var(--text2);padding:14px 16px;font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;transition:all var(--t)}
 .btn-clr:hover{border-color:var(--red);color:var(--red)}
-.credit{text-align:center;padding:16px 0 8px;font-size:10px;color:var(--text3);letter-spacing:2px;font-family:'JetBrains Mono',monospace}
+.credit{text-align:center;padding:16px 0 calc(8px + var(--safe-bottom));font-size:10px;color:var(--text3);letter-spacing:2px;font-family:'JetBrains Mono',monospace}
 .credit em{font-style:italic;color:var(--teal2)}
 
 /* DASHBOARD */
@@ -899,7 +899,7 @@ body.light .auth-body{background:#FFFFFF}
 body.light .auth-top{background:#DFF2EE}
 
 /* -- MORE MENU -- */
-.more-menu{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom));left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--border);z-index:99;padding:8px 16px 16px;animation:slideUp 0.22s ease}
+.more-menu{position:fixed;bottom:calc(var(--nav-h) + max(var(--safe-bottom),env(safe-area-inset-bottom,0px)));left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--border);z-index:99;padding:8px 16px 16px;animation:slideUp 0.22s ease}
 @keyframes slideUp{from{transform:translateX(-50%) translateY(100%)}to{transform:translateX(-50%) translateY(0)}}
 .more-menu-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
 .more-menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -1034,3 +1034,21 @@ body.light .auth-top{background:#DFF2EE}
 /* -- REPORT MODE TOGGLE -- */
 .rep-mode-btn{flex:1;background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;padding:9px;font-size:13px;font-weight:700;color:var(--text3);cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t);-webkit-tap-highlight-color:transparent}
 .rep-mode-btn.on{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
+
+/* ── SAFE AREA GAP FIX (iPhone home indicator + Android nav bar) ── */
+body::after{
+  content:'';
+  display:block;
+  position:fixed;
+  bottom:0;left:0;right:0;
+  height:env(safe-area-inset-bottom,0px);
+  background:rgba(8,14,20,0.97);
+  z-index:79;
+}
+body.light::after{
+  background:rgba(240,244,248,0.97);
+}
+/* Ensure views don't show content under the nav */
+.view.on{
+  padding-bottom:2px;
+}
