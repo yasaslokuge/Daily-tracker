@@ -2876,6 +2876,27 @@ async function buildBorrowPersonPicker(){
   });
 }
 
+/* --- GOOGLE SIGN IN ---------------------------------- */
+async function doGoogleSignIn(){
+  try{
+    const{error}=await sb.auth.signInWithOAuth({
+      provider:'google',
+      options:{
+        redirectTo:window.location.origin+window.location.pathname,
+        queryParams:{
+          access_type:'offline',
+          prompt:'consent',
+        }
+      }
+    });
+    if(error){showToast('Google sign in error: '+error.message,'warn');console.error(error);}
+    // Browser will redirect to Google - no further action needed here
+  }catch(e){
+    console.error('Google sign in exception:',e);
+    showToast('Google sign in failed','warn');
+  }
+}
+
 /* --- 21. BOOT SEQUENCE ------------------------------- */
 // -- BOOT ----------------------------------
 let booted = false;
@@ -2924,7 +2945,7 @@ try {
       // First load - use boot()
       boot(session);
     } else if (event === 'SIGNED_IN' && session && session.user) {
-      // User just signed in from login screen
+      // User just signed in (email/password or Google OAuth)
       initApp(session.user);
     } else if (event === 'SIGNED_OUT') {
       // User signed out

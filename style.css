@@ -1052,3 +1052,40 @@ body.light::after{
 .view.on{
   padding-bottom:2px;
 }
+
+/* -- GOOGLE SIGN IN BUTTON -- */
+.btn-google{
+  width:100%;
+  background:#fff;
+  color:#1F1F1F;
+  border:1.5px solid #DADCE0;
+  border-radius:10px;
+  padding:13px 14px;
+  font-family:'Inter',sans-serif;
+  font-size:15px;
+  font-weight:500;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  transition:all 0.17s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,0.08);
+  margin-top:2px;
+}
+.btn-google:hover{background:#F8F9FA;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+.btn-google:active{transform:scale(0.98)}
+.auth-or{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:14px 0;
+  color:#B0C0D0;
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+.auth-or::before,.auth-or::after{
+  content:'';flex:1;height:1px;background:#D8E2EC;
+}
