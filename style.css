@@ -1030,3 +1030,7 @@ body.light .auth-top{background:#DFF2EE}
 .time-block.fatigue{border-color:rgba(245,166,35,0.4)}
 .time-block.fatigue-high .time-block-val{color:var(--red)}
 .time-block.fatigue-high{border-color:rgba(255,87,87,0.4)}
+
+/* -- REPORT MODE TOGGLE -- */
+.rep-mode-btn{flex:1;background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;padding:9px;font-size:13px;font-weight:700;color:var(--text3);cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t);-webkit-tap-highlight-color:transparent}
+.rep-mode-btn.on{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}

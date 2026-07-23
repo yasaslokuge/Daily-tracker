@@ -265,6 +265,15 @@
       <div class="sup-lbl">Supplies needed <span class="sup-lbl-hint">tap to flag</span></div>
       <div class="sup-grid" id="supGrid"></div>
     </div>
+    <!-- BORROW ITEM BUTTON -->
+    <div style="padding:0 16px 4px">
+      <button onclick="openBorrowModal()" style="width:100%;background:none;border:1.5px solid var(--border2);border-radius:10px;color:var(--text2);padding:11px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all var(--t)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+        Borrow / Return Item
+        <span id="borrowBadge" style="display:none;background:var(--amber);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center">0</span>
+      </button>
+    </div>
+
     <div class="save-row">
       <button class="btn-clr" onclick="clearDay()">Clear</button>
       <button class="btn-save" id="btnSave" onclick="saveDay()">Save Day</button>
@@ -314,6 +323,11 @@
   <!-- REPORT -->
   <div class="view" id="v-rep">
     <div class="rv-wrap">
+      <!-- Report mode toggle -->
+      <div style="display:flex;gap:6px;padding:12px 16px 4px">
+        <button id="repModeWeek" onclick="setRepMode('week')" class="rep-mode-btn on">Weekly</button>
+        <button id="repModeMonth" onclick="setRepMode('month')" class="rep-mode-btn">Monthly</button>
+      </div>
       <div class="rv-nav">
         <button class="rv-btn" onclick="navRep(-1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
         <span class="rv-title" id="rvTitle"></span>
@@ -665,6 +679,36 @@
       <button onclick="closeKeyRequestPanel()" style="background:none;border:1.5px solid var(--border2);border-radius:8px;color:var(--text3);font-size:14px;cursor:pointer;padding:4px 10px">Close</button>
     </div>
     <div id="keyRequestList"><div style="text-align:center;padding:16px;font-size:12px;color:var(--text3)">Loading...</div></div>
+  </div>
+</div>
+
+
+<!-- BORROW ITEM MODAL -->
+<div id="borrowModal" style="display:none">
+  <div style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700">Borrow / Return Item</div>
+      <button onclick="closeBorrowModal()" style="background:none;border:1.5px solid var(--border2);border-radius:8px;color:var(--text3);padding:4px 12px;cursor:pointer;font-family:Inter,sans-serif">Close</button>
+    </div>
+
+    <!-- Send request -->
+    <div style="background:var(--card2);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Request to borrow</div>
+      <input id="borrowItem" type="text" placeholder="Item name (e.g. Extension cord, Mop)" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:11px 13px;outline:none;margin-bottom:10px"/>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Borrow from</div>
+      <div class="key-member-picker" id="borrowPersonPicker" style="margin-bottom:10px"></div>
+      <div id="borrowToEmail" data-email="" data-name="" style="font-size:11px;color:var(--teal);font-weight:600;margin-bottom:10px;min-height:16px"></div>
+      <input id="borrowNote" type="text" placeholder="Note (optional)" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;padding:10px 13px;outline:none;margin-bottom:10px"/>
+      <button onclick="sendBorrowRequest()" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:12px;font-family:Inter,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Send Request</button>
+    </div>
+
+    <!-- Pending requests -->
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Pending requests for me</div>
+    <div id="borrowRequestList" style="margin-bottom:14px"></div>
+
+    <!-- My borrow history -->
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">My borrows</div>
+    <div id="borrowLog"></div>
   </div>
 </div>
 

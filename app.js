@@ -84,7 +84,7 @@ const DFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sund
 
 
 /* --- 3. STATE VARIABLES ------------------------------ */
-let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null;
+let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,repMode='week',repMonthOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null;
 
 
 /* --- 4. DATE UTILITIES ------------------------------- */
@@ -761,15 +761,30 @@ let membersCache=[];
 let membersCacheLoaded=false;
 
 async function getCompanyMembers(forceRefresh=false){
-  if(!COMPANY) return[];
+  if(!COMPANY){console.warn('getCompanyMembers: no COMPANY');return[];}
   if(membersCacheLoaded&&!forceRefresh) return membersCache;
-  const{data,error}=await supabaseClient.from('company_members')
-    .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id).order('display_name');
-  if(error){console.error('getCompanyMembers error:',error);return membersCache;}
-  membersCache=data||[];
-  membersCacheLoaded=true;
-  console.log('Members loaded:',membersCache.length,membersCache.map(m=>m.display_name||m.user_email));
-  return membersCache;
+  try{
+    const{data,error}=await supabaseClient.from('company_members')
+      .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id).order('display_name');
+    if(error){
+      console.error('getCompanyMembers error:',error.message,error.code);
+      // If RLS blocks, try without order to see if basic read works
+      const{data:d2,error:e2}=await supabaseClient.from('company_members')
+        .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id);
+      if(e2){console.error('Fallback also failed:',e2.message);return membersCache||[];}
+      membersCache=d2||[];
+      membersCacheLoaded=true;
+      console.log('Members loaded (fallback):',membersCache.length);
+      return membersCache;
+    }
+    membersCache=data||[];
+    membersCacheLoaded=true;
+    console.log('Members loaded:',membersCache.length,membersCache.map(m=>m.display_name||m.user_email));
+    return membersCache;
+  }catch(e){
+    console.error('getCompanyMembers exception:',e);
+    return membersCache||[];
+  }
 }
 
 function getMemberName(email){
@@ -1327,10 +1342,21 @@ async function navWeek(d){weekOff+=d;await renderWeekView()}
 
 /* --- 15. REPORT -------------------------------------- */
 async function renderReport(){
-  const dates=wkDates(repOff);
-  const m=fd(dates[0]),sun=fd(dates[6]);
-  document.getElementById('rvTitle').textContent=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
-  await loadWk(dates);
+  let dates,titleStr;
+  if(repMode==='month'){
+    dates=getMonthDates(repMonthOff);
+    titleStr=getMonthLabel(repMonthOff);
+    // Load all weeks in month
+    const chunks=[];
+    for(let i=0;i<dates.length;i+=7) chunks.push(dates.slice(i,i+7));
+    for(const chunk of chunks) await loadWk(chunk);
+  } else {
+    dates=wkDates(repOff);
+    const m=fd(dates[0]),sun=fd(dates[6]);
+    titleStr=`${m.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'short',day:'numeric',year:'numeric'})}`;
+    await loadWk(dates);
+  }
+  document.getElementById('rvTitle').textContent=titleStr;
   let dw=0,tl=0,sc=0,lines=['WORK LOCATION REPORT',
     `Week of ${m.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{month:'long',day:'numeric',year:'numeric'})}`,
     '-'.repeat(44)];
@@ -1359,6 +1385,14 @@ async function renderReport(){
   document.getElementById('rvRange').textContent=`${m.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric'})} - ${sun.toLocaleDateString('en-NZ',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}`;
   document.getElementById('rvStats').innerHTML=`<div class="rv-stat"><div class="rv-val">${dw}</div><div class="rv-lbl">Days worked</div></div><div class="rv-stat"><div class="rv-val">${tl}</div><div class="rv-lbl">Locations</div></div><div class="rv-stat"><div class="rv-val">${sc}</div><div class="rv-lbl">Supply alerts</div></div>`;
 }
+function setRepMode(mode){
+  repMode=mode;
+  repOff=0;repMonthOff=0;
+  document.getElementById('repModeWeek')?.classList.toggle('on',mode==='week');
+  document.getElementById('repModeMonth')?.classList.toggle('on',mode==='month');
+  renderReport();
+}
+
 async function navRep(d){repOff+=d;await renderReport()}
 
 /* --- REPORT SHARING & IMAGE EXPORT ------------------- */
@@ -1460,33 +1494,30 @@ async function saveRepImage(){
 
     const dataUrl = canvas.toDataURL('image/png');
 
-    // Try native share with file (Android/iOS)
-    if(navigator.share && navigator.canShare){
+    // Convert canvas to blob directly (no fetch needed - avoids CSP issues)
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    const file = new File([blob], 'worktrace-report-'+new Date().toISOString().slice(0,10)+'.png', {type:'image/png'});
+
+    // Try native share with file (iOS/Android)
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
       try{
-        const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], 'worktrace-report.png', {type:'image/png'});
-        if(navigator.canShare({files:[file]})){
-          await navigator.share({
-            title: 'WorkTrace - Weekly Report',
-            files: [file]
-          });
-          showToast('Image shared');
-          if(btn){btn.disabled=false;btn.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Save Image';}
-          return;
-        }
-      } catch(e){
-        if(e.name==='AbortError'){
-          if(btn){btn.disabled=false;btn.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Save Image';}
-          return;
-        }
+        await navigator.share({title:'WorkTrace - Weekly Report', files:[file]});
+        showToast('Image shared');
+        return;
+      }catch(e){
+        if(e.name==='AbortError'){return;} // user cancelled
+        // Share failed - fall through to download
       }
     }
 
     // Fallback - download link
     const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = 'worktrace-report-' + new Date().toISOString().slice(0,10) + '.png';
+    a.href = URL.createObjectURL(blob);
+    a.download = 'worktrace-report-'+new Date().toISOString().slice(0,10)+'.png';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
     showToast('Image saved to downloads');
 
   } catch(e){
@@ -2650,6 +2681,150 @@ function setTimeNow(){
   tpmSelMin=Math.round(now.getMinutes()/5)*5%60;
   tpmSelAmpm=now.getHours()>=12?'PM':'AM';
   buildWheels();
+}
+
+/* --- ITEM BORROW SYSTEM ------------------------------ */
+async function loadBorrowRequests(){
+  const badge=document.getElementById('borrowBadge');
+  const list=document.getElementById('borrowRequestList');
+  if(!list) return;
+  try{
+    // My pending borrow requests (someone wants to borrow FROM me)
+    const{data:incoming}=await supabaseClient.from('borrow_requests')
+      .select('*').eq('to_email',ME.email).eq('status','pending')
+      .order('created_at',{ascending:false});
+    // My return notifications
+    const{data:returns}=await supabaseClient.from('borrow_requests')
+      .select('*').eq('from_email',ME.email).eq('status','returned_pending')
+      .order('created_at',{ascending:false});
+    const all=[...(incoming||[]),...(returns||[])];
+    const total=all.length;
+    if(badge){badge.style.display=total?'flex':'none';badge.textContent=total;}
+    if(!total){list.innerHTML='<div style="text-align:center;padding:16px;font-size:12px;color:var(--text3)">No pending requests</div>';return;}
+    list.innerHTML=all.map(r=>{
+      const isReturn=r.status==='returned_pending';
+      const dt=new Date(r.created_at).toLocaleDateString('en-NZ',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      const msg=isReturn
+        ?`<strong>${r.from_name}</strong> says they returned: <strong>${r.item}</strong>`
+        :`<strong>${r.from_name}</strong> wants to borrow: <strong>${r.item}</strong>`;
+      const actions=isReturn
+        ?`<button onclick="confirmReturn('${r.id}')" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Confirm Return</button>`
+        :`<button onclick="approveBorrow('${r.id}')" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Approve</button>
+          <button onclick="declineBorrow('${r.id}')" style="flex:1;background:none;border:1.5px solid var(--border2);border-radius:8px;padding:9px;color:var(--text2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif">Decline</button>`;
+      return `<div style="background:var(--card2);border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1px solid ${isReturn?'rgba(245,166,35,0.25)':'rgba(5,217,180,0.2)'}">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${msg}</div>
+        ${r.note?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-style:italic">"${r.note}"</div>`:''}
+        <div style="font-size:10px;color:var(--text3);margin-bottom:8px">${dt}</div>
+        <div style="display:flex;gap:8px">${actions}</div>
+      </div>`;
+    }).join('');
+  }catch(e){console.error('loadBorrowRequests:',e);}
+}
+
+async function sendBorrowRequest(){
+  const item=document.getElementById('borrowItem')?.value.trim();
+  const toEmail=document.getElementById('borrowToEmail');
+  const to=toEmail?.dataset.email||'';
+  const toName=toEmail?.dataset.name||'';
+  const note=document.getElementById('borrowNote')?.value.trim()||'';
+  if(!item){showToast('Enter item name','warn');return;}
+  if(!to){showToast('Select a person','warn');return;}
+  const myName=getMemberName(ME.email);
+  const{error}=await supabaseClient.from('borrow_requests').insert({
+    from_email:ME.email,from_name:myName,
+    to_email:to,to_name:toName,
+    item,note,status:'pending',
+    company_id:COMPANY?.id||null,
+    created_at:new Date().toISOString()
+  });
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast('Request sent to '+toName);
+  closeBorrowModal();
+}
+
+async function markItemReturned(requestId,toEmail,toName,item){
+  const{error}=await supabaseClient.from('borrow_requests')
+    .update({status:'returned_pending',returned_at:new Date().toISOString()})
+    .eq('id',requestId);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast(item+' marked as returned - '+toName+' will confirm');
+  renderBorrowLog();
+}
+
+async function approveBorrow(id){
+  await supabaseClient.from('borrow_requests').update({status:'approved'}).eq('id',id);
+  showToast('Borrow approved');loadBorrowRequests();
+}
+async function declineBorrow(id){
+  await supabaseClient.from('borrow_requests').update({status:'declined'}).eq('id',id);
+  showToast('Request declined');loadBorrowRequests();
+}
+async function confirmReturn(id){
+  await supabaseClient.from('borrow_requests').update({status:'returned'}).eq('id',id);
+  showToast('Return confirmed');loadBorrowRequests();renderBorrowLog();
+}
+
+async function renderBorrowLog(){
+  const el=document.getElementById('borrowLog');
+  if(!el||!COMPANY) return;
+  const{data,error}=await supabaseClient.from('borrow_requests')
+    .select('*').eq('company_id',COMPANY.id)
+    .in('from_email',[ME.email]).order('created_at',{ascending:false}).limit(20);
+  if(error||!data?.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">No borrow history</div>';
+    return;
+  }
+  const statusColors={pending:'var(--amber)',approved:'var(--teal)',declined:'var(--red)',returned_pending:'var(--amber)',returned:'var(--text3)'};
+  const statusLabels={pending:'Pending',approved:'Approved',declined:'Declined',returned_pending:'Awaiting confirm',returned:'Returned'};
+  el.innerHTML=data.map(r=>`
+    <div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${r.item}</div>
+        <div style="font-size:10px;color:var(--text3)">to ${r.to_name}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span style="font-size:10px;font-weight:700;color:${statusColors[r.status]||'var(--text3)'}">${statusLabels[r.status]||r.status}</span>
+        ${r.status==='approved'?`<button onclick="markItemReturned('${r.id}','${r.to_email}','${r.to_name}','${r.item}')" style="font-size:10px;background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,166,35,0.3);border-radius:5px;padding:2px 8px;cursor:pointer;font-family:Inter,sans-serif">Mark Returned</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function openBorrowModal(){
+  const modal=document.getElementById('borrowModal');
+  if(!modal) return;
+  modal.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:900;align-items:flex-end;justify-content:center';
+  // Build person picker
+  buildBorrowPersonPicker();
+  renderBorrowLog();
+  loadBorrowRequests();
+}
+function closeBorrowModal(){
+  const m=document.getElementById('borrowModal');
+  if(m) m.style.display='none';
+}
+
+async function buildBorrowPersonPicker(){
+  const members=await getCompanyMembers(true);
+  const picker=document.getElementById('borrowPersonPicker');
+  if(!picker) return;
+  picker.innerHTML='';
+  members.filter(m=>m.user_email!==ME.email).forEach(m=>{
+    const name=getMemberName(m.user_email);
+    const btn=document.createElement('button');
+    btn.className='key-member-btn';
+    btn.innerHTML='<span class="key-member-avatar">'+name.charAt(0).toUpperCase()+'</span>'
+      +'<span style="display:flex;flex-direction:column;gap:1px">'
+      +'<span style="font-size:13px;font-weight:700">'+name+'</span>'
+      +'<span style="font-size:9px;opacity:0.6">'+m.user_email.split('@')[0]+'</span>'
+      +'</span>';
+    btn.onclick=()=>{
+      picker.querySelectorAll('.key-member-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      const sel=document.getElementById('borrowToEmail');
+      if(sel){sel.dataset.email=m.user_email;sel.dataset.name=name;sel.textContent='To: '+name;}
+    };
+    picker.appendChild(btn);
+  });
 }
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */
