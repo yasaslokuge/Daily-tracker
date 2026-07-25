@@ -99,7 +99,7 @@ function wkDates(off=0){const m=addD(mon(td()),off*7);return Array.from({length:
 
 /* --- 5. UI HELPERS ----------------------------------- */
 function hideLoader(){document.getElementById('loader').classList.add('out')}
-function showAuth(){const a=document.getElementById('authWrap');if(a){a.style.display='block';toggleAuth('in');}}
+function showAuth(){const a=document.getElementById('authWrap');if(a){a.style.display=window.innerWidth>=600?'flex':'block';toggleAuth('in');}}
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
 function showApp(){document.getElementById('app').style.cssText='display:flex;flex-direction:column';document.getElementById('bnav').style.display='flex'}
 function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none'}
@@ -109,8 +109,8 @@ function hideApp(){document.getElementById('app').style.display='none';document.
 function toggleAuth(m){
   const si=document.getElementById('siBox');
   const su=document.getElementById('suBox');
-  if(si) si.style.display=m==='in'?'block':'none';
-  if(su) su.style.display=m==='up'?'block':'none';
+  if(si) si.style.display=m==='in'?'flex':'none';
+  if(su) su.style.display=m==='up'?'flex':'none';
   ['siErr','siOk','suErr','suOk'].forEach(id=>{
     const e=document.getElementById(id);
     if(e){e.style.display='none';e.textContent='';}

@@ -29,7 +29,7 @@
   /* ── DARK THEME: Charcoal Grey Calm ── */
   --bg:#1A1D23;--surface:#20242C;--card:#272B34;--card2:#2E3340;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --teal:#4ECDC4;--teal2:#38B2AA;--teal-bg:rgba(78,205,196,0.10);--teal-bg2:rgba(78,205,196,0.18);
+  --teal:#05D9B4;--teal2:#03A88C;--teal-bg:rgba(5,217,180,0.08);--teal-bg2:rgba(5,217,180,0.15);
   --amber:#F5A623;--amber-bg:rgba(245,166,35,0.1);
   --red:#FF5757;--red-bg:rgba(255,87,87,0.1);
   --blue:#4F8EF7;--blue-bg:rgba(79,142,247,0.1);
@@ -799,7 +799,7 @@ body.light
 body.light 
 
 /* -- MORE MENU -- */
-.more-menu{position:fixed;bottom:calc(var(--nav-h) + max(var(--safe-bottom),env(safe-area-inset-bottom,0px)));left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--border);z-index:99;padding:8px 16px 16px;animation:slideUp 0.22s ease}
+.more-menu{position:fixed;bottom:calc(var(--nav-h) + max(var(--safe-bottom),env(safe-area-inset-bottom,0px)));left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;z-index:99;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));animation:slideUp 0.22s ease}
 @keyframes slideUp{from{transform:translateX(-50%) translateY(100%)}to{transform:translateX(-50%) translateY(0)}}
 .more-menu-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
 .more-menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -1008,8 +1008,8 @@ body.light .loc-card{box-shadow:0 1px 4px rgba(0,0,0,0.07)}
   --auth-text:#1C2B38;
   --auth-text2:#5A6B7A;
   --auth-text3:#96A3AF;
-  --auth-teal:#2BA99A;
-  --auth-teal-light:rgba(43,169,154,0.12);
+  --auth-teal:#05D9B4;
+  --auth-teal-light:rgba(5,217,180,0.12);
   --auth-border:#DDE5E8;
   --auth-shadow:rgba(0,0,0,0.06);
   --auth-input-bg:#F7FAF9;
@@ -1147,17 +1147,17 @@ body.light .loc-card{box-shadow:0 1px 4px rgba(0,0,0,0.07)}
 /* Submit button */
 .auth-submit-btn{
   width:100%;
-  background:linear-gradient(135deg,#2BA99A 0%,#3DC4B8 100%);
+  background:linear-gradient(135deg,#05D9B4 0%,#03C4A2 100%);
   color:#fff;border:none;border-radius:12px;
   padding:15px;font-family:'Inter',sans-serif;
   font-size:15px;font-weight:700;cursor:pointer;
   transition:all 0.18s ease;
-  box-shadow:0 4px 16px rgba(43,169,154,0.35);
+  box-shadow:0 4px 16px rgba(5,217,180,0.35);
   letter-spacing:0.2px;margin-top:4px;
 }
 .auth-submit-btn:hover{
   transform:translateY(-1px);
-  box-shadow:0 6px 20px rgba(43,169,154,0.4);
+  box-shadow:0 6px 20px rgba(5,217,180,0.4);
 }
 .auth-submit-btn:active{transform:scale(0.98);box-shadow:none}
 .auth-submit-btn:disabled{
@@ -1299,3 +1299,36 @@ body.light .loc-card{box-shadow:0 1px 4px rgba(0,0,0,0.07)}
   background:var(--auth-card);
 }
 
+
+/* ── DESKTOP AUTH FIX ── */
+@media(min-width:600px){
+  #authWrap{display:none;align-items:center;justify-content:center;background:var(--auth-bg);min-height:100vh}
+  .auth-screen{
+    position:relative;
+    width:420px;
+    max-height:95vh;
+    overflow-y:auto;
+    border-radius:24px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.12),0 4px 16px rgba(0,0,0,0.06);
+    flex-shrink:0;
+  }
+  .auth-blob{position:absolute}
+  .auth-form-wrap{border-radius:0 0 24px 24px}
+  .auth-footer{border-radius:0 0 24px 24px}
+  .auth-brand-wrap{padding-top:36px}
+}
+
+/* ── MOBILE MORE MENU FIX ── */
+.more-menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.more-item{background:var(--card2);border:1.5px solid var(--border);border-radius:12px;padding:14px 8px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all var(--t);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.more-item:active{transform:scale(0.96)}
+.more-item.on,.more-item:hover{border-color:var(--teal);background:var(--teal-bg)}
+.more-item-icon{width:42px;height:42px;border-radius:11px;background:var(--card);display:flex;align-items:center;justify-content:center;position:relative}
+.more-item-icon svg{width:22px;height:22px;stroke:var(--text2)}
+.more-item.on .more-item-icon svg,.more-item:hover .more-item-icon svg{stroke:var(--teal)}
+.more-item-label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.3px}
+.more-item.on .more-item-label,.more-item:hover .more-item-label{color:var(--teal)}
+
+/* Auth active state */
+.auth-submit-btn{color:#fff}
+body.light .auth-submit-btn{color:#04100D}
