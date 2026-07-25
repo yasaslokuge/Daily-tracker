@@ -899,73 +899,160 @@ async function submitJoinCompany(){
 async function renderCompanySettings(){
   const el=document.getElementById('companySettingsContent');
   if(!el||!COMPANY) return;
-  const members=await getCompanyMembers();
-  const isAdmin=MY_ROLE==='admin';
-  // Build member rows with editable display names for admins
-  const memberRows=members.map((m,idx)=>{
-    const isMe=m.user_id===ME.id;
-    const displayName=m.display_name||m.user_email.split('@')[0];
-    const nameField=isAdmin
-      ?`<input id="memName${idx}" value="${displayName}" style="background:var(--bg);border:1.5px solid var(--border2);border-radius:7px;color:var(--text);font-size:12px;font-weight:700;padding:5px 8px;outline:none;width:100%;margin-bottom:4px;font-family:Inter,sans-serif" placeholder="Display name" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'"/>`
-      :`<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px">${displayName}</div>`;
-    const roleField=isAdmin&&!isMe
-      ?`<select onchange="updateMemberRole('${m.user_id}',this.value)" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:4px 8px;cursor:pointer">
-          <option value="employee"${m.role==='employee'?' selected':''}>Employee</option>
-          <option value="employer"${m.role==='employer'?' selected':''}>Employer</option>
-          <option value="admin"${m.role==='admin'?' selected':''}>Admin</option>
-        </select>`
-      :`<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;background:var(--teal-bg);color:var(--teal)">${m.role}${isMe?' (you)':''}</span>`;
-    const saveBtn=isAdmin
-      ?`<button onclick="saveMemberName('${m.user_id}',document.getElementById('memName${idx}').value)" style="font-size:11px;font-weight:700;background:var(--teal);color:#04100D;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">Save</button>`
-      :'';
-    return '<div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-bottom:6px">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-      +'<div style="width:30px;height:30px;border-radius:50%;background:var(--teal-bg);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">'+displayName.charAt(0).toUpperCase()+'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +nameField
-      +'<div style="font-size:10px;color:var(--text3);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.user_email+'</div>'
-      +'</div>'
-      +'</div>'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-      +roleField
-      +saveBtn
-      +'</div>'
-      +'</div>';
-  }).join('');
+  const isAdmin=MY_ROLE==='admin'||MY_ROLE==='employer';
 
-  el.innerHTML=
-    '<div style="margin-bottom:14px">'
-    +'<div style="font-size:14px;font-weight:700;color:var(--text)">'+COMPANY.name+'</div>'
-    +'<div style="font-size:11px;color:var(--text3);font-family:monospace;margin-top:3px">Invite code: <span style="color:var(--teal);font-weight:700;letter-spacing:2px">'+COMPANY.invite_code+'</span></div>'
-    +'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+members.length+' member'+(members.length!==1?'s':'')+'</div>'
-    +'</div>'
-    +'<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Team Members</div>'
-    +memberRows
-    +(isAdmin
-      ?'<div style="margin-top:14px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Locations</div>'
-       +'<div id="coLocEditList">'
-       +LOCS.map((l,i)=>'<div style="display:flex;gap:6px;margin-bottom:6px">'
-         +'<input value="'+l.name+'" id="coLocEdit'+i+'" style="flex:1;background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none"/>'
-         +'</div>').join('')
-       +'</div>'
-       +'<button onclick="saveCoLocations()" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-top:6px">Save Locations</button>'
-      :'');
+  // Company info header
+  el.innerHTML=`
+    <div style="padding:16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${COMPANY.name}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">${MY_ROLE.charAt(0).toUpperCase()+MY_ROLE.slice(1)}</div>
+        </div>
+        ${isAdmin?`<button onclick="editCompanyName()" style="font-size:12px;font-weight:600;color:var(--teal);background:var(--teal-bg);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-family:Inter,sans-serif">Rename</button>`:''}
+      </div>
+    </div>
+    <div style="padding:14px 16px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Invite Code</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:22px;font-weight:700;color:var(--teal);font-family:'JetBrains Mono',monospace;letter-spacing:4px">${COMPANY.invite_code}</div>
+        <button onclick="copyInviteCode()" style="font-size:11px;font-weight:600;color:var(--text2);background:var(--card2);border:1px solid var(--border2);border-radius:7px;padding:5px 10px;cursor:pointer;font-family:Inter,sans-serif">Copy</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Share with new employees to let them join</div>
+    </div>`;
+
+  // Show management sections for admin/employer
+  const ls=document.getElementById('locationsSection');
+  const ts=document.getElementById('teamSection');
+  if(ls) ls.style.display=isAdmin?'block':'none';
+  if(ts) ts.style.display=isAdmin?'block':'none';
+  if(isAdmin){
+    renderLocationsList();
+    renderTeamList();
+  }
 }
 
-async function saveMemberName(userId, name){
-  const trimmed=name.trim();
-  if(!trimmed){showToast('Enter a name','warn');return;}
-  const{error}=await supabaseClient.from('company_members')
-    .update({display_name:trimmed})
-    .eq('user_id',userId).eq('company_id',COMPANY.id);
+function copyInviteCode(){
+  if(!COMPANY?.invite_code) return;
+  navigator.clipboard?.writeText(COMPANY.invite_code).then(()=>showToast('Invite code copied'));
+}
+
+async function editCompanyName(){
+  const name=prompt('New company name:',COMPANY?.name||'');
+  if(!name||!name.trim()) return;
+  const{error}=await supabaseClient.from('companies').update({name:name.trim()}).eq('id',COMPANY.id);
   if(error){showToast('Error: '+error.message,'warn');return;}
-  // Update local cache
-  const m=membersCache.find(x=>x.user_id===userId);
-  if(m) m.display_name=trimmed;
-  showToast('Name updated to '+trimmed);
-  // Refresh key picker cache
-  membersCacheLoaded=false;
+  COMPANY.name=name.trim();
+  renderCompanySettings();
+  showToast('Company name updated');
 }
+
+function showInviteCode(){
+  if(!COMPANY?.invite_code) return;
+  navigator.clipboard?.writeText(COMPANY.invite_code).then(()=>{
+    showToast('Invite code '+COMPANY.invite_code+' copied! Share with your new employee');
+  });
+}
+
+async function renderLocationsList(){
+  const el=document.getElementById('locationsList');
+  if(!el) return;
+  if(!LOCS.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">No locations yet</div>';return;}
+  el.innerHTML=LOCS.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:${i<LOCS.length-1?'1px solid var(--border)':'none'}">
+      <div style="width:36px;height:36px;border-radius:9px;background:${l.color||'var(--card2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.9)">${l.abbr||l.name.substring(0,2).toUpperCase()}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${l.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${l.id}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="editLocation(${i})" style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-bg);border:none;border-radius:7px;padding:5px 10px;cursor:pointer;font-family:Inter,sans-serif">Edit</button>
+        <button onclick="deleteLocation(${i})" style="font-size:11px;font-weight:600;color:var(--red);background:var(--red-bg);border:none;border-radius:7px;padding:5px 10px;cursor:pointer;font-family:Inter,sans-serif">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function addNewLocation(){
+  const name=prompt('Location name:');
+  if(!name||!name.trim()) return;
+  const abbr=name.trim().substring(0,2).toUpperCase();
+  const colors=['#2A3545','#1E3A35','#2A2040','#3A2525','#1A3045','#2A3530','#352A40'];
+  const color=colors[LOCS.length%colors.length];
+  const newLoc={id:'loc_'+Date.now(),name:name.trim(),abbr,color,img:'',keys:[]};
+  const updated=[...LOCS,newLoc];
+  const ok=await saveCompanyLocations(updated);
+  if(ok){renderLocationsList();renderLocGrid();showToast(name+' added');}
+  else showToast('Error saving location','warn');
+}
+
+async function editLocation(idx){
+  const loc=LOCS[idx];
+  if(!loc) return;
+  const name=prompt('Location name:',loc.name);
+  if(!name||!name.trim()) return;
+  const updated=LOCS.map((l,i)=>i===idx?{...l,name:name.trim(),abbr:name.trim().substring(0,2).toUpperCase()}:l);
+  const ok=await saveCompanyLocations(updated);
+  if(ok){renderLocationsList();renderLocGrid();showToast('Location updated');}
+  else showToast('Error saving','warn');
+}
+
+async function deleteLocation(idx){
+  const loc=LOCS[idx];
+  if(!loc) return;
+  if(!confirm('Delete '+loc.name+'? This cannot be undone.')) return;
+  const updated=LOCS.filter((_,i)=>i!==idx);
+  const ok=await saveCompanyLocations(updated);
+  if(ok){renderLocationsList();renderLocGrid();showToast(loc.name+' deleted');}
+  else showToast('Error deleting','warn');
+}
+
+async function renderTeamList(){
+  const el=document.getElementById('teamList');
+  if(!el) return;
+  const members=await getCompanyMembers(true);
+  if(!members.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">No team members yet</div>';return;}
+  const roleColors={admin:'var(--purple)',employer:'var(--blue)',employee:'var(--teal)'};
+  el.innerHTML=members.map((m,i)=>{
+    const name=getMemberName(m.user_email);
+    const isMe=m.user_id===ME?.id;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:${i<members.length-1?'1px solid var(--border)':'none'}">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;color:var(--text)">${name.charAt(0).toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${name}${isMe?' (you)':''}</div>
+        <div style="font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.user_email}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span style="font-size:10px;font-weight:700;color:${roleColors[m.role]||'var(--text3)'};background:${roleColors[m.role]||'var(--text3)'}18;border-radius:5px;padding:2px 8px">${m.role}</span>
+        ${MY_ROLE==='admin'&&!isMe?`
+        <div style="display:flex;gap:4px">
+          <button onclick="changeRole('${m.user_id}','${m.role}')" style="font-size:10px;color:var(--blue);background:var(--blue-bg);border:none;border-radius:5px;padding:2px 8px;cursor:pointer;font-family:Inter,sans-serif">Role</button>
+          <button onclick="removeMember('${m.user_id}','${name}')" style="font-size:10px;color:var(--red);background:var(--red-bg);border:none;border-radius:5px;padding:2px 8px;cursor:pointer;font-family:Inter,sans-serif">Remove</button>
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function changeRole(userId, currentRole){
+  const roles=['employee','employer','admin'];
+  const next=roles[(roles.indexOf(currentRole)+1)%roles.length];
+  if(!confirm('Change role to '+next+'?')) return;
+  const ok=await updateMemberRole(userId,next);
+  if(ok){membersCacheLoaded=false;renderTeamList();}
+}
+
+async function removeMember(userId, name){
+  if(!confirm('Remove '+name+' from the team? They will lose access to WorkTrace.')) return;
+  const{error}=await supabaseClient.from('company_members')
+    .delete().eq('user_id',userId).eq('company_id',COMPANY.id);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  membersCacheLoaded=false;
+  renderTeamList();
+  showToast(name+' removed from team');
+}
+
 
 async function saveCoLocations(){
   const inputs=document.querySelectorAll('[id^="coLocEdit"]');
@@ -1240,7 +1327,7 @@ function sv(name){
       if(ka) ka.style.display=isM?'block':'none';
       const hs=document.getElementById('historySection');
       if(hs) hs.style.display=MY_ROLE==='admin'?'block':'none';
-      // Render company settings
+      // Render company settings and management
       renderCompanySettings();
     }
     syncThemeToggle();
@@ -2877,6 +2964,14 @@ async function buildBorrowPersonPicker(){
 }
 
 /* --- GOOGLE SIGN IN ---------------------------------- */
+function togglePassVis(inputId, btn){
+  const inp=document.getElementById(inputId);
+  if(!inp) return;
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.style.color=show?'var(--teal)':'';
+}
+
 async function doGoogleSignIn(){
   try{
     const{error}=await sb.auth.signInWithOAuth({
