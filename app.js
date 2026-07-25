@@ -2120,16 +2120,26 @@ function toggleMoreMenu(){
   const nb=document.getElementById('nb-more');
   if(!m) return;
   const isOpen=m.style.display==='block';
-  m.style.display=isOpen?'none':'block';
-  if(o) o.style.display=isOpen?'none':'block';
-  if(nb) nb.classList.toggle('on',!isOpen);
+  if(isOpen){
+    m.style.display='none';
+    if(o){o.style.display='none';o.style.pointerEvents='none';}
+    if(nb) nb.classList.remove('on');
+  } else {
+    // Position above the nav bar
+    const navH=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'))||58;
+    const safeBottom=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom'))||0;
+    m.style.bottom=(navH+safeBottom)+'px';
+    m.style.display='block';
+    if(o){o.style.display='block';o.style.pointerEvents='auto';}
+    if(nb) nb.classList.add('on');
+  }
 }
 function closeMoreMenu(){
   const m=document.getElementById('moreMenu');
   const o=document.getElementById('moreOverlay');
   const nb=document.getElementById('nb-more');
   if(m) m.style.display='none';
-  if(o) o.style.display='none';
+  if(o){o.style.display='none';o.style.pointerEvents='none';}
   if(nb) nb.classList.remove('on');
 }
 
