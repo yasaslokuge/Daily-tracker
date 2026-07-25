@@ -99,7 +99,7 @@ function wkDates(off=0){const m=addD(mon(td()),off*7);return Array.from({length:
 
 /* --- 5. UI HELPERS ----------------------------------- */
 function hideLoader(){document.getElementById('loader').classList.add('out')}
-function showAuth(){const a=document.getElementById('authWrap');if(a){a.style.display=window.innerWidth>=600?'flex':'block';toggleAuth('in');}}
+function showAuth(){const a=document.getElementById('authWrap');if(a){a.style.display=window.innerWidth>=768?'flex':'block';toggleAuth('in');}}
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
 function showApp(){document.getElementById('app').style.cssText='display:flex;flex-direction:column';document.getElementById('bnav').style.display='flex'}
 function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none'}

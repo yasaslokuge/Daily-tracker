@@ -1334,3 +1334,177 @@ body.light .loc-card{box-shadow:0 1px 4px rgba(0,0,0,0.07)}
 /* Auth active state */
 .auth-submit-btn{color:#fff}
 body.light .auth-submit-btn{color:#04100D}
+
+/* ════════════════════════════════════════
+   DESKTOP AUTH — Two-panel split layout
+════════════════════════════════════════ */
+@media(min-width:768px){
+
+  #authWrap{
+    display:none;
+    position:fixed;inset:0;
+    background:#111418;
+    align-items:stretch;
+    justify-content:stretch;
+    z-index:200;
+  }
+
+  .auth-desktop-wrap{
+    position:relative;
+    display:flex !important;
+    flex-direction:row;
+    width:100%;
+    height:100vh;
+    border-radius:0;
+    box-shadow:none;
+    overflow:hidden;
+    animation:none;
+  }
+
+  /* LEFT HERO PANEL */
+  .auth-desktop-wrap::before{
+    content:'';
+    position:absolute;
+    inset:0;width:55%;
+    background:linear-gradient(145deg,#0D1117 0%,#141A22 60%,#0A1A1A 100%);
+    z-index:0;
+  }
+
+  /* Right form panel */
+  .auth-form-wrap{
+    position:relative;
+    z-index:10;
+    margin-left:55%;
+    width:45%;
+    min-width:380px;
+    max-width:520px;
+    height:100vh;
+    overflow-y:auto;
+    border-radius:0;
+    box-shadow:none;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:48px 52px;
+    margin-top:0;
+    flex-shrink:0;
+  }
+
+  /* Hero content on left */
+  .auth-brand-wrap{
+    position:absolute;
+    left:0;width:55%;
+    z-index:5;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:center;
+    padding:60px 64px;
+    height:100vh;
+    top:0;
+  }
+
+  .auth-logo-mark{
+    width:52px;height:52px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(5,217,180,0.3);
+    box-shadow:0 0 30px rgba(5,217,180,0.15);
+    margin-bottom:24px;
+  }
+
+  .auth-wordmark{
+    font-size:40px;
+    font-weight:800;
+    color:#fff;
+    letter-spacing:-1px;
+    line-height:1;
+    margin-bottom:12px;
+  }
+  .auth-wordmark span{color:var(--teal)}
+
+  .auth-tagline{
+    font-size:16px;
+    color:rgba(255,255,255,0.5);
+    margin-bottom:48px;
+    font-weight:400;
+  }
+
+  /* Hero illustration - replace the small SVG with large animated one */
+  .auth-illustration{
+    position:absolute;
+    inset:0;width:55%;
+    z-index:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+  }
+
+  .auth-illustration svg{
+    width:380px;height:380px;
+    opacity:0.6;
+  }
+
+  /* Hero feature pills */
+  .auth-feature-pills{
+    display:flex;flex-direction:column;gap:12px;
+    position:relative;z-index:5;
+  }
+  .auth-feature-pill{
+    display:flex;align-items:center;gap:12px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;padding:12px 16px;
+    backdrop-filter:blur(8px);
+  }
+  .auth-pill-icon{
+    width:32px;height:32px;border-radius:8px;
+    background:rgba(5,217,180,0.12);
+    border:1px solid rgba(5,217,180,0.2);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .auth-pill-icon svg{width:16px;height:16px;stroke:#05D9B4}
+  .auth-pill-text{font-size:13px;font-weight:500;color:rgba(255,255,255,0.75)}
+
+  /* Blobs behind hero */
+  .auth-blob{position:absolute;z-index:2}
+  .auth-blob-1{
+    width:400px;height:400px;
+    top:-100px;left:-80px;
+    background:radial-gradient(circle,rgba(5,217,180,0.12) 0%,transparent 65%);
+  }
+  .auth-blob-2{
+    width:300px;height:300px;
+    bottom:0;left:150px;
+    background:radial-gradient(circle,rgba(79,142,247,0.10) 0%,transparent 65%);
+  }
+
+  /* Animated flow lines behind hero */
+  .auth-flow-lines{
+    position:absolute;
+    inset:0;width:55%;
+    z-index:3;
+    overflow:hidden;
+    pointer-events:none;
+  }
+
+  /* Form adjustments on desktop */
+  .auth-h{font-size:28px}
+  .auth-sub{margin-bottom:28px}
+  .auth-footer{
+    position:absolute;
+    bottom:0;left:55%;right:0;
+    background:#fff;
+    padding-bottom:20px;
+  }
+
+  /* Remove mobile blobs from right panel */
+  .auth-desktop-wrap .auth-blob{display:block}
+  .auth-desktop-wrap .auth-blob-3{display:none}
+}
+
+@media(min-width:1100px){
+  .auth-brand-wrap{padding:60px 80px}
+  .auth-form-wrap{padding:48px 64px}
+}
