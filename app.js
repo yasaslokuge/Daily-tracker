@@ -101,8 +101,13 @@ function wkDates(off=0){const m=addD(mon(td()),off*7);return Array.from({length:
 function hideLoader(){document.getElementById('loader').classList.add('out')}
 function showAuth(){const a=document.getElementById('authWrap');if(a){a.style.display=window.innerWidth>=768?'flex':'block';toggleAuth('in');}}
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
-function showApp(){document.getElementById('app').style.cssText='display:flex;flex-direction:column';document.getElementById('bnav').style.display='flex'}
-function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none'}
+function showApp(){
+  const isDesktop=window.innerWidth>=900;
+  document.getElementById('app').style.cssText=isDesktop?'display:flex;flex-direction:row':'display:flex;flex-direction:column';
+  if(!isDesktop) document.getElementById('bnav').style.display='flex';
+  if(isDesktop) setTimeout(buildDesktopSidebar,50);
+}
+function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none';destroyDesktopSidebar();}
 
 
 /* --- 6. AUTH FUNCTIONS ------------------------------- */
@@ -1283,6 +1288,7 @@ function sv(name){
   const vEl=document.getElementById('v-'+name);
   if(vEl) vEl.classList.add('on');
   const nb=document.getElementById('nb-'+name);if(nb)nb.classList.add('on');
+  updateDesktopNav(name);
   // Update more-badge if any more-menu item is active
   const inMore=['rep','req','set'].includes(name);
   const moreBadge=document.getElementById('more-badge');
@@ -3000,6 +3006,99 @@ async function doGoogleSignIn(){
     console.error('Google sign in exception:',e);
     showToast('Google sign in failed','warn');
   }
+}
+
+/* --- DESKTOP SIDEBAR --------------------------------- */
+function buildDesktopSidebar(){
+  if(window.innerWidth < 900) return;
+  // Don't rebuild if already exists
+  if(document.getElementById('dt-sidebar')) return;
+
+  const app=document.getElementById('app');
+  if(!app) return;
+
+  const sidebar=document.createElement('div');
+  sidebar.id='dt-sidebar';
+  sidebar.className='dt-sidebar';
+  sidebar.innerHTML=`
+    <!-- Brand -->
+    <div class="dt-brand" onclick="sv('log')" style="cursor:pointer">
+      <div class="dt-brand-icon">W</div>
+      <div class="dt-brand-name">Work<span>Trace</span></div>
+    </div>
+
+    <!-- Nav items -->
+    <nav class="dt-nav">
+      <button class="dt-nav-item on" id="dt-log" onclick="sv('log')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Log
+      </button>
+      <button class="dt-nav-item" id="dt-dash" onclick="sv('dash')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Dashboard
+      </button>
+      <button class="dt-nav-item" id="dt-week" onclick="sv('week')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Week View
+      </button>
+      <button class="dt-nav-item" id="dt-sch" onclick="sv('sch')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Schedule
+      </button>
+      <div class="dt-nav-divider"></div>
+      <button class="dt-nav-item" id="dt-rep" onclick="sv('rep')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Report
+      </button>
+      <button class="dt-nav-item" id="dt-req" onclick="sv('req')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        Requests
+        <span id="dt-req-badge" class="dt-badge" style="display:none"></span>
+      </button>
+      <button class="dt-nav-item" id="dt-set" onclick="sv('set')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <!-- User info at bottom -->
+    <div class="dt-user-info">
+      <div class="dt-user-avatar" id="dt-avatar">Y</div>
+      <div class="dt-user-details">
+        <div class="dt-user-name" id="dt-username">User</div>
+        <div class="dt-user-role" id="dt-userrole">Employee</div>
+      </div>
+      <button onclick="doSignOut()" class="dt-signout" title="Sign out">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </button>
+    </div>
+  `;
+
+  // Insert sidebar as first child of app
+  app.insertBefore(sidebar, app.firstChild);
+
+  // Update user info
+  if(ME){
+    const name=getMemberName(ME.email);
+    const el=document.getElementById('dt-username');
+    const av=document.getElementById('dt-avatar');
+    const rl=document.getElementById('dt-userrole');
+    if(el) el.textContent=name;
+    if(av) av.textContent=name.charAt(0).toUpperCase();
+    if(rl) rl.textContent=MY_ROLE.charAt(0).toUpperCase()+MY_ROLE.slice(1);
+  }
+}
+
+function updateDesktopNav(name){
+  if(window.innerWidth < 900) return;
+  document.querySelectorAll('.dt-nav-item').forEach(b=>b.classList.remove('on'));
+  const active=document.getElementById('dt-'+name);
+  if(active) active.classList.add('on');
+}
+
+function destroyDesktopSidebar(){
+  const sb=document.getElementById('dt-sidebar');
+  if(sb) sb.remove();
 }
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */

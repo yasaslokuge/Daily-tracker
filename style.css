@@ -1335,179 +1335,6 @@ body.light .loc-card{box-shadow:0 1px 4px rgba(0,0,0,0.07)}
 .auth-submit-btn{color:#fff}
 body.light .auth-submit-btn{color:#04100D}
 
-/* ════════════════════════════════════════
-   DESKTOP AUTH — Two-panel split layout
-════════════════════════════════════════ */
-@media(min-width:768px){
-
-  #authWrap{
-    display:none;
-    position:fixed;inset:0;
-    background:#111418;
-    align-items:stretch;
-    justify-content:stretch;
-    z-index:200;
-  }
-
-  .auth-desktop-wrap{
-    position:relative;
-    display:flex !important;
-    flex-direction:row;
-    width:100%;
-    height:100vh;
-    border-radius:0;
-    box-shadow:none;
-    overflow:hidden;
-    animation:none;
-  }
-
-  /* LEFT HERO PANEL */
-  .auth-desktop-wrap::before{
-    content:'';
-    position:absolute;
-    inset:0;width:55%;
-    background:linear-gradient(145deg,#0D1117 0%,#141A22 60%,#0A1A1A 100%);
-    z-index:0;
-  }
-
-  /* Right form panel */
-  .auth-form-wrap{
-    position:relative;
-    z-index:10;
-    margin-left:55%;
-    width:45%;
-    min-width:380px;
-    max-width:520px;
-    height:100vh;
-    overflow-y:auto;
-    border-radius:0;
-    box-shadow:none;
-    background:#fff;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    padding:48px 52px;
-    margin-top:0;
-    flex-shrink:0;
-  }
-
-  /* Hero content on left */
-  .auth-brand-wrap{
-    position:absolute;
-    left:0;width:55%;
-    z-index:5;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    justify-content:center;
-    padding:60px 64px;
-    height:100vh;
-    top:0;
-  }
-
-  .auth-logo-mark{
-    width:52px;height:52px;
-    background:rgba(255,255,255,0.08);
-    border:1px solid rgba(5,217,180,0.3);
-    box-shadow:0 0 30px rgba(5,217,180,0.15);
-    margin-bottom:24px;
-  }
-
-  .auth-wordmark{
-    font-size:40px;
-    font-weight:800;
-    color:#fff;
-    letter-spacing:-1px;
-    line-height:1;
-    margin-bottom:12px;
-  }
-  .auth-wordmark span{color:var(--teal)}
-
-  .auth-tagline{
-    font-size:16px;
-    color:rgba(255,255,255,0.5);
-    margin-bottom:48px;
-    font-weight:400;
-  }
-
-  /* Hero illustration - replace the small SVG with large animated one */
-  .auth-illustration{
-    position:absolute;
-    inset:0;width:55%;
-    z-index:1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    pointer-events:none;
-  }
-
-  .auth-illustration svg{
-    width:380px;height:380px;
-    opacity:0.6;
-  }
-
-  /* Hero feature pills */
-  .auth-feature-pills{
-    display:flex;flex-direction:column;gap:12px;
-    position:relative;z-index:5;
-  }
-  .auth-feature-pill{
-    display:flex;align-items:center;gap:12px;
-    background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:12px;padding:12px 16px;
-    backdrop-filter:blur(8px);
-  }
-  .auth-pill-icon{
-    width:32px;height:32px;border-radius:8px;
-    background:rgba(5,217,180,0.12);
-    border:1px solid rgba(5,217,180,0.2);
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  .auth-pill-icon svg{width:16px;height:16px;stroke:#05D9B4}
-  .auth-pill-text{font-size:13px;font-weight:500;color:rgba(255,255,255,0.75)}
-
-  /* Blobs behind hero */
-  .auth-blob{position:absolute;z-index:2}
-  .auth-blob-1{
-    width:400px;height:400px;
-    top:-100px;left:-80px;
-    background:radial-gradient(circle,rgba(5,217,180,0.12) 0%,transparent 65%);
-  }
-  .auth-blob-2{
-    width:300px;height:300px;
-    bottom:0;left:150px;
-    background:radial-gradient(circle,rgba(79,142,247,0.10) 0%,transparent 65%);
-  }
-
-  /* Animated flow lines behind hero */
-  .auth-flow-lines{
-    position:absolute;
-    inset:0;width:55%;
-    z-index:3;
-    overflow:hidden;
-    pointer-events:none;
-  }
-
-  /* Form adjustments on desktop */
-  .auth-h{font-size:28px}
-  .auth-sub{margin-bottom:28px}
-  .auth-footer{
-    position:absolute;
-    bottom:0;left:55%;right:0;
-    background:#fff;
-    padding-bottom:20px;
-  }
-
-  /* Remove mobile blobs from right panel */
-  .auth-desktop-wrap .auth-blob{display:block}
-  .auth-desktop-wrap .auth-blob-3{display:none}
-}
-
-@media(min-width:1100px){
-  .auth-brand-wrap{padding:60px 80px}
-  .auth-form-wrap{padding:48px 64px}
-}
 
 /* ── MOBILE AUTH FIX — no scroll needed ── */
 @media(max-width:767px){
@@ -1558,4 +1385,274 @@ body.light .auth-submit-btn{color:#04100D}
     padding:8px 0 calc(12px + env(safe-area-inset-bottom,0px));
     flex-shrink:0;
   }
+}
+
+/* ════════════════════════════════════════
+   DESKTOP SHELL — Sidebar layout
+   Only active at 900px+, mobile unchanged
+════════════════════════════════════════ */
+@media(min-width:900px){
+
+  /* Full viewport layout */
+  body{overflow:hidden;height:100vh}
+
+  #app{
+    display:none;
+    flex-direction:row !important;
+    height:100vh;
+    max-width:100% !important;
+    border:none !important;
+    position:fixed;inset:0;
+  }
+
+  /* ── SIDEBAR ── */
+  .topbar{
+    position:relative;
+    top:auto;
+    width:220px;
+    min-width:220px;
+    height:100vh;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:flex-start;
+    padding:0;
+    border-bottom:none;
+    border-right:1px solid var(--border);
+    background:var(--surface);
+    backdrop-filter:none;
+    gap:0;
+    flex-shrink:0;
+    overflow:visible;
+    z-index:10;
+  }
+
+  /* Brand at top of sidebar */
+  .tb-brand{
+    padding:22px 20px 18px;
+    border-bottom:1px solid var(--border);
+    width:100%;
+    display:flex;align-items:center;gap:10px;
+  }
+  .tb-dot{width:28px;height:28px;border-radius:8px;background:var(--teal);box-shadow:none;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .tb-dot::after{content:'W';font-size:13px;font-weight:800;color:#04100D}
+  .tb-name{font-size:17px;font-weight:700;color:var(--text)}
+  .tb-name span{color:var(--teal)}
+
+  /* Nav items in sidebar */
+  .tb-r{
+    display:flex;flex-direction:column;
+    width:100%;padding:12px 10px;
+    gap:2px;flex:1;
+  }
+
+  /* User info at bottom of sidebar */
+  .tb-user{
+    font-size:12px;color:var(--text2);
+    padding:4px 10px 2px;
+    border-top:1px solid var(--border);
+    margin-top:auto;
+  }
+
+  /* Sidebar nav buttons (the view switchers) */
+  .tb-r .tb-user,
+  .tb-r #tbRole,
+  .tb-r .btn-so,
+  .tb-r button[onclick*="openKeyRequestPanel"]{
+    display:block;width:100%;
+  }
+
+  #tbRole{
+    display:block;
+    font-size:10px;padding:2px 10px 8px;
+    color:var(--text3);
+    background:none;border-radius:0;
+    text-transform:uppercase;letter-spacing:1px;
+  }
+
+  .btn-so{
+    margin:0 0 8px;width:calc(100% - 20px);
+    margin-left:10px;
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:12px;
+    background:var(--card2);
+    color:var(--text2);
+    border:1px solid var(--border2);
+    text-align:left;
+    cursor:pointer;
+    transition:all var(--t);
+  }
+  .btn-so:hover{color:var(--red);border-color:rgba(224,112,112,0.3)}
+
+  /* ── SIDEBAR NAV LINKS (from bnav) ── */
+  .bnav{
+    position:relative;
+    bottom:auto;left:auto;
+    transform:none;
+    width:220px;
+    min-width:220px;
+    height:100vh;
+    display:flex !important;
+    flex-direction:column;
+    border-top:none;
+    border-right:1px solid var(--border);
+    background:var(--surface);
+    padding:12px 10px;
+    gap:2px;
+    align-items:stretch;
+    justify-content:flex-start;
+    z-index:10;
+    /* Hide default bnav - replaced by sidebar */
+    display:none !important;
+  }
+
+  /* Main content area */
+  .view{
+    flex:1;
+    height:100vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:24px;
+  }
+
+  /* Content wrapper fills space after sidebar */
+  #app > .topbar ~ .view,
+  #app > .view{
+    margin-left:0;
+  }
+
+  /* Credit line */
+  .credit{display:none}
+
+  /* Hide mobile bottom nav */
+  .bnav{display:none !important}
+}
+
+/* ════════════════════════════════════════
+   DESKTOP SHELL — Sidebar + content area
+════════════════════════════════════════ */
+@media(min-width:900px){
+
+  body{overflow:hidden;height:100vh;height:100dvh}
+
+  #app{
+    flex-direction:row !important;
+    height:100vh;height:100dvh;
+    max-width:100% !important;
+    width:100% !important;
+    border:none !important;
+    position:fixed;inset:0;
+    padding-bottom:0 !important;
+  }
+
+  /* Hide mobile topbar and bottom nav on desktop */
+  .topbar{display:none !important}
+  .bnav{display:none !important}
+  .credit{display:none}
+
+  /* All views fill remaining space */
+  .view{
+    flex:1;
+    height:100vh;
+    height:100dvh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:40px;
+  }
+
+  /* ── SIDEBAR ── */
+  .dt-sidebar{
+    width:220px;
+    min-width:220px;
+    height:100vh;
+    height:100dvh;
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+    overflow:hidden;
+    z-index:50;
+  }
+
+  .dt-brand{
+    padding:20px 18px 16px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;
+    flex-shrink:0;
+  }
+  .dt-brand-icon{
+    width:30px;height:30px;border-radius:8px;
+    background:var(--teal);
+    color:#04100D;font-size:14px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .dt-brand-name{font-size:16px;font-weight:700;color:var(--text)}
+  .dt-brand-name span{color:var(--teal)}
+
+  /* Nav */
+  .dt-nav{
+    flex:1;padding:10px 8px;
+    display:flex;flex-direction:column;gap:1px;
+    overflow-y:auto;
+  }
+  .dt-nav-item{
+    display:flex;align-items:center;gap:11px;
+    padding:10px 12px;
+    border-radius:9px;border:none;
+    background:none;
+    color:var(--text2);
+    font-family:'Inter',sans-serif;
+    font-size:13px;font-weight:500;
+    cursor:pointer;
+    transition:all var(--t);
+    text-align:left;
+    -webkit-tap-highlight-color:transparent;
+    position:relative;
+  }
+  .dt-nav-item svg{width:18px;height:18px;stroke:currentColor;flex-shrink:0}
+  .dt-nav-item:hover{background:var(--card);color:var(--text)}
+  .dt-nav-item.on{
+    background:var(--teal-bg);
+    color:var(--teal);
+    font-weight:600;
+  }
+  .dt-nav-item.on svg{stroke:var(--teal)}
+  .dt-nav-divider{height:1px;background:var(--border);margin:8px 4px}
+  .dt-badge{
+    margin-left:auto;
+    background:var(--red);color:#fff;
+    border-radius:10px;padding:1px 6px;
+    font-size:10px;font-weight:700;
+  }
+
+  /* User info at bottom */
+  .dt-user-info{
+    padding:12px 14px;
+    border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;
+    flex-shrink:0;
+  }
+  .dt-user-avatar{
+    width:32px;height:32px;border-radius:50%;
+    background:var(--teal-bg);border:1.5px solid var(--teal);
+    color:var(--teal);font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .dt-user-details{flex:1;min-width:0}
+  .dt-user-name{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dt-user-role{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:1px}
+  .dt-signout{
+    background:none;border:none;cursor:pointer;
+    color:var(--text3);padding:4px;
+    border-radius:6px;transition:all var(--t);
+    display:flex;align-items:center;
+    flex-shrink:0;
+  }
+  .dt-signout:hover{color:var(--red);background:var(--red-bg)}
+
+  body.light .dt-sidebar{background:#F8F9FB}
+  body.light .dt-nav-item.on{background:rgba(0,184,154,0.08)}
 }
