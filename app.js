@@ -3020,6 +3020,15 @@ function buildDesktopSidebar(){
   const sidebar=document.createElement('div');
   sidebar.id='dt-sidebar';
   sidebar.className='dt-sidebar';
+  // Build online members avatars
+  const onlineMembers=membersCache.filter(m=>m.user_id!==ME?.id).slice(0,4);
+  const totalOnline=membersCache.length;
+  const extraCount=Math.max(0,totalOnline-onlineMembers.length-1);
+  const avatarHtml=membersCache.slice(0,4).map(m=>{
+    const name=getMemberName(m.user_email);
+    return `<div class="dt-online-av" title="${name}">${name.charAt(0).toUpperCase()}</div>`;
+  }).join('')+(extraCount>0?`<div class="dt-online-more">+${extraCount}</div>`:'');
+
   sidebar.innerHTML=`
     <!-- Brand -->
     <div class="dt-brand" onclick="sv('log')" style="cursor:pointer">
@@ -3061,15 +3070,28 @@ function buildDesktopSidebar(){
       </button>
     </nav>
 
+    <!-- Online members card -->
+    ${totalOnline>0?`<div class="dt-online-card">
+      <div class="dt-online-header">
+        <div class="dt-online-dot"></div>
+        <span class="dt-online-label">Team Members</span>
+        <span class="dt-online-count">${totalOnline} active</span>
+      </div>
+      <div class="dt-online-avatars">${avatarHtml}</div>
+    </div>`:''}
+
     <!-- User info at bottom -->
     <div class="dt-user-info">
-      <div class="dt-user-avatar" id="dt-avatar">Y</div>
+      <div class="dt-user-avatar-wrap">
+        <div class="dt-user-avatar" id="dt-avatar">Y</div>
+        <div class="dt-user-online-dot" title="Online"></div>
+      </div>
       <div class="dt-user-details">
         <div class="dt-user-name" id="dt-username">User</div>
         <div class="dt-user-role" id="dt-userrole">Employee</div>
       </div>
       <button onclick="doSignOut()" class="dt-signout" title="Sign out">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
       </button>
     </div>
   `;
