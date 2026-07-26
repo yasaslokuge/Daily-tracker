@@ -689,37 +689,61 @@ async function saveKeyHolder(){
 
 async function loadMyCompany(){
   try{
-    const{data:memberships,error:me}=await supabaseClient
-      .from('company_members').select('*').eq('user_id',ME.id).limit(1);
+    // Try user_id first, then email as fallback (handles RLS edge cases)
+    let memberships=null;
+    const{data:d1,error:e1}=await supabaseClient
+      .from('company_members').select('*').eq('user_id',ME.id);
+    if(e1||!d1||!d1.length){
+      if(e1) console.error('user_id query failed:',e1.message);
+      const{data:d2,error:e2}=await supabaseClient
+        .from('company_members').select('*').eq('user_email',ME.email);
+      if(e2) console.error('email query failed:',e2.message);
+      memberships=(d2&&d2.length?d2:d1)||[];
+    } else {
+      memberships=d1;
+    }
     if(me){
       console.error('company_members error:',me.message,me.code);
-      // If it's a network error, propagate null to trigger retry
       return null;
     }
     if(!memberships||!memberships.length){
-      console.log('No company membership found for',ME.email);
+      console.log('No membership found for',ME.email,'id:',ME.id);
       return null;
     }
-    const membership=memberships[0];
-    MY_ROLE=membership.role;
+    console.log('Found',memberships.length,'membership(s)');
+    const companyIds=[...new Set(memberships.map(m=>m.company_id))];
     const{data:companies,error:ce}=await supabaseClient
-      .from('companies').select('*').eq('id',membership.company_id).limit(1);
+      .from('companies').select('*').in('id',companyIds);
     if(ce){console.error('companies error:',ce.message);return null;}
     if(!companies||!companies.length){
-      console.error('Company not found for id',membership.company_id);
+      console.error('No companies found for memberships');
       return null;
     }
-    const company=companies[0];
-    COMPANY=company;
-    if(company.locations&&company.locations.length>0){
-      LOCS=company.locations.map(l=>({...l,keys:[]}));
+    // Pick the company with the most locations (most likely the real one)
+    // Fall back to admin role company, then first
+    let best=null;
+    let bestMembership=null;
+    for(const m of memberships){
+      const co=companies.find(c=>c.id===m.company_id);
+      if(!co) continue;
+      const locCount=(co.locations||[]).length;
+      if(!best || locCount>(best.locations||[]).length || m.role==='admin'){
+        best=co;
+        bestMembership=m;
+      }
+    }
+    if(!best){best=companies[0];bestMembership=memberships[0];}
+    MY_ROLE=bestMembership.role;
+    COMPANY=best;
+    if(best.locations&&best.locations.length>0){
+      LOCS=best.locations.map(l=>({...l,keys:[]}));
       console.log('LOCS set from company:',LOCS.length,'locations:',LOCS.map(l=>l.name).join(', '));
     } else {
       LOCS=[...DEFAULT_LOCS];
       console.log('LOCS fallback to DEFAULT_LOCS:',LOCS.length);
     }
-    console.log('Company loaded:',company.name,'Role:',MY_ROLE);
-    return company;
+    console.log('Company loaded:',best.name,'Role:',MY_ROLE,'('+memberships.length+' memberships found)');
+    return best;
   }catch(e){
     console.error('loadMyCompany exception:',e);
     return null;
@@ -1625,67 +1649,130 @@ function buildRepImageCard(){
 
 // -- Generate PNG and trigger download / share --
 async function saveRepImage(){
-  const btn = document.getElementById('btnImage');
-  if(btn){ btn.disabled=true; btn.textContent='Generating...'; }
-
+  const btn=document.getElementById('btnImage');
+  if(btn){btn.disabled=true;btn.textContent='Generating...';}
   try{
-    buildRepImageCard();
-    const card = document.getElementById('repImageCard');
+    // Build report data
+    const range=document.getElementById('rvRange')?.textContent||'';
+    const lines=(document.getElementById('rvText')?.textContent||'').split('\n');
+    const statsEl=document.getElementById('rvStats');
+    const vals=[...( statsEl?.querySelectorAll('.rv-val')||[])].map(v=>v.textContent);
+    const lbls=[...(statsEl?.querySelectorAll('.rv-lbl')||[])].map(v=>v.textContent);
 
-    // Briefly make visible for html2canvas
-    card.style.left = '-9999px';
-    card.style.top = '0';
-    card.style.display = 'block';
+    // Canvas dimensions
+    const W=800,PADDING=40,lineH=22,statH=90,headerH=120;
+    const bodyLines=lines.filter(l=>l!==undefined);
+    const H=headerH+statH+40+bodyLines.length*lineH+PADDING*2+60;
 
-    await new Promise(r=>setTimeout(r,100)); // let DOM paint
+    const canvas=document.createElement('canvas');
+    canvas.width=W*2;canvas.height=H*2; // retina
+    const ctx=canvas.getContext('2d');
+    ctx.scale(2,2);
 
-    const canvas = await html2canvas(card, {
-      backgroundColor: '#0F1923',
-      scale: 2,          // retina quality
-      useCORS: true,
-      logging: false,
-      width: 380,
+    // Background
+    ctx.fillStyle='#1A1D23';
+    ctx.fillRect(0,0,W,H);
+
+    // Top teal bar
+    ctx.fillStyle='#05D9B4';
+    ctx.fillRect(0,0,W,4);
+
+    // Header
+    ctx.fillStyle='#05D9B4';
+    ctx.font='bold 22px monospace';
+    ctx.fillText('WorkTrace',PADDING,44);
+    ctx.fillStyle='#8A95A3';
+    ctx.font='12px monospace';
+    ctx.fillText('Work Location Report',PADDING,64);
+    ctx.fillStyle='#E8ECF0';
+    ctx.font='bold 13px monospace';
+    ctx.fillText(range,PADDING,88);
+
+    // Divider
+    ctx.fillStyle='#2E3340';
+    ctx.fillRect(PADDING,100,W-PADDING*2,1);
+
+    // Stats row
+    const statColors=['#05D9B4','#6B9FE4','#E8A84C'];
+    const statW=(W-PADDING*2)/3;
+    vals.forEach((val,i)=>{
+      const sx=PADDING+i*statW;
+      const sy=110;
+      ctx.fillStyle='#272B34';
+      roundRect(ctx,sx,sy,statW-10,70,8);
+      ctx.fillStyle=statColors[i]||'#05D9B4';
+      ctx.fillRect(sx,sy,statW-10,3); // top accent
+      ctx.font='bold 28px monospace';
+      ctx.fillStyle=statColors[i]||'#05D9B4';
+      ctx.fillText(val,sx+16,sy+36);
+      ctx.font='10px monospace';
+      ctx.fillStyle='#8A95A3';
+      ctx.fillText((lbls[i]||'').toUpperCase(),sx+16,sy+56);
     });
 
-    card.style.left = '-9999px'; // hide again
+    // Body lines
+    let y=headerH+statH+20;
+    lines.forEach(line=>{
+      if(!line.trim()){y+=lineH*0.5;return;}
+      const isDay=/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/.test(line.trim());
+      const isBullet=line.trim().startsWith('*')||line.trim().startsWith('-');
+      const isTotal=line.startsWith('Days worked')||line.startsWith('Total')||line.startsWith('Supply');
+      const isSep=line.startsWith('---')||line.startsWith('===');
+      const isTitle=line.startsWith('WORK');
 
-    const dataUrl = canvas.toDataURL('image/png');
-
-    // Convert canvas to blob directly (no fetch needed - avoids CSP issues)
-    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-    const file = new File([blob], 'worktrace-report-'+new Date().toISOString().slice(0,10)+'.png', {type:'image/png'});
-
-    // Try native share with file (iOS/Android)
-    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-      try{
-        await navigator.share({title:'WorkTrace - Weekly Report', files:[file]});
-        showToast('Image shared');
-        return;
-      }catch(e){
-        if(e.name==='AbortError'){return;} // user cancelled
-        // Share failed - fall through to download
+      if(isSep){
+        ctx.fillStyle='#2E3340';
+        ctx.fillRect(PADDING,y+8,W-PADDING*2,1);
+        y+=lineH*0.7;return;
       }
+      if(isTitle){y+=lineH*0.3;return;}
+
+      let color='#525C6B',weight='normal',size=11;
+      if(isDay){color='#E8ECF0';weight='bold';size=13;}
+      else if(isBullet){color='#05D9B4';size=11;}
+      else if(isTotal){color='#E8ECF0';weight='600';size=11;}
+
+      ctx.font=weight+' '+size+'px monospace';
+      ctx.fillStyle=color;
+      const indent=isBullet?PADDING+16:PADDING;
+      ctx.fillText(line.trim().substring(0,70),indent,y+lineH*0.75);
+      y+=lineH;
+    });
+
+    // Footer
+    ctx.fillStyle='#525C6B';
+    ctx.font='10px monospace';
+    ctx.fillText('Generated by WorkTrace  ·  '+new Date().toLocaleDateString('en-NZ'),PADDING,H-16);
+
+    // Export
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/png',0.95));
+    const fname='worktrace-report-'+new Date().toISOString().slice(0,10)+'.png';
+    const file=new File([blob],fname,{type:'image/png'});
+
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({title:'WorkTrace Report',files:[file]});showToast('Report shared');return;}
+      catch(e){if(e.name==='AbortError')return;}
     }
-
-    // Fallback - download link
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'worktrace-report-'+new Date().toISOString().slice(0,10)+'.png';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-    showToast('Image saved to downloads');
-
-  } catch(e){
-    console.error('Image generation error:', e);
-    showToast('Could not generate image','warn');
+    // Download fallback
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=fname;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(a.href);
+    showToast('Report image saved');
+  }catch(e){
+    console.error('saveRepImage error:',e);
+    showToast('Could not generate image: '+e.message,'warn');
   }
+  if(btn){btn.disabled=false;btn.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Save Image';}
+}
 
-  if(btn){
-    btn.disabled=false;
-    btn.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Save Image';
-  }
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();
 }
 
 function copyRep(){navigator.clipboard.writeText(document.getElementById('rvText').textContent).then(()=>showToast('Copied to clipboard')).catch(()=>showToast('Select and copy manually'))}
