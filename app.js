@@ -1168,18 +1168,44 @@ async function initApp(u){
     company=await loadMyCompany();
   }
   if(!company){
-    // Genuinely not in a company - check if it's a network issue
+    // Last resort: try loading company directly by known company IDs
+    console.log('loadMyCompany failed - trying direct company load');
+    try{
+      // Try to find any company where this email is listed
+      const{data:{session}}=await sb.auth.getSession();
+      const token=session?.access_token;
+      if(token){
+        // Fetch all companies and check membership via email
+        const res=await fetch(SUPABASE_URL+'/rest/v1/company_members?select=*,companies(*)&user_email=eq.'+encodeURIComponent(ME.email),{
+          headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}
+        });
+        if(res.ok){
+          const rows=await res.json();
+          console.log('Direct email lookup rows:',rows?.length);
+          if(rows&&rows.length){
+            const m=rows[0];
+            MY_ROLE=m.role;
+            if(m.companies){
+              company=m.companies;
+              COMPANY=company;
+              if(company.locations&&company.locations.length>0){
+                LOCS=company.locations.map(l=>({...l,keys:[]}));
+              }
+              console.log('Direct load success:',company.name);
+            }
+          }
+        }
+      }
+    }catch(de){console.error('Direct load error:',de);}
+  }
+
+  if(!company){
     const online=navigator.onLine;
     if(!online){
-      showToast('No internet connection. Please reconnect and refresh.','warn');
-      hideLoader();
-      showAuth();
-      return;
+      showToast('No internet - please reconnect and refresh.','warn');
+      hideLoader();showAuth();return;
     }
-    // User not in a company yet - show company setup
-    hideAuth();
-    showCompanySetup();
-    return;
+    hideAuth();showCompanySetup();return;
   }
   // Update role badge in topbar
   const roleEl=document.getElementById('tbRole');
