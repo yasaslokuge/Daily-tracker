@@ -99,7 +99,17 @@ function wkDates(off=0){const m=addD(mon(td()),off*7);return Array.from({length:
 
 /* --- 5. UI HELPERS ----------------------------------- */
 function hideLoader(){document.getElementById('loader').classList.add('out')}
-function showAuth(){const a=document.getElementById('authWrap');if(a){a.style.display=window.innerWidth>=768?'flex':'block';toggleAuth('in');}}
+function showAuth(){
+  const a=document.getElementById('authWrap');
+  if(!a) return;
+  const isDesktop=window.innerWidth>=768;
+  a.style.display=isDesktop?'flex':'block';
+  // On desktop ensure it covers full screen
+  if(isDesktop){
+    a.style.cssText='display:flex;position:fixed;inset:0;z-index:200;align-items:stretch';
+  }
+  toggleAuth('in');
+}
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
 function showApp(){
   const isDesktop=window.innerWidth>=900;
@@ -114,8 +124,9 @@ function hideApp(){document.getElementById('app').style.display='none';document.
 function toggleAuth(m){
   const si=document.getElementById('siBox');
   const su=document.getElementById('suBox');
-  if(si) si.style.display=m==='in'?'flex':'none';
-  if(su) su.style.display=m==='up'?'flex':'none';
+  const isDesktop=window.innerWidth>=768;
+  if(si) si.style.display=m==='in'?(isDesktop?'flex':'flex'):'none';
+  if(su) su.style.display=m==='up'?(isDesktop?'flex':'flex'):'none';
   ['siErr','siOk','suErr','suOk'].forEach(id=>{
     const e=document.getElementById(id);
     if(e){e.style.display='none';e.textContent='';}
