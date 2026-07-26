@@ -84,7 +84,7 @@ const DFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sund
 
 
 /* --- 3. STATE VARIABLES ------------------------------ */
-let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,repMode='week',repMonthOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null;
+let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,repMode='week',repMonthOff=0,cache={},assignedPeople=new Set(),tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null;
 
 
 /* --- 4. DATE UTILITIES ------------------------------- */
@@ -1022,24 +1022,37 @@ async function deleteLocation(idx){
 async function renderTeamList(){
   const el=document.getElementById('teamList');
   if(!el) return;
+  el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Loading...</div>';
   const members=await getCompanyMembers(true);
-  if(!members.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">No team members yet</div>';return;}
+  if(!members.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">No team members yet.<br>Share your invite code to add people.</div>';
+    return;
+  }
   const roleColors={admin:'var(--purple)',employer:'var(--blue)',employee:'var(--teal)'};
+  const canManage=MY_ROLE==='admin'||MY_ROLE==='employer';
   el.innerHTML=members.map((m,i)=>{
     const name=getMemberName(m.user_email);
     const isMe=m.user_id===ME?.id;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:${i<members.length-1?'1px solid var(--border)':'none'}">
-      <div style="width:36px;height:36px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;color:var(--text)">${name.charAt(0).toUpperCase()}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--text)">${name}${isMe?' (you)':''}</div>
-        <div style="font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.user_email}</div>
+    const roleBg=m.role==='admin'?'rgba(155,142,196,0.12)':m.role==='employer'?'rgba(107,159,228,0.12)':'rgba(5,217,180,0.10)';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:${i<members.length-1?'1px solid var(--border)':'none'}">
+      <!-- Avatar -->
+      <div style="position:relative;flex-shrink:0">
+        <div style="width:38px;height:38px;border-radius:50%;background:${roleColors[m.role]||'var(--card2)'}22;border:2px solid ${roleColors[m.role]||'var(--border2)'};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${roleColors[m.role]||'var(--text)'}">
+          ${name.charAt(0).toUpperCase()}
+        </div>
+        ${isMe?'<div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#4CAF50;border:2px solid var(--card)"></div>':''}
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <span style="font-size:10px;font-weight:700;color:${roleColors[m.role]||'var(--text3)'};background:${roleColors[m.role]||'var(--text3)'}18;border-radius:5px;padding:2px 8px">${m.role}</span>
-        ${MY_ROLE==='admin'&&!isMe?`
-        <div style="display:flex;gap:4px">
-          <button onclick="changeRole('${m.user_id}','${m.role}')" style="font-size:10px;color:var(--blue);background:var(--blue-bg);border:none;border-radius:5px;padding:2px 8px;cursor:pointer;font-family:Inter,sans-serif">Role</button>
-          <button onclick="removeMember('${m.user_id}','${name}')" style="font-size:10px;color:var(--red);background:var(--red-bg);border:none;border-radius:5px;padding:2px 8px;cursor:pointer;font-family:Inter,sans-serif">Remove</button>
+      <!-- Info -->
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${name}${isMe?' <span style="font-size:10px;color:var(--text3);font-weight:400">(you)</span>':''}</div>
+        <div style="font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${m.user_email}</div>
+      </div>
+      <!-- Role + actions -->
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        <span style="font-size:10px;font-weight:700;color:${roleColors[m.role]||'var(--text3)'};background:${roleBg};border-radius:20px;padding:3px 9px;text-transform:uppercase;letter-spacing:0.5px">${m.role}</span>
+        ${canManage&&!isMe?`<div style="display:flex;gap:5px">
+          <button onclick="changeRole('${m.user_id}','${m.role}')" style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-bg);border:1px solid rgba(107,159,228,0.2);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:Inter,sans-serif;transition:all var(--t)">Change Role</button>
+          ${MY_ROLE==='admin'?`<button onclick="removeMember('${m.user_id}','${name}')" style="font-size:11px;font-weight:600;color:var(--red);background:var(--red-bg);border:1px solid rgba(224,112,112,0.2);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:Inter,sans-serif">Remove</button>`:''}
         </div>`:''}
       </div>
     </div>`;
@@ -1892,13 +1905,10 @@ async function navSch(dir){schOff+=dir;await renderSchedule();}
 
 /* --- 19. ASSIGNMENT MODAL ---------------------------- */
 // Modal
-function openModal(){
+async function openModal(){
   const overlay=document.getElementById('assignModal');
   if(!overlay){showToast('Modal missing','warn');return;}
-  dayConfigs={};
-  activeConfigDay=null;
-  const emailEl=document.getElementById('assignEmail');
-  if(emailEl) emailEl.value='';
+  dayConfigs={};activeConfigDay=null;assignedPeople=new Set();
   const dates=wkDates(schOff);
   const dc=document.getElementById('modalDays');
   if(dc) dc.innerHTML=DABB.map((d,i)=>{
@@ -1910,10 +1920,62 @@ function openModal(){
   if(cfg) cfg.style.display='none';
   const sum=document.getElementById('modalDaySummary');
   if(sum) sum.innerHTML='';
+  await buildAssignPeoplePicker();
   overlay.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
   const sheet=overlay.querySelector('.modal-sheet');
   if(sheet) sheet.scrollTop=0;
 }
+
+async function buildAssignPeoplePicker(){
+  const picker=document.getElementById('assignPeoplePicker');
+  if(!picker) return;
+  const members=await getCompanyMembers(true);
+  picker.innerHTML='';
+  members.forEach(m=>{
+    const name=getMemberName(m.user_email);
+    const btn=document.createElement('button');
+    btn.className='key-member-btn';
+    btn.dataset.email=m.user_email;
+    btn.innerHTML=`<span class="key-member-avatar">${name.charAt(0).toUpperCase()}</span>`
+      +`<span style="display:flex;flex-direction:column;gap:1px">`
+      +`<span style="font-size:13px;font-weight:700">${name}</span>`
+      +`<span style="font-size:9px;opacity:0.6">${m.user_email.split('@')[0]}</span>`
+      +`</span>`;
+    btn.onclick=()=>toggleAssignPerson(m.user_email,name,btn);
+    picker.appendChild(btn);
+  });
+  renderAssignChips();
+}
+
+function toggleAssignPerson(email,name,btn){
+  if(assignedPeople.has(email)){assignedPeople.delete(email);btn.classList.remove('sel');}
+  else{assignedPeople.add(email);btn.classList.add('sel');}
+  renderAssignChips();
+}
+
+function renderAssignChips(){
+  const chips=document.getElementById('assignSelectedChips');
+  const count=document.getElementById('assignPeopleCount');
+  if(!chips) return;
+  const members=[...assignedPeople];
+  if(count) count.textContent=members.length?members.length+' selected':'';
+  chips.innerHTML=members.map(email=>{
+    const name=getMemberName(email);
+    return `<div style="display:flex;align-items:center;gap:5px;background:var(--teal-bg);border:1px solid rgba(5,217,180,0.3);border-radius:20px;padding:4px 10px 4px 6px">`
+      +`<span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:#04100D;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">${name.charAt(0).toUpperCase()}</span>`
+      +`<span style="font-size:12px;font-weight:600;color:var(--teal)">${name}</span>`
+      +`<button onclick="removeAssignPerson('${email}')" style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:16px;line-height:1;padding:0;margin-left:2px">&times;</button></div>`;
+  }).join('');
+  chips.style.display=members.length?'flex':'none';
+}
+
+function removeAssignPerson(email){
+  assignedPeople.delete(email);
+  const btn=document.querySelector('#assignPeoplePicker [data-email="'+email+'"]');
+  if(btn) btn.classList.remove('sel');
+  renderAssignChips();
+}
+
 
 function openDayConfig(btn,date,label){
   // Save previous day config if one was open
@@ -2004,44 +2066,44 @@ function closeModal(){
 }
 
 async function saveAssignment(){
-  // Save current day config if panel is open
   if(activeConfigDay) saveDayConfigSilent();
-  const emailEl=document.getElementById('assignEmail');
-  const email=emailEl?emailEl.value.trim().toLowerCase():'';
-  if(!email){showToast('Enter an employee email','warn');return;}
+  const people=[...assignedPeople];
+  if(!people.length){showToast('Select at least one person','warn');return;}
   const configured=Object.keys(dayConfigs).filter(d=>dayConfigs[d].locations&&dayConfigs[d].locations.length>0);
   if(!configured.length){showToast('Configure at least one day with locations','warn');return;}
-  const rows=configured.map(d=>({
-    employee_email:email,
-    work_date:d,
-    locations:dayConfigs[d].locations,
-    start_time:dayConfigs[d].startTime||'09:00',
-    note:dayConfigs[d].note||''
-  }));
   const btn=document.querySelector('#assignModal .btn-modal-save');
   if(btn){btn.disabled=true;btn.textContent='Saving...';}
   try{
-    // Delete existing rows for these days first, then insert fresh
-    const dates=configured;
-    const{error:de}=await supabaseClient.from('schedules')
-      .delete()
-      .eq('employee_email',email)
-      .in('work_date',dates);
-    if(de){console.warn('Delete warning:',de.message);}
-
-    const{error}=await supabaseClient.from('schedules').insert(rows);
-    if(btn){btn.disabled=false;btn.textContent='Assign All';}
-    if(error){
-      showToast('Error: '+error.message,'warn');
-      console.error('Schedule save error:',error);
-      return;
+    // Save schedule for every selected person
+    for(const email of people){
+      const rows=configured.map(d=>({
+        employee_email:email,
+        work_date:d,
+        locations:dayConfigs[d].locations,
+        start_time:dayConfigs[d].startTime||'09:00',
+        note:dayConfigs[d].note||'',
+        company_id:COMPANY?.id||null
+      }));
+      // Delete existing then insert
+      await supabaseClient.from('schedules')
+        .delete().eq('employee_email',email).in('work_date',configured);
+      const{error}=await supabaseClient.from('schedules').insert(rows);
+      if(error){
+        showToast('Error for '+getMemberName(email)+': '+error.message,'warn');
+        console.error(error);
+        if(btn){btn.disabled=false;btn.textContent='Assign Schedule';}
+        return;
+      }
     }
+    if(btn){btn.disabled=false;btn.textContent='Assign Schedule';}
     closeModal();
-    showToast('Schedule saved for '+email.split('@')[0]+' ('+configured.length+' days)');
+    const names=people.map(e=>getMemberName(e)).join(', ');
+    showToast('Schedule saved for '+names+' ('+configured.length+' day'+( configured.length>1?'s':'')+')');
     await renderSchedule();
   }catch(e){
     showToast('Error - check console','warn');
     console.error(e);
+    if(btn){btn.disabled=false;btn.textContent='Assign Schedule';}
   }
 }
 

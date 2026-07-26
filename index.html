@@ -742,11 +742,20 @@
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">Assign Schedule</div>
-    <div class="modal-sub">Set locations, start time and note per day</div>
+    <div class="modal-sub">Assign the same schedule to one or more people</div>
+
+    <!-- Multi-person picker -->
     <div class="modal-field">
-      <div class="modal-label">Employee Email</div>
-      <input class="modal-input" type="email" id="assignEmail" placeholder="employee@example.com"/>
+      <div class="modal-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Select People</span>
+        <span id="assignPeopleCount" style="font-size:11px;color:var(--teal);font-weight:700"></span>
+      </div>
+      <div id="assignPeoplePicker" class="key-member-picker" style="max-height:140px;overflow-y:auto"></div>
     </div>
+
+    <!-- Selected chips -->
+    <div id="assignSelectedChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:0"></div>
+
     <div class="modal-field">
       <div class="modal-label">Tap a day to configure it</div>
       <div class="modal-days" id="modalDays"></div>
@@ -770,7 +779,7 @@
     <div id="modalDaySummary"></div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-modal-save" onclick="saveAssignment()">Assign All</button>
+      <button class="btn-modal-save" onclick="saveAssignment()">Assign Schedule</button>
     </div>
   </div>
 </div>
