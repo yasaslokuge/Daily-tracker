@@ -102,12 +102,8 @@ function hideLoader(){document.getElementById('loader').classList.add('out')}
 function showAuth(){
   const a=document.getElementById('authWrap');
   if(!a) return;
-  const isDesktop=window.innerWidth>=768;
-  a.style.display=isDesktop?'flex':'block';
-  // On desktop ensure it covers full screen
-  if(isDesktop){
-    a.style.cssText='display:flex;position:fixed;inset:0;z-index:200;align-items:stretch';
-  }
+  // Always use flex - CSS handles layout differences via media query
+  a.style.cssText='display:flex;position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;overflow:hidden';
   toggleAuth('in');
 }
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
@@ -124,9 +120,8 @@ function hideApp(){document.getElementById('app').style.display='none';document.
 function toggleAuth(m){
   const si=document.getElementById('siBox');
   const su=document.getElementById('suBox');
-  const isDesktop=window.innerWidth>=768;
-  if(si) si.style.display=m==='in'?(isDesktop?'flex':'flex'):'none';
-  if(su) su.style.display=m==='up'?(isDesktop?'flex':'flex'):'none';
+  if(si) si.style.display=m==='in'?'flex':'none';
+  if(su) su.style.display=m==='up'?'flex':'none';
   ['siErr','siOk','suErr','suOk'].forEach(id=>{
     const e=document.getElementById(id);
     if(e){e.style.display='none';e.textContent='';}

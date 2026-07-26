@@ -1300,23 +1300,7 @@ body.light .loc-card{box-shadow:0 1px 4px rgba(0,0,0,0.07)}
 }
 
 
-/* ── DESKTOP AUTH FIX ── */
-@media(min-width:600px){
-  #authWrap{display:none;align-items:center;justify-content:center;background:var(--auth-bg);min-height:100vh}
-  .auth-screen{
-    position:relative;
-    width:420px;
-    max-height:95vh;
-    overflow-y:auto;
-    border-radius:24px;
-    box-shadow:0 20px 60px rgba(0,0,0,0.12),0 4px 16px rgba(0,0,0,0.06);
-    flex-shrink:0;
-  }
-  .auth-blob{position:absolute}
-  .auth-form-wrap{border-radius:0 0 24px 24px}
-  .auth-footer{border-radius:0 0 24px 24px}
-  .auth-brand-wrap{padding-top:36px}
-}
+
 
 /* ── MOBILE MORE MENU FIX ── */
 .more-menu{z-index:999 !important}
@@ -1334,6 +1318,141 @@ body.light .loc-card{box-shadow:0 1px 4px rgba(0,0,0,0.07)}
 /* Auth active state */
 .auth-submit-btn{color:#fff}
 body.light .auth-submit-btn{color:#04100D}
+
+/* ════════════════════════════════════════
+   DESKTOP AUTH — True two-panel split
+   No scroll, full viewport height
+════════════════════════════════════════ */
+@media(min-width:768px){
+  /* Wrapper fills screen */
+  #authWrap{
+    position:fixed !important;
+    inset:0 !important;
+    width:100vw !important;
+    height:100vh !important;
+    height:100dvh !important;
+    overflow:hidden !important;
+    background:#0D1117;
+    z-index:200;
+  }
+
+  /* Each auth screen is a full two-panel layout */
+  .auth-screen{
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    height:100% !important;
+    overflow:hidden !important;
+    flex-direction:row !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    background:transparent !important;
+    min-height:unset !important;
+    animation:none !important;
+  }
+
+  /* LEFT HERO: dark, fills 55% */
+  .auth-blob,
+  .auth-flow-lines,
+  .auth-brand-wrap{
+    position:absolute;
+    left:0;
+    width:55%;
+  }
+  .auth-blob-1{
+    width:400px;height:400px;top:-80px;left:-60px;
+    background:radial-gradient(circle,rgba(5,217,180,0.12) 0%,transparent 65%);
+  }
+  .auth-blob-2{
+    width:300px;height:300px;bottom:0;left:100px;
+    background:radial-gradient(circle,rgba(79,142,247,0.10) 0%,transparent 65%);
+  }
+  .auth-blob-3{display:none}
+  .auth-flow-lines{
+    top:0;height:100%;z-index:1;overflow:hidden;pointer-events:none;
+  }
+  .auth-illustration{display:none}
+  .auth-brand-wrap{
+    top:0;height:100%;z-index:5;
+    display:flex !important;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:center;
+    padding:0 60px;
+    gap:0;
+  }
+  .auth-logo-mark{
+    width:52px;height:52px;border-radius:14px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(5,217,180,0.3);
+    box-shadow:0 0 30px rgba(5,217,180,0.12);
+    margin-bottom:20px;
+  }
+  .auth-logo-mark svg{width:36px;height:36px}
+  .auth-wordmark{
+    font-size:38px;font-weight:800;
+    color:#fff;letter-spacing:-1px;
+    margin-bottom:10px;
+  }
+  .auth-wordmark span{color:var(--teal)}
+  .auth-tagline{
+    font-size:15px;color:rgba(255,255,255,0.45);
+    margin-bottom:44px;font-weight:400;
+  }
+  .auth-feature-pills{display:flex;flex-direction:column;gap:10px}
+  .auth-feature-pill{
+    display:flex;align-items:center;gap:12px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:10px;padding:11px 14px;
+  }
+  .auth-pill-icon{
+    width:30px;height:30px;border-radius:8px;
+    background:rgba(5,217,180,0.1);border:1px solid rgba(5,217,180,0.2);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .auth-pill-icon svg{width:14px;height:14px;stroke:#05D9B4}
+  .auth-pill-text{font-size:12px;font-weight:500;color:rgba(255,255,255,0.65)}
+
+  /* RIGHT FORM PANEL: white, fills 45%, no scroll */
+  .auth-form-wrap{
+    position:absolute !important;
+    right:0;top:0;
+    width:45% !important;
+    height:100% !important;
+    margin:0 !important;
+    padding:0 52px !important;
+    background:#fff !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:center !important;
+    overflow:hidden !important;
+    overflow-y:auto !important;
+  }
+  .auth-h{font-size:26px}
+  .auth-sub{margin-bottom:24px}
+  .auth-step-row{margin-bottom:16px}
+  .auth-section-label{margin-top:2px;margin-bottom:10px}
+  .auth-field{margin-bottom:12px}
+  .auth-or-row{margin:12px 0}
+  .auth-switch{margin-top:16px}
+
+  /* Footer pinned at bottom of right panel */
+  .auth-footer{
+    position:absolute;
+    bottom:0;right:0;
+    width:45%;
+    background:#fff;
+    text-align:center;
+    padding:12px 0;
+    border-radius:0;
+  }
+
+  /* Step indicator narrowed */
+  .su-option-row{grid-template-columns:1fr 1fr;gap:8px}
+}
 
 
 /* ── MOBILE AUTH FIX — no scroll needed ── */
