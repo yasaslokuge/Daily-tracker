@@ -689,18 +689,41 @@ async function saveKeyHolder(){
 
 async function loadMyCompany(){
   try{
-    // Try user_id first, then email as fallback (handles RLS edge cases)
+    // Get current session token for direct REST call
+    const{data:{session}}=await sb.auth.getSession();
+    const token=session?.access_token;
+
     let memberships=null;
-    const{data:d1,error:e1}=await supabaseClient
-      .from('company_members').select('*').eq('user_id',ME.id);
-    if(e1||!d1||!d1.length){
-      if(e1) console.error('user_id query failed:',e1.message);
-      const{data:d2,error:e2}=await supabaseClient
-        .from('company_members').select('*').eq('user_email',ME.email);
-      if(e2) console.error('email query failed:',e2.message);
-      memberships=(d2&&d2.length?d2:d1)||[];
-    } else {
-      memberships=d1;
+
+    // Try direct REST API call with user's JWT - bypasses RLS issues
+    if(token){
+      try{
+        const res=await fetch(SUPABASE_URL+'/rest/v1/company_members?select=*&user_id=eq.'+ME.id,{
+          headers:{
+            'apikey':SUPABASE_ANON_KEY,
+            'Authorization':'Bearer '+token,
+            'Content-Type':'application/json'
+          }
+        });
+        if(res.ok){
+          const d=await res.json();
+          if(d&&d.length){memberships=d;console.log('REST fetch got',d.length,'rows');}
+        }
+      }catch(fe){console.warn('REST fetch failed:',fe.message);}
+    }
+
+    // Fallback to supabase client
+    if(!memberships||!memberships.length){
+      const{data:d1,error:e1}=await supabaseClient
+        .from('company_members').select('*').eq('user_id',ME.id);
+      if(!e1&&d1&&d1.length){memberships=d1;}
+      else{
+        if(e1) console.error('user_id query:',e1.message);
+        const{data:d2,error:e2}=await supabaseClient
+          .from('company_members').select('*').eq('user_email',ME.email);
+        if(e2) console.error('email query:',e2.message);
+        memberships=(d2&&d2.length?d2:d1)||[];
+      }
     }
     if(me){
       console.error('company_members error:',me.message,me.code);
