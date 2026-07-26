@@ -775,21 +775,34 @@ async function getCompanyMembers(forceRefresh=false){
   if(!COMPANY){console.warn('getCompanyMembers: no COMPANY');return[];}
   if(membersCacheLoaded&&!forceRefresh) return membersCache;
   try{
-    const{data,error}=await supabaseClient.from('company_members')
-      .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id).order('display_name');
+    // Try ordered first
+    const{data,error}=await supabaseClient
+      .from('company_members')
+      .select('id,user_id,user_email,role,display_name')
+      .eq('company_id',COMPANY.id)
+      .order('role',{ascending:true})
+      .order('display_name',{ascending:true});
+
     if(error){
-      console.error('getCompanyMembers error:',error.message,error.code);
-      // If RLS blocks, try without order to see if basic read works
-      const{data:d2,error:e2}=await supabaseClient.from('company_members')
-        .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id);
-      if(e2){console.error('Fallback also failed:',e2.message);return membersCache||[];}
+      console.error('getCompanyMembers error:',error.message,'code:',error.code);
+      // Try without ordering
+      const{data:d2,error:e2}=await supabaseClient
+        .from('company_members')
+        .select('id,user_id,user_email,role,display_name')
+        .eq('company_id',COMPANY.id);
+      if(e2){
+        console.error('Fallback failed:',e2.message);
+        // Last resort: at least return self
+        if(ME) membersCache=[{user_id:ME.id,user_email:ME.email,role:MY_ROLE,display_name:null}];
+        membersCacheLoaded=true;
+        return membersCache;
+      }
       membersCache=d2||[];
       membersCacheLoaded=true;
-      console.log('Members loaded (fallback):',membersCache.length);
-      return membersCache;
+    } else {
+      membersCache=data||[];
+      membersCacheLoaded=true;
     }
-    membersCache=data||[];
-    membersCacheLoaded=true;
     console.log('Members loaded:',membersCache.length,membersCache.map(m=>m.display_name||m.user_email));
     return membersCache;
   }catch(e){
@@ -938,6 +951,8 @@ async function renderCompanySettings(){
   if(ls) ls.style.display=isAdmin?'block':'none';
   if(ts) ts.style.display=isAdmin?'block':'none';
   if(isAdmin){
+    // Force fresh member load each time settings is opened
+    membersCacheLoaded=false;
     renderLocationsList();
     renderTeamList();
   }
