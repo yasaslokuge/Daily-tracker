@@ -1040,9 +1040,14 @@ async function renderTeamList(){
   el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Loading...</div>';
   const members=await getCompanyMembers(true);
   if(!members.length){
-    el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">No team members yet.<br>Share your invite code to add people.</div>';
+    el.innerHTML='<div style="text-align:center;padding:12px">'
+      +'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">No team members found.<br>This may be a permissions issue.</div>'
+      +'<button onclick="diagMembers()" style="font-size:11px;background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text2);cursor:pointer;font-family:Inter,sans-serif">Run Diagnostic</button>'
+      +'</div>';
     return;
   }
+  // Add diag button at bottom
+  const diagBtn='<div style="padding:8px 0;text-align:center"><button onclick="diagMembers()" style="font-size:10px;background:none;border:none;color:var(--text3);cursor:pointer;text-decoration:underline;font-family:Inter,sans-serif">Debug: Run member diagnostic</button></div>';
   const roleColors={admin:'var(--purple)',employer:'var(--blue)',employee:'var(--teal)'};
   const canManage=MY_ROLE==='admin'||MY_ROLE==='employer';
   el.innerHTML=members.map((m,i)=>{
@@ -1071,7 +1076,7 @@ async function renderTeamList(){
         </div>`:''}
       </div>
     </div>`;
-  }).join('');
+  }).join('')+diagBtn;
 }
 
 async function changeRole(userId, currentRole){
@@ -3204,6 +3209,38 @@ function updateDesktopNav(name){
 function destroyDesktopSidebar(){
   const sb=document.getElementById('dt-sidebar');
   if(sb) sb.remove();
+}
+
+/* --- MEMBER DIAGNOSTICS ----------------------------- */
+async function diagMembers(){
+  if(!COMPANY||!ME){showToast('Not logged in','warn');return;}
+  const results=[];
+  results.push('Company ID: '+COMPANY.id);
+  results.push('My user_id: '+ME.id);
+  results.push('My email: '+ME.email);
+  results.push('My role: '+MY_ROLE);
+  results.push('---');
+
+  // Test 1: raw select with company_id filter
+  const{data:t1,error:e1}=await supabaseClient
+    .from('company_members').select('user_email,role').eq('company_id',COMPANY.id);
+  results.push('Test 1 (company_id filter): '+(e1?'ERROR: '+e1.message:'OK, '+( t1?.length||0)+' rows'));
+  if(t1) t1.forEach(r=>results.push('  '+r.user_email+' ('+r.role+')'));
+
+  // Test 2: select all (no filter)
+  const{data:t2,error:e2}=await supabaseClient
+    .from('company_members').select('user_email,role,company_id').limit(10);
+  results.push('Test 2 (no filter): '+(e2?'ERROR: '+e2.message:'OK, '+(t2?.length||0)+' rows'));
+  if(t2) t2.forEach(r=>results.push('  '+r.user_email+' co:'+r.company_id?.slice(-6)));
+
+  // Test 3: only my row
+  const{data:t3,error:e3}=await supabaseClient
+    .from('company_members').select('*').eq('user_id',ME.id);
+  results.push('Test 3 (my row): '+(e3?'ERROR: '+e3.message:'OK, '+(t3?.length||0)+' rows'));
+
+  const msg=results.join('\n');
+  console.log('=== MEMBER DIAG ===\n'+msg);
+  alert(msg);
 }
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */
