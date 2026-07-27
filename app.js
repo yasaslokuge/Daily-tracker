@@ -1,3 +1,4 @@
+/* WorkTrace v2.2.1 - 2026-07-27 */
 async function saveMyDisplayName(){
   const inp=document.getElementById('myDisplayName');
   const name=inp?inp.value.trim():'';
@@ -229,11 +230,14 @@ async function doSignUpFull(){
     if(!company){msg('suErr','Error creating company - please sign in and try again');if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
     COMPANY=company;LOCS=locs;MY_ROLE='admin';
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
-    hideAuth();showApp();sv('log');
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='admin';
+    hideAuth();
+    showApp();
+    sv('log');
+    await new Promise(r=>setTimeout(r,100));
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
-    showToast('Welcome! Invite code: '+company.invite_code);
+    showToast('Welcome to WorkTrace! Invite code: '+company.invite_code);
 
   } else {
     // Join company
@@ -253,9 +257,11 @@ async function doSignUpFull(){
       LOCS=result.company.locations.map(l=>({...l,keys:[]}));
     }
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
-    hideAuth();showApp();sv('log');
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='employee';
+    hideAuth();
+    showApp();
+    sv('log');
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
     showToast('Joined '+result.company.name+'!');
   }
