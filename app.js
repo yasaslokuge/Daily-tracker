@@ -47,9 +47,22 @@ const EMAILJS_PUBLIC_KEY  = 'Ta3kamz3gnz2F3zsu';
 
 const SUPABASE_URL='https://vwoylscgfhuzmsnkjdlu.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3b3lsc2NnZmh1em1zbmtqZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDY0OTUsImV4cCI6MjA5NzcyMjQ5NX0.ci08mxviFw5le494yUUE70fTRnWi6TqqC1Rjk971k_s';
-const{createClient}=window.supabase||supabase;
-const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const supabaseClient=sb;
+let sb, supabaseClient;
+try {
+  const{createClient}=window.supabase||supabase;
+  sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  supabaseClient=sb;
+} catch(e) {
+  // Supabase failed to load - show error on screen
+  document.addEventListener('DOMContentLoaded', function() {
+    const loader = document.getElementById('loader');
+    if(loader) {
+      const txt = document.getElementById('ldTxt');
+      if(txt) txt.innerHTML = 'Failed to load. Please refresh.<br><small style="color:#888">'+e.message+'</small>';
+    }
+  });
+  console.error('Supabase init failed:', e);
+}
 
 
 /* --- 2. DATA: LOCATIONS & SUPPLIES ------------------- */
@@ -3451,6 +3464,13 @@ async function loadKeyAuditLog(){
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */
 // -- BOOT ----------------------------------
+// Global error catcher - shows errors on screen during boot
+window.onerror = function(msg, src, line) {
+  const lt = document.getElementById('ldTxt');
+  if(lt && !booted) lt.innerHTML = 'Error: '+msg+'<br><small>'+src+':'+line+'</small>';
+  console.error('Global error:', msg, src, line);
+};
+
 let booted = false;
 
 function boot(session) {
