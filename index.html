@@ -877,5 +877,47 @@
   </div>
 </div>
 
+
+<script>
+// RESCUE SCRIPT - fixes black screen if app loaded but views are hidden
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    var app = document.getElementById('app');
+    var loader = document.getElementById('loader');
+    var auth = document.getElementById('authWrap');
+    
+    // If app is visible but no view is active, activate log view
+    if(app && app.style.display !== 'none' && app.style.display !== '') {
+      var activeView = document.querySelector('.view.on');
+      if(!activeView || activeView.style.display === 'none') {
+        console.log('RESCUE: activating log view');
+        if(typeof sv === 'function') sv('log');
+      }
+    }
+    
+    // If loader is still showing after 10s, force show auth
+    if(loader && !loader.classList.contains('out')) {
+      console.log('RESCUE: loader stuck, showing auth');
+      loader.classList.add('out');
+      if(typeof showAuth === 'function') showAuth();
+    }
+  }, 3000);
+  
+  // Check every 2 seconds for black screen
+  setInterval(function() {
+    var app = document.getElementById('app');
+    var loader = document.getElementById('loader');
+    
+    if(app && app.style.display && app.style.display !== 'none') {
+      var activeView = document.querySelector('.view.on');
+      if(!activeView) {
+        console.log('RESCUE INTERVAL: no active view, calling sv log');
+        if(typeof sv === 'function') sv('log');
+      }
+    }
+  }, 2000);
+});
+</script>
+
 </body>
 </html>
