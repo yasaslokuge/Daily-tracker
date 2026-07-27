@@ -707,82 +707,65 @@ async function saveKeyHolder(){
 
 async function loadMyCompany(){
   try{
-    // Get current session token for direct REST call
+    // Direct REST fetch with JWT token - most reliable approach
     const{data:{session}}=await sb.auth.getSession();
     const token=session?.access_token;
+    if(!token){console.error('No session token');return null;}
 
-    let memberships=null;
-
-    // Try direct REST API call with user's JWT - bypasses RLS issues
-    if(token){
-      try{
-        const res=await fetch(SUPABASE_URL+'/rest/v1/company_members?select=*&user_id=eq.'+ME.id,{
-          headers:{
-            'apikey':SUPABASE_ANON_KEY,
-            'Authorization':'Bearer '+token,
-            'Content-Type':'application/json'
-          }
-        });
-        if(res.ok){
-          const d=await res.json();
-          if(d&&d.length){memberships=d;console.log('REST fetch got',d.length,'rows');}
-        }
-      }catch(fe){console.warn('REST fetch failed:',fe.message);}
+    // Fetch membership rows directly
+    const res=await fetch(
+      SUPABASE_URL+'/rest/v1/company_members?select=*&user_id=eq.'+ME.id,
+      {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
+    );
+    let memberships=[];
+    if(res.ok){
+      const d=await res.json();
+      memberships=Array.isArray(d)?d:[];
+      console.log('Memberships found:',memberships.length);
     }
 
-    // Fallback to supabase client
-    if(!memberships||!memberships.length){
-      const{data:d1,error:e1}=await supabaseClient
-        .from('company_members').select('*').eq('user_id',ME.id);
-      if(!e1&&d1&&d1.length){memberships=d1;}
-      else{
-        if(e1) console.error('user_id query:',e1.message);
-        const{data:d2,error:e2}=await supabaseClient
-          .from('company_members').select('*').eq('user_email',ME.email);
-        if(e2) console.error('email query:',e2.message);
-        memberships=(d2&&d2.length?d2:d1)||[];
-      }
+    // If no rows by user_id, try by email
+    if(!memberships.length){
+      const res2=await fetch(
+        SUPABASE_URL+'/rest/v1/company_members?select=*&user_email=eq.'+encodeURIComponent(ME.email),
+        {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
+      );
+      if(res2.ok){const d=await res2.json();memberships=Array.isArray(d)?d:[];}
+      console.log('Memberships by email:',memberships.length);
     }
-    if(!memberships||!memberships.length){
-      console.log('No membership found for',ME.email,'id:',ME.id);
-      return null;
-    }
-    console.log('Found',memberships.length,'membership(s)');
-    const companyIds=[...new Set(memberships.map(m=>m.company_id))];
-    const{data:companies,error:ce}=await supabaseClient
-      .from('companies').select('*').in('id',companyIds);
-    if(ce){console.error('companies error:',ce.message);return null;}
-    if(!companies||!companies.length){
-      console.error('No companies found for memberships');
-      return null;
-    }
-    // Pick the company with the most locations (most likely the real one)
-    // Fall back to admin role company, then first
-    let best=null;
-    let bestMembership=null;
+
+    if(!memberships.length){console.log('No memberships for',ME.email);return null;}
+
+    // Fetch companies
+    const ids=[...new Set(memberships.map(m=>m.company_id))];
+    const res3=await fetch(
+      SUPABASE_URL+'/rest/v1/companies?select=*&id=in.('+ids.join(',')+')' ,
+      {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
+    );
+    if(!res3.ok){console.error('Companies fetch failed');return null;}
+    const companies=await res3.json();
+    if(!companies||!companies.length){console.error('No companies');return null;}
+
+    // Pick best: most locations wins, admin preferred
+    let best=null,bestM=null,bestScore=-1;
     for(const m of memberships){
       const co=companies.find(c=>c.id===m.company_id);
       if(!co) continue;
-      const locCount=(co.locations||[]).length;
-      if(!best || locCount>(best.locations||[]).length || m.role==='admin'){
-        best=co;
-        bestMembership=m;
-      }
+      const score=(co.locations||[]).length*10+(m.role==='admin'?5:m.role==='employer'?3:1);
+      if(score>bestScore){bestScore=score;best=co;bestM=m;}
     }
-    if(!best){best=companies[0];bestMembership=memberships[0];}
-    MY_ROLE=bestMembership.role;
+    if(!best){best=companies[0];bestM=memberships[0];}
+
+    MY_ROLE=bestM.role;
     COMPANY=best;
-    if(best.locations&&best.locations.length>0){
-      LOCS=best.locations.map(l=>({...l,keys:[]}));
-      console.log('LOCS set from company:',LOCS.length,'locations:',LOCS.map(l=>l.name).join(', '));
-    } else {
-      LOCS=[...DEFAULT_LOCS];
-      console.log('LOCS fallback to DEFAULT_LOCS:',LOCS.length);
-    }
-    console.log('Company loaded:',best.name,'Role:',MY_ROLE,'('+memberships.length+' memberships found)');
+    LOCS=(best.locations||[]).length>0
+      ?best.locations.map(l=>({...l,keys:[]}))
+      :[...DEFAULT_LOCS];
+
+    console.log('Company loaded:',best.name,'role:',MY_ROLE,'locs:',LOCS.length);
     return best;
   }catch(e){
-    console.error('loadMyCompany exception:',e);
+    console.error('loadMyCompany error:',e.message);
     return null;
   }
 }
@@ -1181,38 +1164,6 @@ async function initApp(u){
     await new Promise(r=>setTimeout(r,1500));
     company=await loadMyCompany();
   }
-  if(!company){
-    // Last resort: try loading company directly by known company IDs
-    console.log('loadMyCompany failed - trying direct company load');
-    try{
-      // Try to find any company where this email is listed
-      const{data:{session}}=await sb.auth.getSession();
-      const token=session?.access_token;
-      if(token){
-        // Fetch all companies and check membership via email
-        const res=await fetch(SUPABASE_URL+'/rest/v1/company_members?select=*,companies(*)&user_email=eq.'+encodeURIComponent(ME.email),{
-          headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}
-        });
-        if(res.ok){
-          const rows=await res.json();
-          console.log('Direct email lookup rows:',rows?.length);
-          if(rows&&rows.length){
-            const m=rows[0];
-            MY_ROLE=m.role;
-            if(m.companies){
-              company=m.companies;
-              COMPANY=company;
-              if(company.locations&&company.locations.length>0){
-                LOCS=company.locations.map(l=>({...l,keys:[]}));
-              }
-              console.log('Direct load success:',company.name);
-            }
-          }
-        }
-      }
-    }catch(de){console.error('Direct load error:',de);}
-  }
-
   if(!company){
     const online=navigator.onLine;
     if(!online){
