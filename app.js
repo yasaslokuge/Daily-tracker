@@ -1,4 +1,3 @@
-/* WorkTrace v2.2.1 - 2026-07-27 */
 async function saveMyDisplayName(){
   const inp=document.getElementById('myDisplayName');
   const name=inp?inp.value.trim():'';
@@ -48,22 +47,9 @@ const EMAILJS_PUBLIC_KEY  = 'Ta3kamz3gnz2F3zsu';
 
 const SUPABASE_URL='https://vwoylscgfhuzmsnkjdlu.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3b3lsc2NnZmh1em1zbmtqZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDY0OTUsImV4cCI6MjA5NzcyMjQ5NX0.ci08mxviFw5le494yUUE70fTRnWi6TqqC1Rjk971k_s';
-let sb, supabaseClient;
-try {
-  const{createClient}=window.supabase||supabase;
-  sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-  supabaseClient=sb;
-} catch(e) {
-  // Supabase failed to load - show error on screen
-  document.addEventListener('DOMContentLoaded', function() {
-    const loader = document.getElementById('loader');
-    if(loader) {
-      const txt = document.getElementById('ldTxt');
-      if(txt) txt.innerHTML = 'Failed to load. Please refresh.<br><small style="color:#888">'+e.message+'</small>';
-    }
-  });
-  console.error('Supabase init failed:', e);
-}
+const{createClient}=window.supabase||supabase;
+const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const supabaseClient=sb;
 
 
 /* --- 2. DATA: LOCATIONS & SUPPLIES ------------------- */
@@ -123,12 +109,8 @@ function showAuth(){
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
 function showApp(){
   const isDesktop=window.innerWidth>=900;
-  const app=document.getElementById('app');
-  if(app) app.style.cssText=isDesktop
-    ?'display:flex;flex-direction:row;width:100%;height:100vh;position:fixed;inset:0'
-    :'display:flex;flex-direction:column';
-  const bnav=document.getElementById('bnav');
-  if(!isDesktop&&bnav) bnav.style.display='flex';
+  document.getElementById('app').style.cssText=isDesktop?'display:flex;flex-direction:row':'display:flex;flex-direction:column';
+  if(!isDesktop) document.getElementById('bnav').style.display='flex';
   if(isDesktop) setTimeout(buildDesktopSidebar,50);
 }
 function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none';destroyDesktopSidebar();}
@@ -230,14 +212,11 @@ async function doSignUpFull(){
     if(!company){msg('suErr','Error creating company - please sign in and try again');if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
     COMPANY=company;LOCS=locs;MY_ROLE='admin';
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
+    hideAuth();showApp();
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='admin';
-    hideAuth();
-    showApp();
-    sv('log');
-    await new Promise(r=>setTimeout(r,100));
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
-    showToast('Welcome to WorkTrace! Invite code: '+company.invite_code);
+    showToast('Welcome! Invite code: '+company.invite_code);
 
   } else {
     // Join company
@@ -257,11 +236,9 @@ async function doSignUpFull(){
       LOCS=result.company.locations.map(l=>({...l,keys:[]}));
     }
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
+    hideAuth();showApp();
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='employee';
-    hideAuth();
-    showApp();
-    sv('log');
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
     showToast('Joined '+result.company.name+'!');
   }
@@ -713,65 +690,86 @@ async function saveKeyHolder(){
 
 async function loadMyCompany(){
   try{
-    // Direct REST fetch with JWT token - most reliable approach
+    // Get current session token for direct REST call
     const{data:{session}}=await sb.auth.getSession();
     const token=session?.access_token;
-    if(!token){console.error('No session token');return null;}
 
-    // Fetch membership rows directly
-    const res=await fetch(
-      SUPABASE_URL+'/rest/v1/company_members?select=*&user_id=eq.'+ME.id,
-      {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
-    );
-    let memberships=[];
-    if(res.ok){
-      const d=await res.json();
-      memberships=Array.isArray(d)?d:[];
-      console.log('Memberships found:',memberships.length);
+    let memberships=null;
+
+    // Try direct REST API call with user's JWT - bypasses RLS issues
+    if(token){
+      try{
+        const res=await fetch(SUPABASE_URL+'/rest/v1/company_members?select=*&user_id=eq.'+ME.id,{
+          headers:{
+            'apikey':SUPABASE_ANON_KEY,
+            'Authorization':'Bearer '+token,
+            'Content-Type':'application/json'
+          }
+        });
+        if(res.ok){
+          const d=await res.json();
+          if(d&&d.length){memberships=d;console.log('REST fetch got',d.length,'rows');}
+        }
+      }catch(fe){console.warn('REST fetch failed:',fe.message);}
     }
 
-    // If no rows by user_id, try by email
-    if(!memberships.length){
-      const res2=await fetch(
-        SUPABASE_URL+'/rest/v1/company_members?select=*&user_email=eq.'+encodeURIComponent(ME.email),
-        {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
-      );
-      if(res2.ok){const d=await res2.json();memberships=Array.isArray(d)?d:[];}
-      console.log('Memberships by email:',memberships.length);
+    // Fallback to supabase client
+    if(!memberships||!memberships.length){
+      const{data:d1,error:e1}=await supabaseClient
+        .from('company_members').select('*').eq('user_id',ME.id);
+      if(!e1&&d1&&d1.length){memberships=d1;}
+      else{
+        if(e1) console.error('user_id query:',e1.message);
+        const{data:d2,error:e2}=await supabaseClient
+          .from('company_members').select('*').eq('user_email',ME.email);
+        if(e2) console.error('email query:',e2.message);
+        memberships=(d2&&d2.length?d2:d1)||[];
+      }
     }
-
-    if(!memberships.length){console.log('No memberships for',ME.email);return null;}
-
-    // Fetch companies
-    const ids=[...new Set(memberships.map(m=>m.company_id))];
-    const res3=await fetch(
-      SUPABASE_URL+'/rest/v1/companies?select=*&id=in.('+ids.join(',')+')' ,
-      {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
-    );
-    if(!res3.ok){console.error('Companies fetch failed');return null;}
-    const companies=await res3.json();
-    if(!companies||!companies.length){console.error('No companies');return null;}
-
-    // Pick best: most locations wins, admin preferred
-    let best=null,bestM=null,bestScore=-1;
+    if(me){
+      console.error('company_members error:',me.message,me.code);
+      return null;
+    }
+    if(!memberships||!memberships.length){
+      console.log('No membership found for',ME.email,'id:',ME.id);
+      return null;
+    }
+    console.log('Found',memberships.length,'membership(s)');
+    const companyIds=[...new Set(memberships.map(m=>m.company_id))];
+    const{data:companies,error:ce}=await supabaseClient
+      .from('companies').select('*').in('id',companyIds);
+    if(ce){console.error('companies error:',ce.message);return null;}
+    if(!companies||!companies.length){
+      console.error('No companies found for memberships');
+      return null;
+    }
+    // Pick the company with the most locations (most likely the real one)
+    // Fall back to admin role company, then first
+    let best=null;
+    let bestMembership=null;
     for(const m of memberships){
       const co=companies.find(c=>c.id===m.company_id);
       if(!co) continue;
-      const score=(co.locations||[]).length*10+(m.role==='admin'?5:m.role==='employer'?3:1);
-      if(score>bestScore){bestScore=score;best=co;bestM=m;}
+      const locCount=(co.locations||[]).length;
+      if(!best || locCount>(best.locations||[]).length || m.role==='admin'){
+        best=co;
+        bestMembership=m;
+      }
     }
-    if(!best){best=companies[0];bestM=memberships[0];}
-
-    MY_ROLE=bestM.role;
+    if(!best){best=companies[0];bestMembership=memberships[0];}
+    MY_ROLE=bestMembership.role;
     COMPANY=best;
-    LOCS=(best.locations||[]).length>0
-      ?best.locations.map(l=>({...l,keys:[]}))
-      :[...DEFAULT_LOCS];
-
-    console.log('Company loaded:',best.name,'role:',MY_ROLE,'locs:',LOCS.length);
+    if(best.locations&&best.locations.length>0){
+      LOCS=best.locations.map(l=>({...l,keys:[]}));
+      console.log('LOCS set from company:',LOCS.length,'locations:',LOCS.map(l=>l.name).join(', '));
+    } else {
+      LOCS=[...DEFAULT_LOCS];
+      console.log('LOCS fallback to DEFAULT_LOCS:',LOCS.length);
+    }
+    console.log('Company loaded:',best.name,'Role:',MY_ROLE,'('+memberships.length+' memberships found)');
     return best;
   }catch(e){
-    console.error('loadMyCompany error:',e.message);
+    console.error('loadMyCompany exception:',e);
     return null;
   }
 }
@@ -943,7 +941,7 @@ async function submitCreateCompany(){
   if(btn){btn.disabled=false;btn.textContent='Create Company';}
   if(!company){showToast('Error creating company','warn');return;}
   COMPANY=company;LOCS=locations;MY_ROLE='admin';
-  hideCompanySetup();showApp();sv('log');
+  hideCompanySetup();showApp();
   const roleEl=document.getElementById('tbRole');
   if(roleEl) roleEl.textContent=MY_ROLE;
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -963,7 +961,7 @@ async function submitJoinCompany(){
   if(result.company.locations&&result.company.locations.length){
     LOCS=result.company.locations.map(l=>({...l,keys:[]}));
   }
-  hideCompanySetup();showApp();sv('log');
+  hideCompanySetup();showApp();
   const roleEl=document.getElementById('tbRole');
   if(roleEl) roleEl.textContent=MY_ROLE;
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -1171,6 +1169,38 @@ async function initApp(u){
     company=await loadMyCompany();
   }
   if(!company){
+    // Last resort: try loading company directly by known company IDs
+    console.log('loadMyCompany failed - trying direct company load');
+    try{
+      // Try to find any company where this email is listed
+      const{data:{session}}=await sb.auth.getSession();
+      const token=session?.access_token;
+      if(token){
+        // Fetch all companies and check membership via email
+        const res=await fetch(SUPABASE_URL+'/rest/v1/company_members?select=*,companies(*)&user_email=eq.'+encodeURIComponent(ME.email),{
+          headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}
+        });
+        if(res.ok){
+          const rows=await res.json();
+          console.log('Direct email lookup rows:',rows?.length);
+          if(rows&&rows.length){
+            const m=rows[0];
+            MY_ROLE=m.role;
+            if(m.companies){
+              company=m.companies;
+              COMPANY=company;
+              if(company.locations&&company.locations.length>0){
+                LOCS=company.locations.map(l=>({...l,keys:[]}));
+              }
+              console.log('Direct load success:',company.name);
+            }
+          }
+        }
+      }
+    }catch(de){console.error('Direct load error:',de);}
+  }
+
+  if(!company){
     const online=navigator.onLine;
     if(!online){
       showToast('No internet - please reconnect and refresh.','warn');
@@ -1183,7 +1213,6 @@ async function initApp(u){
   if(roleEl) roleEl.textContent=MY_ROLE;
   hideAuth();
   showApp();
-  sv('log'); // activate default view - without this all views stay hidden
   await loadWk(wkDates(logOff));
   await loadLocKeys();
   // Pre-load company members for key picker (all roles need this)
@@ -3417,13 +3446,6 @@ async function loadKeyAuditLog(){
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */
 // -- BOOT ----------------------------------
-// Global error catcher - shows errors on screen during boot
-window.onerror = function(msg, src, line) {
-  const lt = document.getElementById('ldTxt');
-  if(lt && !booted) lt.innerHTML = 'Error: '+msg+'<br><small>'+src+':'+line+'</small>';
-  console.error('Global error:', msg, src, line);
-};
-
 let booted = false;
 
 function boot(session) {

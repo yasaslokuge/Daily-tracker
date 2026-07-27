@@ -1540,6 +1540,7 @@ body.light .auth-submit-btn{color:#04100D}
   body{overflow:hidden;height:100vh}
 
   #app{
+    display:none;
     flex-direction:row !important;
     height:100vh;
     max-width:100% !important;
