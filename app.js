@@ -336,8 +336,9 @@ async function setLocKey(locId,locName,holderName,holderEmail){
       holder_name:holderName||null,holder_email:holderEmail||null,
       action:holderName?'assigned':'cleared',
       performed_by:ME.id,performed_by_email:ME.email,
+      company_id:COMPANY?.id||null,
       performed_at:new Date().toISOString()
-    }).then(({error:ae})=>{if(ae)console.warn('Key audit:',ae);});
+    }).then(({error:ae})=>{if(ae)console.warn('Key audit:',ae.message);});
     if(holderName){keysCache[locId]={name:holderName,email:holderEmail||null};}
     else{delete keysCache[locId];}
     return true;
@@ -1447,6 +1448,8 @@ function sv(name){
       if(hs) hs.style.display=MY_ROLE==='admin'?'block':'none';
       // Render company settings and management
       renderCompanySettings();
+      // Load audit log if section is visible
+      if(MY_ROLE==='admin'||MY_ROLE==='employer') loadKeyAuditLog();
     }
     syncThemeToggle();
   }
@@ -3377,6 +3380,68 @@ async function diagMembers(){
   const msg=results.join('\n');
   console.log('=== MEMBER DIAG ===\n'+msg);
   alert(msg);
+}
+
+/* --- KEY AUDIT LOG ----------------------------------- */
+async function loadKeyAuditLog(){
+  const el=document.getElementById('keyAuditList');
+  if(!el) return;
+  el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Loading...</div>';
+  try{
+    const{data,error}=await supabaseClient
+      .from('key_audit_log')
+      .select('*')
+      .eq('company_id',COMPANY?.id||null)
+      .order('performed_at',{ascending:false})
+      .limit(50);
+
+    // If company_id column doesn't exist, try without it
+    let rows=data;
+    if(error&&error.message?.includes('company_id')){
+      const{data:d2,error:e2}=await supabaseClient
+        .from('key_audit_log')
+        .select('*')
+        .order('performed_at',{ascending:false})
+        .limit(50);
+      if(e2){el.innerHTML='<div style="font-size:12px;color:var(--red);text-align:center;padding:12px">Error: '+e2.message+'</div>';return;}
+      rows=d2;
+    } else if(error){
+      el.innerHTML='<div style="font-size:12px;color:var(--red);text-align:center;padding:12px">Error: '+error.message+'</div>';
+      return;
+    }
+
+    if(!rows||!rows.length){
+      el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">No key activity yet</div>';
+      return;
+    }
+
+    const actionColors={assigned:'var(--teal)',cleared:'var(--text3)',transferred:'var(--blue)',returned:'var(--amber)'};
+    const actionIcons={assigned:'🔑',cleared:'🗑',transferred:'↔',returned:'↩'};
+
+    el.innerHTML=rows.map((r,i)=>{
+      const dt=new Date(r.performed_at);
+      const dateStr=dt.toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'});
+      const timeStr=dt.toLocaleTimeString('en-NZ',{hour:'2-digit',minute:'2-digit'});
+      const color=actionColors[r.action]||'var(--text2)';
+      const icon=actionIcons[r.action]||'🔑';
+      return `<div style="padding:10px 0;border-bottom:${i<rows.length-1?'1px solid var(--border)':'none'};display:flex;gap:10px;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:${color}18;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:700;color:${color};text-transform:capitalize">${r.action}</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">${r.location_name||r.location_id}</span>
+          </div>
+          ${r.holder_name?`<div style="font-size:11px;color:var(--text2);margin-top:2px">Key holder: ${r.holder_name}</div>`:''}
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">
+            By ${r.performed_by_email?.split('@')[0]||'unknown'} · ${dateStr} ${timeStr}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('loadKeyAuditLog:',e);
+    el.innerHTML='<div style="font-size:12px;color:var(--red);text-align:center;padding:12px">Failed to load audit log</div>';
+  }
 }
 
 /* --- 21. BOOT SEQUENCE ------------------------------- */
