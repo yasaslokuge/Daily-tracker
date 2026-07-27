@@ -2,217 +2,93 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>WorkTrace - Smart Location Tracking for Field Teams</title>
-<meta name="description" content="WorkTrace helps field teams log daily work locations, manage schedules, track keys and flag supplies — all from any device, no app download needed."/>
-<meta name="theme-color" content="#1A1D23"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="WorkTrace"/>
-<meta property="og:title" content="WorkTrace"/>
-<meta property="og:description" content="Smart location tracking for field teams"/>
-<meta property="og:type" content="website"/>
-<meta name="referrer" content="strict-origin-when-cross-origin"/>
-<!-- Preconnect hints -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
+<title>WorkTrace</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
-<!-- CSS first - prevents flash of unstyled content -->
-<link rel="stylesheet" href="style.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
-<!-- Scripts -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
-<!-- Hotjar lazy load -->
-<script>
-  window.addEventListener('load',function(){
-    setTimeout(function(){
-      (function(h,o,t,j,a,r){
-        h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
-        h._hjSettings={hjid:6740723,hjsv:6};
-        a=o.getElementsByTagName('head')[0];
-        r=o.createElement('script');r.async=1;
-        r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
-        a.appendChild(r);
-      })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
-    },3000);
-  });
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- Styles -->
+<link rel="stylesheet" href="style.css"/>
+  <!-- Hotjar Tracking Code for Worktrace -->
+  <script>
+    (function(h,o,t,j,a,r){
+      h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+      h._hjSettings={hjid:6740723,hjsv:6};
+      a=o.getElementsByTagName('head')[0];
+      r=o.createElement('script');r.async=1;
+      r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+      a.appendChild(r);
+    })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+  </script>
 </head>
-<body style="background:#1A1D23;margin:0">
+<body>
 
 <div id="loader">
   <div class="ld-logo"><div class="spin-ring"></div><div class="ld-word">Work<b>Trace</b></div></div>
   <div class="ld-txt" id="ldTxt">connecting…</div>
 </div>
 
-<div id="authWrap">
+<div id="authWrap" style="display:none">
 
-  <!-- ── SIGN IN ── -->
-  <div id="siBox" class="auth-screen auth-desktop-wrap">
-    <!-- Ambient background blobs -->
-    <div class="auth-blob auth-blob-1"></div>
-    <div class="auth-blob auth-blob-2"></div>
-
-    <!-- Animated flow lines (desktop hero) -->
-    <div class="auth-flow-lines">
-      <svg viewBox="0 0 600 900" fill="none" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
-        <path d="M-50 200 Q150 100 300 300 Q450 500 650 400" stroke="rgba(5,217,180,0.12)" stroke-width="1.5" fill="none"/>
-        <path d="M-50 300 Q200 150 350 350 Q500 550 700 450" stroke="rgba(5,217,180,0.08)" stroke-width="1" fill="none"/>
-        <path d="M-50 400 Q100 250 280 420 Q460 590 680 480" stroke="rgba(79,142,247,0.08)" stroke-width="1.2" fill="none"/>
-        <path d="M-50 500 Q180 380 320 500 Q460 620 700 520" stroke="rgba(5,217,180,0.06)" stroke-width="1" fill="none"/>
-        <circle cx="280" cy="320" r="5" fill="rgba(5,217,180,0.4)">
-          <animate attributeName="opacity" values="0.2;0.8;0.2" dur="3s" repeatCount="indefinite"/>
-        </circle>
-        <circle cx="450" cy="480" r="3.5" fill="rgba(5,217,180,0.3)">
-          <animate attributeName="opacity" values="0.3;0.9;0.3" dur="4s" begin="1s" repeatCount="indefinite"/>
-        </circle>
-        <circle cx="150" cy="420" r="3" fill="rgba(79,142,247,0.3)">
-          <animate attributeName="opacity" values="0.2;0.7;0.2" dur="5s" begin="2s" repeatCount="indefinite"/>
-        </circle>
-      </svg>
+  <!-- ── SIGN IN (default) ── -->
+  <div id="siBox" class="auth-screen">
+    <div class="auth-top">
+      <div class="auth-brand-name">WorkTrace</div>
+      <div class="auth-brand-sub">Smart Location Tracking</div>
     </div>
-
-    <!-- Brand mark -->
-    <div class="auth-brand-wrap">
-      <div class="auth-logo-mark">
-        <svg viewBox="0 0 40 40" fill="none" width="40" height="40">
-          <circle cx="20" cy="20" r="20" fill="rgba(5,217,180,0.15)"/>
-          <path d="M20 8 L28 14 L28 22 C28 27 24 31 20 33 C16 31 12 27 12 22 L12 14 Z" fill="none" stroke="#05D9B4" stroke-width="1.8" stroke-linejoin="round"/>
-          <circle cx="20" cy="20" r="3" fill="#05D9B4"/>
-          <path d="M20 20 L24 16" stroke="#05D9B4" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="auth-wordmark">Work<span>Trace</span></div>
-      <div class="auth-tagline">Smart location tracking</div>
-      <!-- Feature pills — desktop only -->
-      <div class="auth-feature-pills">
-        <div class="auth-feature-pill">
-          <div class="auth-pill-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
-          <span class="auth-pill-text">Real-time location logging across all sites</span>
-        </div>
-        <div class="auth-feature-pill">
-          <div class="auth-pill-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
-          <span class="auth-pill-text">Schedule management for your whole team</span>
-        </div>
-        <div class="auth-feature-pill">
-          <div class="auth-pill-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg></div>
-          <span class="auth-pill-text">Key tracking with full audit trail</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Illustration area (mobile only) -->
-    <div class="auth-illustration" style="">
-      <svg viewBox="0 0 160 80" fill="none" width="160" height="80">
-        <!-- Person -->
-        <circle cx="72" cy="22" r="8" fill="rgba(78,205,196,0.2)" stroke="#4ECDC4" stroke-width="1.5"/>
-        <circle cx="72" cy="19" r="4" fill="#4ECDC4" opacity="0.8"/>
-        <path d="M62 38 Q72 32 82 38 L84 52 L60 52 Z" fill="rgba(78,205,196,0.15)" stroke="#4ECDC4" stroke-width="1.2" stroke-linejoin="round"/>
-        <!-- Pin -->
-        <circle cx="90" cy="40" r="10" fill="rgba(78,205,196,0.2)" stroke="#4ECDC4" stroke-width="1.5"/>
-        <circle cx="90" cy="38" r="4" fill="#4ECDC4"/>
-        <path d="M90 48 L90 54" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round"/>
-        <!-- Dotted line -->
-        <path d="M80 44 Q85 48 88 48" stroke="#4ECDC4" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.6"/>
-        <!-- Small location dots -->
-        <circle cx="48" cy="55" r="3" fill="rgba(78,205,196,0.4)"/>
-        <circle cx="112" cy="30" r="2.5" fill="rgba(78,205,196,0.3)"/>
-        <circle cx="100" cy="58" r="2" fill="rgba(78,205,196,0.25)"/>
-      </svg>
-    </div>
-
-    <!-- Form -->
-    <div class="auth-form-wrap">
+    <div class="auth-divider"></div>
+    <div class="auth-body">
       <div class="auth-h">Welcome back</div>
       <div class="auth-sub">Sign in to continue tracking</div>
       <div class="amsg err" id="siErr"></div>
       <div class="amsg ok" id="siOk"></div>
-
-      <div class="auth-field">
-        <div class="auth-field-label">EMAIL</div>
-        <input class="auth-input" type="email" id="siEmail" placeholder="you@example.com" autocomplete="email"/>
+      <div class="fg">
+        <label>Email</label>
+        <input type="email" id="siEmail" placeholder="you@example.com" autocomplete="email"/>
       </div>
-      <div class="auth-field">
-        <div class="auth-field-label-row">
-          <span class="auth-field-label">PASSWORD</span>
-        </div>
-        <div class="auth-input-wrap">
-          <input class="auth-input" type="password" id="siPass" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password"/>
-          <button type="button" class="auth-eye-btn" onclick="togglePassVis('siPass',this)" tabindex="-1">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-          </button>
-        </div>
+      <div class="fg">
+        <label>Password</label>
+        <input type="password" id="siPass" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password"/>
       </div>
-
-      <button class="auth-submit-btn" id="siBtn" onclick="doSignIn()">Sign In</button>
-
-      <div class="auth-or-row"><div class="auth-or-line"></div><span class="auth-or-text">or</span><div class="auth-or-line"></div></div>
-
-      <button class="auth-google-btn" onclick="doGoogleSignIn()">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Continue with Google
-      </button>
-
-      <div class="auth-switch">No account? <a onclick="toggleAuth('up')">Create one</a></div>
+      <button class="btn-auth" id="siBtn" onclick="doSignIn()">Sign In</button>
+      <div class="auth-tog">No account? <a onclick="toggleAuth('up')">Create one</a></div>
     </div>
-
-    <div class="auth-footer">created by D.Y.D Lokuge</div>
+    <div class="auth-credit">created by D.Y.D Lokuge</div>
   </div>
 
-  <!-- ── CREATE ACCOUNT ── -->
-  <div id="suBox" class="auth-screen auth-desktop-wrap" style="display:none">
-    <div class="auth-blob auth-blob-1"></div>
-    <div class="auth-blob auth-blob-3"></div>
-
-    <div class="auth-brand-wrap" style="padding-top:48px">
-      <div class="auth-logo-mark">
-        <svg viewBox="0 0 40 40" fill="none" width="40" height="40">
-          <circle cx="20" cy="20" r="20" fill="rgba(78,205,196,0.15)"/>
-          <path d="M20 8 L28 14 L28 22 C28 27 24 31 20 33 C16 31 12 27 12 22 L12 14 Z" fill="none" stroke="#4ECDC4" stroke-width="1.8" stroke-linejoin="round"/>
-          <circle cx="20" cy="20" r="3" fill="#4ECDC4"/>
-          <path d="M20 20 L24 16" stroke="#4ECDC4" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="auth-wordmark">Work<span>Trace</span></div>
+  <!-- ── CREATE ACCOUNT (secondary) ── -->
+  <div id="suBox" class="auth-screen" style="display:none">
+    <div class="auth-top">
+      <div class="auth-brand-name">WorkTrace</div>
+      <div class="auth-brand-sub">Smart Location Tracking</div>
     </div>
-
-    <div class="auth-form-wrap">
+    <div class="auth-divider"></div>
+    <div class="auth-body">
       <div class="auth-h">Create account</div>
-      <div class="auth-sub">Set up your workspace in minutes</div>
+      <div class="auth-sub">Set up your email, password and workspace</div>
       <div class="amsg err" id="suErr"></div>
       <div class="amsg ok" id="suOk"></div>
 
-      <div class="auth-step-row"><div class="auth-step-dot active"></div><div class="auth-step-line"></div><div class="auth-step-dot"></div><div class="auth-step-line"></div><div class="auth-step-dot"></div></div>
+      <div class="su-step-label">Your details</div>
+      <div class="fg"><label>Full Name</label><input type="text" id="suName" placeholder="e.g. Robin Smith" autocomplete="name"/></div>
+      <div class="fg"><label>Email</label><input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="suPass" placeholder="Min 6 characters" autocomplete="new-password"/></div>
 
-      <div class="auth-section-label">Your details</div>
-      <div class="auth-field">
-        <div class="auth-field-label">FULL NAME</div>
-        <input class="auth-input" type="text" id="suName" placeholder="e.g. Robin Smith" autocomplete="name"/>
-      </div>
-      <div class="auth-field">
-        <div class="auth-field-label">EMAIL</div>
-        <input class="auth-input" type="email" id="suEmail" placeholder="you@example.com" autocomplete="email"/>
-      </div>
-      <div class="auth-field">
-        <div class="auth-field-label">PASSWORD</div>
-        <div class="auth-input-wrap">
-          <input class="auth-input" type="password" id="suPass" placeholder="Min 6 characters" autocomplete="new-password"/>
-          <button type="button" class="auth-eye-btn" onclick="togglePassVis('suPass',this)" tabindex="-1">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="auth-section-label" style="margin-top:8px">Choose your workspace</div>
+      <div class="su-step-label">Choose your workspace</div>
       <div class="su-option-row">
         <div class="su-option on" id="suOptCreate" onclick="selectSignUpOption('create')">
           <div class="su-option-icon">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
           </div>
           <div class="su-option-text">
-            <div class="su-option-title">Create company</div>
-            <div class="su-option-sub">I'm an employer</div>
+            <div class="su-option-title">Create a company</div>
+            <div class="su-option-sub">I am an employer or admin</div>
           </div>
         </div>
         <div class="su-option" id="suOptJoin" onclick="selectSignUpOption('join')">
@@ -220,41 +96,35 @@
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           </div>
           <div class="su-option-text">
-            <div class="su-option-title">Join team</div>
+            <div class="su-option-title">Join my team</div>
             <div class="su-option-sub">I have an invite code</div>
           </div>
         </div>
       </div>
 
       <div id="suCreateFields">
-        <div class="auth-field"><div class="auth-field-label">COMPANY NAME</div><input class="auth-input" type="text" id="suCompanyName" placeholder="e.g. Clean Pro Services" autocomplete="organization"/></div>
-        <div class="auth-field">
-          <div class="auth-field-label">LOCATIONS <span style="font-size:10px;color:var(--auth-text3);font-weight:400;text-transform:none;letter-spacing:0">(add your work sites)</span></div>
+        <div class="fg"><label>Company Name</label><input type="text" id="suCompanyName" placeholder="e.g. Clean Pro Services" autocomplete="organization"/></div>
+        <div class="fg">
+          <label>Locations <span style="font-size:10px;color:#8A9BB0;font-weight:400;text-transform:none;letter-spacing:0">(add your work sites)</span></label>
           <div id="suLocList"></div>
-          <button type="button" onclick="addSuLocation()" class="auth-add-loc-btn">+ Add Location</button>
+          <button type="button" onclick="addSuLocation()" class="btn-add-loc">+ Add Location</button>
         </div>
       </div>
+
       <div id="suJoinFields" style="display:none">
-        <div class="auth-field">
-          <div class="auth-field-label">INVITE CODE</div>
-          <input class="auth-input invite-input" type="text" id="suInviteCode" placeholder="e.g. A1B2C3D4"/>
+        <div class="fg">
+          <label>Invite Code</label>
+          <input type="text" id="suInviteCode" placeholder="e.g. A1B2C3D4" class="invite-input"/>
         </div>
       </div>
 
-      <button class="auth-submit-btn" id="suBtn" onclick="doSignUpFull()">Create Account</button>
-
-      <div class="auth-or-row"><div class="auth-or-line"></div><span class="auth-or-text">or</span><div class="auth-or-line"></div></div>
-      <button class="auth-google-btn" onclick="doGoogleSignIn()">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Continue with Google
-      </button>
-
-      <div class="auth-switch">Already have an account? <a onclick="toggleAuth('in')">Sign in</a></div>
+      <button class="btn-auth" id="suBtn" onclick="doSignUpFull()">Create Account</button>
+      <div class="auth-tog">Already have an account? <a onclick="toggleAuth('in')">Sign in</a></div>
     </div>
-    <div class="auth-footer">created by D.Y.D Lokuge</div>
+    <div class="auth-credit">created by D.Y.D Lokuge</div>
   </div>
 
-</main>
+</div>
 
 
 <!-- COMPANY SETUP SCREEN -->
@@ -314,10 +184,10 @@
   </div>
 </div>
 
-<main id="app" style="display:none;flex-direction:column">
+<div id="app" style="display:none;flex-direction:column">
   <div class="topbar">
     <div class="tb-brand" onclick="sv('log')" style="cursor:pointer"><div class="tb-dot"></div><div class="tb-name">Work<span>Trace</span></div></div>
-    <div class="tb-r"><div class="tb-user" id="tbUser"></div><span id="tbRole" style="font-size:9px;font-weight:700;color:var(--teal);background:var(--teal-bg);border-radius:4px;padding:2px 6px;text-transform:uppercase;letter-spacing:0.5px"></span><button onclick="openKeyRequestPanel()" style="background:none;border:none;cursor:pointer;position:relative;padding:4px;display:flex;align-items:center" title="Key Requests"><svg fill="none" stroke="var(--text2)" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg><span id="keyReqBadge" style="display:none;position:absolute;top:0;right:0;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center">0</span></button><button class="btn-so" onclick="doSignOut()" aria-label="Sign out">Sign out</button></div>
+    <div class="tb-r"><div class="tb-user" id="tbUser"></div><span id="tbRole" style="font-size:9px;font-weight:700;color:var(--teal);background:var(--teal-bg);border-radius:4px;padding:2px 6px;text-transform:uppercase;letter-spacing:0.5px"></span><button onclick="openKeyRequestPanel()" style="background:none;border:none;cursor:pointer;position:relative;padding:4px;display:flex;align-items:center" title="Key Requests"><svg fill="none" stroke="var(--text2)" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg><span id="keyReqBadge" style="display:none;position:absolute;top:0;right:0;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center">0</span></button><button class="btn-so" onclick="doSignOut()">Sign out</button></div>
   </div>
 
   <!-- LOG -->
@@ -395,15 +265,6 @@
       <div class="sup-lbl">Supplies needed <span class="sup-lbl-hint">tap to flag</span></div>
       <div class="sup-grid" id="supGrid"></div>
     </div>
-    <!-- BORROW ITEM BUTTON -->
-    <div style="padding:0 16px 4px">
-      <button onclick="openBorrowModal()" style="width:100%;background:none;border:1.5px solid var(--border2);border-radius:10px;color:var(--text2);padding:11px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all var(--t)">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
-        Borrow / Return Item
-        <span id="borrowBadge" style="display:none;background:var(--amber);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center">0</span>
-      </button>
-    </div>
-
     <div class="save-row">
       <button class="btn-clr" onclick="clearDay()">Clear</button>
       <button class="btn-save" id="btnSave" onclick="saveDay()">Save Day</button>
@@ -453,11 +314,6 @@
   <!-- REPORT -->
   <div class="view" id="v-rep">
     <div class="rv-wrap">
-      <!-- Report mode toggle -->
-      <div style="display:flex;gap:6px;padding:12px 16px 4px">
-        <button id="repModeWeek" onclick="setRepMode('week')" class="rep-mode-btn on">Weekly</button>
-        <button id="repModeMonth" onclick="setRepMode('month')" class="rep-mode-btn">Monthly</button>
-      </div>
       <div class="rv-nav">
         <button class="rv-btn" onclick="navRep(-1)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
         <span class="rv-title" id="rvTitle"></span>
@@ -616,35 +472,13 @@
         </div>
       </div>
 
-      <!-- COMPANY SETTINGS — Admin/Employer Controls -->
+      <!-- COMPANY SETTINGS -->
       <div class="set-section" id="companySettingsSection">
         <div class="set-sec-title">Company</div>
-        <div class="set-card" style="padding:0;overflow:hidden">
+        <div class="set-card" style="padding:14px">
           <div id="companySettingsContent">
-            <div style="font-size:12px;color:var(--text3);text-align:center;padding:16px">Loading...</div>
+            <div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Loading...</div>
           </div>
-        </div>
-      </div>
-
-      <!-- LOCATIONS MANAGEMENT (admin/employer only) -->
-      <div class="set-section" id="locationsSection" style="display:none">
-        <div class="set-sec-title" style="display:flex;align-items:center;justify-content:space-between">
-          <span>Locations</span>
-          <button onclick="addNewLocation()" class="set-action-btn">+ Add</button>
-        </div>
-        <div class="set-card" style="padding:12px" id="locationsList">
-          <div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">Loading...</div>
-        </div>
-      </div>
-
-      <!-- TEAM MANAGEMENT (admin/employer only) -->
-      <div class="set-section" id="teamSection" style="display:none">
-        <div class="set-sec-title" style="display:flex;align-items:center;justify-content:space-between">
-          <span>Team Members</span>
-          <button onclick="showInviteCode()" class="set-action-btn">+ Invite</button>
-        </div>
-        <div class="set-card" style="padding:12px" id="teamList">
-          <div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">Loading...</div>
         </div>
       </div>
 
@@ -743,6 +577,25 @@
     <button class="nb" id="nb-more" onclick="toggleMoreMenu()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>More<div class="nb-badge" id="more-badge"></div></button>
   </div>
 
+  <!-- More menu slide-up panel -->
+  <div id="moreMenu" class="more-menu" style="display:none">
+    <div class="more-menu-handle"></div>
+    <div class="more-menu-grid">
+      <button class="more-item" id="more-rep" onclick="sv('rep');closeMoreMenu()">
+        <div class="more-item-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+        <div class="more-item-label">Report</div>
+      </button>
+      <button class="more-item" id="more-req" onclick="sv('req');closeMoreMenu()">
+        <div class="more-item-icon" style="position:relative"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg><div class="nb-badge" id="req-badge-dot" style="top:0;right:0"></div></div>
+        <div class="more-item-label">Requests</div>
+      </button>
+      <button class="more-item" id="more-set" onclick="sv('set');closeMoreMenu()">
+        <div class="more-item-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div class="more-item-label">Settings</div>
+      </button>
+    </div>
+  </div>
+  <div id="moreOverlay" onclick="closeMoreMenu()" style="display:none;position:fixed;inset:0;z-index:98"></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -754,20 +607,11 @@
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">Assign Schedule</div>
-    <div class="modal-sub">Assign the same schedule to one or more people</div>
-
-    <!-- Multi-person picker -->
+    <div class="modal-sub">Set locations, start time and note per day</div>
     <div class="modal-field">
-      <div class="modal-label" style="display:flex;align-items:center;justify-content:space-between">
-        <span>Select People</span>
-        <span id="assignPeopleCount" style="font-size:11px;color:var(--teal);font-weight:700"></span>
-      </div>
-      <div id="assignPeoplePicker" class="key-member-picker" style="max-height:140px;overflow-y:auto"></div>
+      <div class="modal-label">Employee Email</div>
+      <input class="modal-input" type="email" id="assignEmail" placeholder="employee@example.com"/>
     </div>
-
-    <!-- Selected chips -->
-    <div id="assignSelectedChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:0"></div>
-
     <div class="modal-field">
       <div class="modal-label">Tap a day to configure it</div>
       <div class="modal-days" id="modalDays"></div>
@@ -791,7 +635,7 @@
     <div id="modalDaySummary"></div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-modal-save" onclick="saveAssignment()">Assign Schedule</button>
+      <button class="btn-modal-save" onclick="saveAssignment()">Assign All</button>
     </div>
   </div>
 </div>
@@ -823,101 +667,6 @@
     <div id="keyRequestList"><div style="text-align:center;padding:16px;font-size:12px;color:var(--text3)">Loading...</div></div>
   </div>
 </div>
-
-
-<!-- BORROW ITEM MODAL -->
-<div id="borrowModal" style="display:none">
-  <div style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px;max-height:85vh;overflow-y:auto">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-size:16px;font-weight:700">Borrow / Return Item</div>
-      <button onclick="closeBorrowModal()" style="background:none;border:1.5px solid var(--border2);border-radius:8px;color:var(--text3);padding:4px 12px;cursor:pointer;font-family:Inter,sans-serif">Close</button>
-    </div>
-
-    <!-- Send request -->
-    <div style="background:var(--card2);border-radius:12px;padding:14px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Request to borrow</div>
-      <input id="borrowItem" type="text" placeholder="Item name (e.g. Extension cord, Mop)" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:11px 13px;outline:none;margin-bottom:10px"/>
-      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Borrow from — team members</div>
-      <div class="key-member-picker" id="borrowPersonPicker" style="margin-bottom:8px"></div>
-      <div id="borrowToEmail" data-email="" data-name="" style="font-size:11px;color:var(--teal);font-weight:600;margin-bottom:10px;min-height:16px"></div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Or enter a name (not on app)</div>
-      <input id="borrowManualName" type="text" placeholder="e.g. John from another team" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;padding:10px 13px;outline:none;margin-bottom:10px"/>
-      <input id="borrowNote" type="text" placeholder="Note (optional)" style="width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;padding:10px 13px;outline:none;margin-bottom:10px"/>
-      <button onclick="sendBorrowRequest()" class="borrow-send-btn" style="width:100%;background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:12px;font-family:Inter,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Send Request</button>
-    </div>
-
-    <!-- Pending requests -->
-    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Pending requests for me</div>
-    <div id="borrowRequestList" style="margin-bottom:14px"></div>
-
-    <!-- My borrow history -->
-    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">My borrows</div>
-    <div id="borrowLog"></div>
-  </div>
-</div>
-
-
-<!-- MORE MENU (outside #app to avoid stacking context issues) -->
-<div id="moreOverlay" onclick="closeMoreMenu()" style="display:none;position:fixed;inset:0;z-index:998;pointer-events:none"></div>
-<div id="moreMenu" style="display:none;position:fixed;z-index:999;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;padding:8px 16px 16px;animation:slideUp 0.22s ease">
-  <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 14px"></div>
-  <div class="more-menu-grid">
-    <button class="more-item" id="more-rep" onclick="sv('rep');closeMoreMenu()">
-      <div class="more-item-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
-      <div class="more-item-label">Report</div>
-    </button>
-    <button class="more-item" id="more-req" onclick="sv('req');closeMoreMenu()">
-      <div class="more-item-icon" style="position:relative"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg><div class="nb-badge" id="req-badge-dot" style="top:0;right:0"></div></div>
-      <div class="more-item-label">Requests</div>
-    </button>
-    <button class="more-item" id="more-set" onclick="sv('set');closeMoreMenu()">
-      <div class="more-item-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg></div>
-      <div class="more-item-label">Settings</div>
-    </button>
-  </div>
-</div>
-
-
-<script>
-// RESCUE SCRIPT - fixes black screen if app loaded but views are hidden
-window.addEventListener('load', function() {
-  setTimeout(function() {
-    var app = document.getElementById('app');
-    var loader = document.getElementById('loader');
-    var auth = document.getElementById('authWrap');
-    
-    // If app is visible but no view is active, activate log view
-    if(app && app.style.display !== 'none' && app.style.display !== '') {
-      var activeView = document.querySelector('.view.on');
-      if(!activeView || activeView.style.display === 'none') {
-        console.log('RESCUE: activating log view');
-        if(typeof sv === 'function') sv('log');
-      }
-    }
-    
-    // If loader is still showing after 10s, force show auth
-    if(loader && !loader.classList.contains('out')) {
-      console.log('RESCUE: loader stuck, showing auth');
-      loader.classList.add('out');
-      if(typeof showAuth === 'function') showAuth();
-    }
-  }, 3000);
-  
-  // Check every 2 seconds for black screen
-  setInterval(function() {
-    var app = document.getElementById('app');
-    var loader = document.getElementById('loader');
-    
-    if(app && app.style.display && app.style.display !== 'none') {
-      var activeView = document.querySelector('.view.on');
-      if(!activeView) {
-        console.log('RESCUE INTERVAL: no active view, calling sv log');
-        if(typeof sv === 'function') sv('log');
-      }
-    }
-  }, 2000);
-});
-</script>
 
 </body>
 </html>
