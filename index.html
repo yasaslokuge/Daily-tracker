@@ -2,50 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link rel="dns-prefetch" href="https://vwoylscgfhuzmsnkjdlu.supabase.co"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>WorkTrace - Smart Location Tracking for Field Teams</title>
-  <meta name="description" content="WorkTrace helps field teams log daily work locations, manage schedules, track keys and flag supplies — all from any device, no app download needed."/>
-  <meta name="theme-color" content="#1A1D23"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="WorkTrace"/>
-  <!-- Open Graph -->
-  <meta property="og:title" content="WorkTrace"/>
-  <meta property="og:description" content="Smart location tracking for field teams"/>
-  <meta property="og:type" content="website"/>
-  <!-- Security headers via meta -->
-  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<meta name="description" content="WorkTrace helps field teams log daily work locations, manage schedules, track keys and flag supplies — all from any device, no app download needed."/>
+<meta name="theme-color" content="#1A1D23"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WorkTrace"/>
+<meta property="og:title" content="WorkTrace"/>
+<meta property="og:description" content="Smart location tracking for field teams"/>
+<meta property="og:type" content="website"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
+<!-- Preconnect hints -->
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<!-- CSS first - prevents flash of unstyled content -->
+<link rel="stylesheet" href="style.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
-  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
-  <meta name="referrer" content="strict-origin-when-cross-origin"/>
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
-<!-- Styles -->
-<link rel="stylesheet" href="style.css"/>
-  <!-- Hotjar — lazy load after page is interactive -->
-  <script>
-    window.addEventListener('load',function(){
-      setTimeout(function(){
-        (function(h,o,t,j,a,r){
-          h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
-          h._hjSettings={hjid:6740723,hjsv:6};
-          a=o.getElementsByTagName('head')[0];
-          r=o.createElement('script');r.async=1;
-          r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
-          a.appendChild(r);
-        })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
-      },3000);
-    });
-  </script>
+<!-- Hotjar lazy load -->
+<script>
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      (function(h,o,t,j,a,r){
+        h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+        h._hjSettings={hjid:6740723,hjsv:6};
+        a=o.getElementsByTagName('head')[0];
+        r=o.createElement('script');r.async=1;
+        r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+        a.appendChild(r);
+      })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+    },3000);
+  });
+</script>
 </head>
-<body>
+<body style="background:#1A1D23;margin:0">
 
 <div id="loader">
   <div class="ld-logo"><div class="spin-ring"></div><div class="ld-word">Work<b>Trace</b></div></div>
