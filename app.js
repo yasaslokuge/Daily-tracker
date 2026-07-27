@@ -216,7 +216,7 @@ async function doSignUpFull(){
     if(!company){msg('suErr','Error creating company - please sign in and try again');if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
     COMPANY=company;LOCS=locs;MY_ROLE='admin';
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
-    hideAuth();showApp();
+    hideAuth();showApp();sv('log');
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='admin';
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -240,7 +240,7 @@ async function doSignUpFull(){
       LOCS=result.company.locations.map(l=>({...l,keys:[]}));
     }
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
-    hideAuth();showApp();
+    hideAuth();showApp();sv('log');
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='employee';
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -945,7 +945,7 @@ async function submitCreateCompany(){
   if(btn){btn.disabled=false;btn.textContent='Create Company';}
   if(!company){showToast('Error creating company','warn');return;}
   COMPANY=company;LOCS=locations;MY_ROLE='admin';
-  hideCompanySetup();showApp();
+  hideCompanySetup();showApp();sv('log');
   const roleEl=document.getElementById('tbRole');
   if(roleEl) roleEl.textContent=MY_ROLE;
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -965,7 +965,7 @@ async function submitJoinCompany(){
   if(result.company.locations&&result.company.locations.length){
     LOCS=result.company.locations.map(l=>({...l,keys:[]}));
   }
-  hideCompanySetup();showApp();
+  hideCompanySetup();showApp();sv('log');
   const roleEl=document.getElementById('tbRole');
   if(roleEl) roleEl.textContent=MY_ROLE;
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
