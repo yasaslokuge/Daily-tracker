@@ -109,8 +109,12 @@ function showAuth(){
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
 function showApp(){
   const isDesktop=window.innerWidth>=900;
-  document.getElementById('app').style.cssText=isDesktop?'display:flex;flex-direction:row':'display:flex;flex-direction:column';
-  if(!isDesktop) document.getElementById('bnav').style.display='flex';
+  const app=document.getElementById('app');
+  if(app) app.style.cssText=isDesktop
+    ?'display:flex;flex-direction:row;width:100%;height:100vh;position:fixed;inset:0'
+    :'display:flex;flex-direction:column';
+  const bnav=document.getElementById('bnav');
+  if(!isDesktop&&bnav) bnav.style.display='flex';
   if(isDesktop) setTimeout(buildDesktopSidebar,50);
 }
 function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none';destroyDesktopSidebar();}
@@ -1213,6 +1217,7 @@ async function initApp(u){
   if(roleEl) roleEl.textContent=MY_ROLE;
   hideAuth();
   showApp();
+  sv('log'); // activate default view - without this all views stay hidden
   await loadWk(wkDates(logOff));
   await loadLocKeys();
   // Pre-load company members for key picker (all roles need this)
