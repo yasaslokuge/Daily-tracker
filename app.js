@@ -743,10 +743,6 @@ async function loadMyCompany(){
         memberships=(d2&&d2.length?d2:d1)||[];
       }
     }
-    if(me){
-      console.error('company_members error:',me.message,me.code);
-      return null;
-    }
     if(!memberships||!memberships.length){
       console.log('No membership found for',ME.email,'id:',ME.id);
       return null;
