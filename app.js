@@ -201,7 +201,7 @@ async function doSignUpFull(){
     if(!company){msg('suErr','Error creating company - please sign in and try again');if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
     COMPANY=company;LOCS=locs;MY_ROLE='admin';
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
-    hideAuth();showApp();
+    hideAuth();showApp();sv('log');
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='admin';
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -225,7 +225,7 @@ async function doSignUpFull(){
       LOCS=result.company.locations.map(l=>({...l,keys:[]}));
     }
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
-    hideAuth();showApp();
+    hideAuth();showApp();sv('log');
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='employee';
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -678,41 +678,44 @@ async function saveKeyHolder(){
 
 async function loadMyCompany(){
   try{
-    const{data:memberships,error:me}=await supabaseClient
-      .from('company_members').select('*').eq('user_id',ME.id).limit(1);
-    if(me){
-      console.error('company_members error:',me.message,me.code);
-      // If it's a network error, propagate null to trigger retry
-      return null;
+    const{data:{session}}=await sb.auth.getSession();
+    const token=session?.access_token;
+    if(!token){console.error('No session token');return null;}
+    let memberships=[];
+    const r1=await fetch(
+      SUPABASE_URL+'/rest/v1/company_members?select=*&user_id=eq.'+ME.id,
+      {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
+    );
+    if(r1.ok){const d=await r1.json();memberships=Array.isArray(d)?d:[];}
+    if(!memberships.length){
+      const r2=await fetch(
+        SUPABASE_URL+'/rest/v1/company_members?select=*&user_email=eq.'+encodeURIComponent(ME.email),
+        {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
+      );
+      if(r2.ok){const d=await r2.json();memberships=Array.isArray(d)?d:[];}
     }
-    if(!memberships||!memberships.length){
-      console.log('No company membership found for',ME.email);
-      return null;
+    if(!memberships.length){console.log('No memberships for',ME.email);return null;}
+    const ids=[...new Set(memberships.map(m=>m.company_id))];
+    const r3=await fetch(
+      SUPABASE_URL+'/rest/v1/companies?select=*&id=in.('+ids.join(',')+')',
+      {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
+    );
+    if(!r3.ok){console.error('Companies fetch failed');return null;}
+    const companies=await r3.json();
+    if(!companies||!companies.length){return null;}
+    let best=null,bestM=null,bestScore=-1;
+    for(const m of memberships){
+      const co=companies.find(c=>c.id===m.company_id);
+      if(!co) continue;
+      const score=(co.locations||[]).length*10+(m.role==='admin'?5:m.role==='employer'?3:1);
+      if(score>bestScore){bestScore=score;best=co;bestM=m;}
     }
-    const membership=memberships[0];
-    MY_ROLE=membership.role;
-    const{data:companies,error:ce}=await supabaseClient
-      .from('companies').select('*').eq('id',membership.company_id).limit(1);
-    if(ce){console.error('companies error:',ce.message);return null;}
-    if(!companies||!companies.length){
-      console.error('Company not found for id',membership.company_id);
-      return null;
-    }
-    const company=companies[0];
-    COMPANY=company;
-    if(company.locations&&company.locations.length>0){
-      LOCS=company.locations.map(l=>({...l,keys:[]}));
-      console.log('LOCS set from company:',LOCS.length,'locations:',LOCS.map(l=>l.name).join(', '));
-    } else {
-      LOCS=[...DEFAULT_LOCS];
-      console.log('LOCS fallback to DEFAULT_LOCS:',LOCS.length);
-    }
-    console.log('Company loaded:',company.name,'Role:',MY_ROLE);
-    return company;
-  }catch(e){
-    console.error('loadMyCompany exception:',e);
-    return null;
-  }
+    if(!best){best=companies[0];bestM=memberships[0];}
+    MY_ROLE=bestM.role;COMPANY=best;
+    LOCS=(best.locations||[]).length>0?best.locations.map(l=>({...l,keys:[]})):[...DEFAULT_LOCS];
+    console.log('Company loaded:',best.name,'Role:',MY_ROLE,'Locs:',LOCS.length);
+    return best;
+  }catch(e){console.error('loadMyCompany error:',e.message);return null;}
 }
 
 async function createCompany(name,locations){
@@ -761,15 +764,34 @@ let membersCache=[];
 let membersCacheLoaded=false;
 
 async function getCompanyMembers(forceRefresh=false){
-  if(!COMPANY) return[];
+  if(!COMPANY){return[];}
   if(membersCacheLoaded&&!forceRefresh) return membersCache;
-  const{data,error}=await supabaseClient.from('company_members')
-    .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id).order('display_name');
-  if(error){console.error('getCompanyMembers error:',error);return membersCache;}
-  membersCache=data||[];
-  membersCacheLoaded=true;
-  console.log('Members loaded:',membersCache.length,membersCache.map(m=>m.display_name||m.user_email));
-  return membersCache;
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    const token=session?.access_token;
+    if(token){
+      const res=await fetch(
+        SUPABASE_URL+'/rest/v1/company_members?select=id,user_id,user_email,role,display_name&company_id=eq.'+COMPANY.id+'&order=display_name',
+        {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
+      );
+      if(res.ok){
+        const data=await res.json();
+        membersCache=Array.isArray(data)?data:[];
+        membersCacheLoaded=true;
+        console.log('Members loaded:',membersCache.length,membersCache.map(m=>m.display_name||m.user_email));
+        return membersCache;
+      }
+    }
+    // Fallback to supabase client
+    const{data,error}=await supabaseClient.from('company_members')
+      .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id);
+    if(!error){membersCache=data||[];membersCacheLoaded=true;}
+    console.log('Members (fallback):',membersCache.length);
+    return membersCache;
+  }catch(e){
+    console.error('getCompanyMembers error:',e.message);
+    return membersCache||[];
+  }
 }
 
 function getMemberName(email){
@@ -993,6 +1015,7 @@ async function initApp(u){
   if(roleEl) roleEl.textContent=MY_ROLE;
   hideAuth();
   showApp();
+  sv('log');
   await loadWk(wkDates(logOff));
   await loadLocKeys();
   // Pre-load company members for key picker (all roles need this)
