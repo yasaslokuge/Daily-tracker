@@ -1157,3 +1157,37 @@ body.light .auth-top{background:#DFF2EE}
   .dt-signout{background:none;border:none;cursor:pointer;color:var(--text3);padding:6px;border-radius:6px;transition:all var(--t);display:flex;align-items:center;flex-shrink:0}
   .dt-signout:hover{color:var(--red);background:var(--red-bg)}
 }
+
+/* ── STATS BANNER ── */
+.stats-banner{
+  display:flex;align-items:center;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:0 4px;
+  margin-bottom:16px;
+  overflow:hidden;
+}
+.stats-banner-item{
+  flex:1;display:flex;align-items:center;gap:12px;
+  padding:16px 18px;
+}
+.stats-banner-ico{
+  width:36px;height:36px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.stats-banner-val{
+  font-size:22px;font-weight:700;
+  color:var(--text);line-height:1;margin-bottom:3px;
+}
+.stats-banner-lbl{
+  font-size:11px;color:var(--text3);
+  font-weight:500;white-space:nowrap;
+}
+.stats-banner-div{
+  width:1px;height:40px;
+  background:var(--border);flex-shrink:0;
+}
+/* Remove old stats-g on dashboard */
+.stats-g{display:none}

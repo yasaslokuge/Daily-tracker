@@ -1363,11 +1363,48 @@ async function renderDash(){
   let dw=0,tl=0,sd=0,streak=0,chk=td();
   while(true){const dd=gd(chk);if(dd.locations&&dd.locations.length){streak++;chk=ds(addD(fd(chk),-1))}else break}
   dates.forEach(d=>{const dd=gd(d);if(dd.locations&&dd.locations.length){dw++;tl+=dd.locations.length}if(dd.supplies&&Object.values(dd.supplies).some(Boolean))sd++});
-  document.getElementById('dashStats').innerHTML=`
-    <div class="s-card ct"><div class="s-ico ct"><svg stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="s-val">${dw}</div><div class="s-lbl">Days worked</div></div>
-    <div class="s-card cb"><div class="s-ico cb"><svg stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg></div><div class="s-val">${tl}</div><div class="s-lbl">Total locations</div></div>
-    <div class="s-card ca"><div class="s-ico ca"><svg stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><div class="s-val">${streak}</div><div class="s-lbl">Day streak</div></div>
-    <div class="s-card cp"><div class="s-ico cp"><svg stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><div class="s-val">${sd}</div><div class="s-lbl">Supply alerts</div></div>`;
+  // Calculate total hours worked this week
+  let totalMins=0;
+  dates.forEach(d=>{const dd=gd(d);if(dd.start_time&&dd.end_time){const[sh,sm]=dd.start_time.split(':').map(Number);const[eh,em]=dd.end_time.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;totalMins+=mins;}});
+  const totalHrs=Math.floor(totalMins/60);const totalMin2=totalMins%60;
+  const hrsLabel=totalMins>0?(totalHrs+'h'+(totalMin2>0?' '+totalMin2+'m':'')):'—';
+
+  document.getElementById('dashStats').innerHTML=`<div class="stats-banner">
+    <div class="stats-banner-item">
+      <div class="stats-banner-ico" style="background:rgba(5,217,180,0.15)">
+        <svg fill="none" stroke="#05D9B4" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div><div class="stats-banner-val">${dw}</div><div class="stats-banner-lbl">Days worked</div></div>
+    </div>
+    <div class="stats-banner-div"></div>
+    <div class="stats-banner-item">
+      <div class="stats-banner-ico" style="background:rgba(107,159,228,0.15)">
+        <svg fill="none" stroke="#6B9FE4" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+      </div>
+      <div><div class="stats-banner-val">${tl}</div><div class="stats-banner-lbl">Total locations</div></div>
+    </div>
+    <div class="stats-banner-div"></div>
+    <div class="stats-banner-item">
+      <div class="stats-banner-ico" style="background:rgba(232,168,76,0.15)">
+        <svg fill="none" stroke="#E8A84C" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <div><div class="stats-banner-val">${streak}</div><div class="stats-banner-lbl">Day streak</div></div>
+    </div>
+    <div class="stats-banner-div"></div>
+    <div class="stats-banner-item">
+      <div class="stats-banner-ico" style="background:rgba(91,196,160,0.15)">
+        <svg fill="none" stroke="#5BC4A0" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/></svg>
+      </div>
+      <div><div class="stats-banner-val">${hrsLabel}</div><div class="stats-banner-lbl">Hours this week</div></div>
+    </div>
+    <div class="stats-banner-div"></div>
+    <div class="stats-banner-item">
+      <div class="stats-banner-ico" style="background:rgba(224,112,112,0.15)">
+        <svg fill="none" stroke="#E07070" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <div><div class="stats-banner-val">${sd}</div><div class="stats-banner-lbl">Supply alerts</div></div>
+    </div>
+  </div>`;
   const wm=addD(mon(td()),0),wsu=addD(wm,6);
   document.getElementById('wccR').textContent=`${wm.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${wsu.toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}`;
   const mx=Math.max(1,...dates.map(d=>gd(d).locations?.length||0)),tday=td();
