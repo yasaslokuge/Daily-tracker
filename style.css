@@ -1254,5 +1254,5 @@ body.light .stats-banner::after{
 body.light .stats-banner-inner::before{
   background:linear-gradient(90deg,transparent,rgba(0,184,154,0.25),rgba(74,127,193,0.15),transparent);
 }
-/* Remove old stats-g on dashboard */
-.stats-g{display:none}
+/* stats-g now holds the banner - just remove grid layout */
+.stats-g{display:block;margin-bottom:0}
