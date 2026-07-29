@@ -1369,7 +1369,7 @@ async function renderDash(){
   const totalHrs=Math.floor(totalMins/60);const totalMin2=totalMins%60;
   const hrsLabel=totalMins>0?(totalHrs+'h'+(totalMin2>0?' '+totalMin2+'m':'')):'—';
 
-  document.getElementById('dashStats').innerHTML=`<div class="stats-banner">
+  document.getElementById('dashStats').innerHTML=`<div class="stats-banner"><div class="stats-banner-inner">
     <div class="stats-banner-item">
       <div class="stats-banner-ico" style="background:rgba(5,217,180,0.15)">
         <svg fill="none" stroke="#05D9B4" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -1404,7 +1404,7 @@ async function renderDash(){
       </div>
       <div><div class="stats-banner-val">${sd}</div><div class="stats-banner-lbl">Supply alerts</div></div>
     </div>
-  </div>`;
+  </div></div>`;
   const wm=addD(mon(td()),0),wsu=addD(wm,6);
   document.getElementById('wccR').textContent=`${wm.toLocaleDateString('en-NZ',{month:'short',day:'numeric'})} - ${wsu.toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}`;
   const mx=Math.max(1,...dates.map(d=>gd(d).locations?.length||0)),tday=td();

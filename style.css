@@ -1161,21 +1161,75 @@ body.light .auth-top{background:#DFF2EE}
 /* ── STATS BANNER ── */
 .stats-banner{
   display:flex;align-items:center;
+  position:relative;
   background:var(--card);
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius:16px;
   padding:0 4px;
-  margin-bottom:16px;
+  margin-bottom:20px;
   overflow:hidden;
+  isolation:isolate;
+}
+/* Ambient glow blobs behind the banner */
+.stats-banner::before{
+  content:'';
+  position:absolute;
+  top:-40px;left:-20px;
+  width:180px;height:120px;
+  background:radial-gradient(ellipse,rgba(5,217,180,0.13) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+  filter:blur(2px);
+}
+.stats-banner::after{
+  content:'';
+  position:absolute;
+  top:-30px;right:60px;
+  width:160px;height:100px;
+  background:radial-gradient(ellipse,rgba(107,159,228,0.10) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+  filter:blur(2px);
+}
+/* Subtle top highlight line */
+.stats-banner-inner{
+  display:flex;align-items:center;width:100%;
+  position:relative;z-index:1;
+}
+.stats-banner-inner::before{
+  content:'';
+  position:absolute;
+  top:0;left:5%;width:90%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(5,217,180,0.3),rgba(107,159,228,0.2),rgba(232,168,76,0.15),transparent);
+  border-radius:1px;
 }
 .stats-banner-item{
   flex:1;display:flex;align-items:center;gap:12px;
-  padding:16px 18px;
+  padding:18px 18px;
+  position:relative;
+}
+/* Per-item ambient under the icon */
+.stats-banner-item:first-child::after{
+  content:'';position:absolute;
+  bottom:0;left:10px;width:60px;height:40px;
+  background:radial-gradient(ellipse,rgba(5,217,180,0.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.stats-banner-item:nth-child(3)::after{
+  content:'';position:absolute;
+  bottom:0;left:10px;width:60px;height:40px;
+  background:radial-gradient(ellipse,rgba(107,159,228,0.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+.stats-banner-item:nth-child(5)::after{
+  content:'';position:absolute;
+  bottom:0;left:10px;width:60px;height:40px;
+  background:radial-gradient(ellipse,rgba(232,168,76,0.07) 0%,transparent 70%);
+  pointer-events:none;
 }
 .stats-banner-ico{
-  width:36px;height:36px;border-radius:9px;
+  width:38px;height:38px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;
+  position:relative;
 }
 .stats-banner-val{
   font-size:22px;font-weight:700;
@@ -1186,8 +1240,19 @@ body.light .auth-top{background:#DFF2EE}
   font-weight:500;white-space:nowrap;
 }
 .stats-banner-div{
-  width:1px;height:40px;
-  background:var(--border);flex-shrink:0;
+  width:1px;height:44px;
+  background:linear-gradient(to bottom,transparent,var(--border),transparent);
+  flex-shrink:0;
+}
+/* Light mode adjustments */
+body.light .stats-banner::before{
+  background:radial-gradient(ellipse,rgba(0,184,154,0.10) 0%,transparent 70%);
+}
+body.light .stats-banner::after{
+  background:radial-gradient(ellipse,rgba(74,127,193,0.08) 0%,transparent 70%);
+}
+body.light .stats-banner-inner::before{
+  background:linear-gradient(90deg,transparent,rgba(0,184,154,0.25),rgba(74,127,193,0.15),transparent);
 }
 /* Remove old stats-g on dashboard */
 .stats-g{display:none}
