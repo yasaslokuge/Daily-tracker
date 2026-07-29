@@ -1030,3 +1030,130 @@ body.light .auth-top{background:#DFF2EE}
 .time-block.fatigue{border-color:rgba(245,166,35,0.4)}
 .time-block.fatigue-high .time-block-val{color:var(--red)}
 .time-block.fatigue-high{border-color:rgba(255,87,87,0.4)}
+
+/* ════════════════════════════════════════
+   DESKTOP LAYOUT — Sidebar + Full Width
+   Active at 900px+, mobile unchanged
+════════════════════════════════════════ */
+@media(min-width:900px){
+  body{overflow:hidden;height:100vh}
+
+  /* Full width app container */
+  #app{
+    max-width:100% !important;
+    width:100% !important;
+    margin:0 !important;
+    border:none !important;
+    flex-direction:row !important;
+    height:100vh;
+    position:fixed;inset:0;
+    padding-bottom:0 !important;
+  }
+
+  /* Hide mobile topbar and bottom nav */
+  .topbar{display:none !important}
+  .bnav{display:none !important}
+  .credit{display:none}
+
+  /* Views fill remaining space after sidebar */
+  .view{
+    flex:1;
+    height:100vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:40px;
+    min-width:0;
+  }
+
+  /* Widen grids to use available space */
+  .loc-grid{grid-template-columns:repeat(4,1fr) !important}
+  .sup-grid{grid-template-columns:repeat(8,1fr) !important}
+  .stats-g{grid-template-columns:repeat(4,1fr) !important}
+  .wk-grid{grid-template-columns:repeat(7,1fr) !important}
+
+  /* ── SIDEBAR ── */
+  .dt-sidebar{
+    width:240px;min-width:240px;
+    height:100vh;
+    background:var(--surface,#20242C);
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;
+    flex-shrink:0;overflow:hidden;z-index:50;
+  }
+  .dt-brand{
+    padding:22px 20px 18px;
+    display:flex;align-items:center;gap:11px;
+    border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .dt-brand-icon{
+    width:32px;height:32px;border-radius:9px;
+    background:var(--teal);color:#04100D;
+    font-size:14px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .dt-brand-name{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+  .dt-brand-name span{color:var(--teal)}
+  .dt-nav{flex:1;padding:10px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+  .dt-nav-item{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 13px;border-radius:10px;
+    border:none;background:none;
+    color:var(--text2);font-family:'Inter',sans-serif;
+    font-size:13px;font-weight:500;
+    cursor:pointer;transition:all var(--t);
+    text-align:left;width:100%;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .dt-nav-item svg{width:18px;height:18px;stroke:currentColor;flex-shrink:0;opacity:0.7}
+  .dt-nav-item:hover{background:var(--card);color:var(--text)}
+  .dt-nav-item:hover svg{opacity:1}
+  .dt-nav-item.on{background:var(--teal-bg);color:var(--teal);font-weight:600}
+  .dt-nav-item.on svg{stroke:var(--teal);opacity:1}
+  .dt-nav-divider{height:1px;background:var(--border);margin:8px 2px}
+  .dt-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700}
+
+  /* Online card */
+  .dt-online-card{
+    margin:0 10px 10px;background:var(--card);
+    border:1px solid var(--border);border-radius:12px;
+    padding:12px 14px;flex-shrink:0;
+  }
+  .dt-online-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+  .dt-online-dot{width:8px;height:8px;border-radius:50%;background:#4CAF50;flex-shrink:0;box-shadow:0 0 6px rgba(76,175,80,0.5)}
+  .dt-online-label{font-size:12px;font-weight:700;color:var(--text)}
+  .dt-online-count{font-size:11px;color:var(--text3);margin-left:auto}
+  .dt-online-avatars{display:flex}
+  .dt-online-av{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--teal-bg);border:2px solid var(--surface,#20242C);
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;color:var(--teal);
+    margin-left:-6px;flex-shrink:0;
+  }
+  .dt-online-av:first-child{margin-left:0}
+  .dt-online-more{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--card2);border:2px solid var(--surface,#20242C);
+    margin-left:-6px;display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;color:var(--text3);
+  }
+
+  /* User info */
+  .dt-user-info{
+    padding:12px 16px 16px;border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;flex-shrink:0;
+  }
+  .dt-user-avatar-wrap{position:relative;flex-shrink:0}
+  .dt-user-avatar{
+    width:34px;height:34px;border-radius:50%;
+    background:var(--teal-bg);border:2px solid var(--teal);
+    color:var(--teal);font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .dt-user-online-dot{position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:#4CAF50;border:2px solid var(--surface,#20242C)}
+  .dt-user-details{flex:1;min-width:0}
+  .dt-user-name{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dt-user-role{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:1px}
+  .dt-signout{background:none;border:none;cursor:pointer;color:var(--text3);padding:6px;border-radius:6px;transition:all var(--t);display:flex;align-items:center;flex-shrink:0}
+  .dt-signout:hover{color:var(--red);background:var(--red-bg)}
+}

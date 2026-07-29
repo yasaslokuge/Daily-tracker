@@ -101,8 +101,14 @@ function wkDates(off=0){const m=addD(mon(td()),off*7);return Array.from({length:
 function hideLoader(){document.getElementById('loader').classList.add('out')}
 function showAuth(){const a=document.getElementById('authWrap');if(a){a.style.display='block';toggleAuth('in');}}
 function hideAuth(){document.getElementById('authWrap').style.display='none'}
-function showApp(){document.getElementById('app').style.cssText='display:flex;flex-direction:column';document.getElementById('bnav').style.display='flex'}
-function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none'}
+function showApp(){
+  const isDesktop=window.innerWidth>=900;
+  const app=document.getElementById('app');
+  if(app) app.style.cssText=isDesktop?'display:flex;flex-direction:row':'display:flex;flex-direction:column';
+  if(!isDesktop){const bn=document.getElementById('bnav');if(bn)bn.style.display='flex';}
+  if(isDesktop) setTimeout(buildDesktopSidebar,80);
+}
+function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none';destroyDesktopSidebar();}
 
 
 /* --- 6. AUTH FUNCTIONS ------------------------------- */
@@ -201,7 +207,7 @@ async function doSignUpFull(){
     if(!company){msg('suErr','Error creating company - please sign in and try again');if(btn){btn.disabled=false;btn.textContent='Create Account';}return;}
     COMPANY=company;LOCS=locs;MY_ROLE='admin';
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
-    hideAuth();showApp();sv('log');
+    hideAuth();showApp();
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='admin';
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
@@ -225,12 +231,101 @@ async function doSignUpFull(){
       LOCS=result.company.locations.map(l=>({...l,keys:[]}));
     }
     if(btn){btn.disabled=false;btn.textContent='Create Account';}
-    hideAuth();showApp();sv('log');
+    hideAuth();showApp();
     document.getElementById('tbUser').textContent=ME.email;
     document.getElementById('tbRole').textContent='employee';
     renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
     showToast('Joined '+result.company.name+'!');
   }
+}
+
+/* --- DESKTOP SIDEBAR --------------------------------- */
+function buildDesktopSidebar(){
+  if(window.innerWidth<900) return;
+  if(document.getElementById('dt-sidebar')) return;
+  const app=document.getElementById('app');
+  if(!app) return;
+  const members=membersCache||[];
+  const avatarsHtml=members.slice(0,4).map(m=>{
+    const n=getMemberName(m.user_email);
+    return '<div class="dt-online-av" title="'+n+'">'+n.charAt(0).toUpperCase()+'</div>';
+  }).join('');
+  const extra=Math.max(0,members.length-4);
+  const sidebar=document.createElement('div');
+  sidebar.id='dt-sidebar';
+  sidebar.className='dt-sidebar';
+  const myName=getMemberName(ME?.email||'');
+  sidebar.innerHTML=`
+    <div class="dt-brand" onclick="sv('log')" style="cursor:pointer">
+      <div class="dt-brand-icon">W</div>
+      <div class="dt-brand-name">Work<span>Trace</span></div>
+    </div>
+    <nav class="dt-nav">
+      <button class="dt-nav-item on" id="dt-log" onclick="sv('log')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Log
+      </button>
+      <button class="dt-nav-item" id="dt-dash" onclick="sv('dash')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Dashboard
+      </button>
+      <button class="dt-nav-item" id="dt-week" onclick="sv('week')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Week View
+      </button>
+      <button class="dt-nav-item" id="dt-sch" onclick="sv('sch')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Schedule
+      </button>
+      <div class="dt-nav-divider"></div>
+      <button class="dt-nav-item" id="dt-rep" onclick="sv('rep')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Report
+      </button>
+      <button class="dt-nav-item" id="dt-req" onclick="sv('req')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        Requests
+        <span id="dt-req-badge" class="dt-badge" style="display:none"></span>
+      </button>
+      <button class="dt-nav-item" id="dt-set" onclick="sv('set')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        Settings
+      </button>
+    </nav>
+    ${members.length>0?`<div class="dt-online-card">
+      <div class="dt-online-header">
+        <div class="dt-online-dot"></div>
+        <span class="dt-online-label">Team</span>
+        <span class="dt-online-count">${members.length} members</span>
+      </div>
+      <div class="dt-online-avatars">${avatarsHtml}${extra>0?'<div class="dt-online-more">+'+extra+'</div>':''}</div>
+    </div>`:''}
+    <div class="dt-user-info">
+      <div class="dt-user-avatar-wrap">
+        <div class="dt-user-avatar">${myName.charAt(0).toUpperCase()||'U'}</div>
+        <div class="dt-user-online-dot"></div>
+      </div>
+      <div class="dt-user-details">
+        <div class="dt-user-name">${myName||ME?.email?.split('@')[0]||'User'}</div>
+        <div class="dt-user-role">${MY_ROLE}</div>
+      </div>
+      <button onclick="doSignOut()" class="dt-signout" title="Sign out">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </button>
+    </div>`;
+  app.insertBefore(sidebar,app.firstChild);
+}
+
+function updateDesktopNav(name){
+  if(window.innerWidth<900) return;
+  document.querySelectorAll('.dt-nav-item').forEach(b=>b.classList.remove('on'));
+  const a=document.getElementById('dt-'+name);
+  if(a) a.classList.add('on');
+}
+
+function destroyDesktopSidebar(){
+  const s=document.getElementById('dt-sidebar');
+  if(s) s.remove();
 }
 
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
@@ -678,44 +773,41 @@ async function saveKeyHolder(){
 
 async function loadMyCompany(){
   try{
-    const{data:{session}}=await sb.auth.getSession();
-    const token=session?.access_token;
-    if(!token){console.error('No session token');return null;}
-    let memberships=[];
-    const r1=await fetch(
-      SUPABASE_URL+'/rest/v1/company_members?select=*&user_id=eq.'+ME.id,
-      {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
-    );
-    if(r1.ok){const d=await r1.json();memberships=Array.isArray(d)?d:[];}
-    if(!memberships.length){
-      const r2=await fetch(
-        SUPABASE_URL+'/rest/v1/company_members?select=*&user_email=eq.'+encodeURIComponent(ME.email),
-        {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
-      );
-      if(r2.ok){const d=await r2.json();memberships=Array.isArray(d)?d:[];}
+    const{data:memberships,error:me}=await supabaseClient
+      .from('company_members').select('*').eq('user_id',ME.id).limit(1);
+    if(me){
+      console.error('company_members error:',me.message,me.code);
+      // If it's a network error, propagate null to trigger retry
+      return null;
     }
-    if(!memberships.length){console.log('No memberships for',ME.email);return null;}
-    const ids=[...new Set(memberships.map(m=>m.company_id))];
-    const r3=await fetch(
-      SUPABASE_URL+'/rest/v1/companies?select=*&id=in.('+ids.join(',')+')',
-      {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
-    );
-    if(!r3.ok){console.error('Companies fetch failed');return null;}
-    const companies=await r3.json();
-    if(!companies||!companies.length){return null;}
-    let best=null,bestM=null,bestScore=-1;
-    for(const m of memberships){
-      const co=companies.find(c=>c.id===m.company_id);
-      if(!co) continue;
-      const score=(co.locations||[]).length*10+(m.role==='admin'?5:m.role==='employer'?3:1);
-      if(score>bestScore){bestScore=score;best=co;bestM=m;}
+    if(!memberships||!memberships.length){
+      console.log('No company membership found for',ME.email);
+      return null;
     }
-    if(!best){best=companies[0];bestM=memberships[0];}
-    MY_ROLE=bestM.role;COMPANY=best;
-    LOCS=(best.locations||[]).length>0?best.locations.map(l=>({...l,keys:[]})):[...DEFAULT_LOCS];
-    console.log('Company loaded:',best.name,'Role:',MY_ROLE,'Locs:',LOCS.length);
-    return best;
-  }catch(e){console.error('loadMyCompany error:',e.message);return null;}
+    const membership=memberships[0];
+    MY_ROLE=membership.role;
+    const{data:companies,error:ce}=await supabaseClient
+      .from('companies').select('*').eq('id',membership.company_id).limit(1);
+    if(ce){console.error('companies error:',ce.message);return null;}
+    if(!companies||!companies.length){
+      console.error('Company not found for id',membership.company_id);
+      return null;
+    }
+    const company=companies[0];
+    COMPANY=company;
+    if(company.locations&&company.locations.length>0){
+      LOCS=company.locations.map(l=>({...l,keys:[]}));
+      console.log('LOCS set from company:',LOCS.length,'locations:',LOCS.map(l=>l.name).join(', '));
+    } else {
+      LOCS=[...DEFAULT_LOCS];
+      console.log('LOCS fallback to DEFAULT_LOCS:',LOCS.length);
+    }
+    console.log('Company loaded:',company.name,'Role:',MY_ROLE);
+    return company;
+  }catch(e){
+    console.error('loadMyCompany exception:',e);
+    return null;
+  }
 }
 
 async function createCompany(name,locations){
@@ -764,34 +856,15 @@ let membersCache=[];
 let membersCacheLoaded=false;
 
 async function getCompanyMembers(forceRefresh=false){
-  if(!COMPANY){return[];}
+  if(!COMPANY) return[];
   if(membersCacheLoaded&&!forceRefresh) return membersCache;
-  try{
-    const{data:{session}}=await sb.auth.getSession();
-    const token=session?.access_token;
-    if(token){
-      const res=await fetch(
-        SUPABASE_URL+'/rest/v1/company_members?select=id,user_id,user_email,role,display_name&company_id=eq.'+COMPANY.id+'&order=display_name',
-        {headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}}
-      );
-      if(res.ok){
-        const data=await res.json();
-        membersCache=Array.isArray(data)?data:[];
-        membersCacheLoaded=true;
-        console.log('Members loaded:',membersCache.length,membersCache.map(m=>m.display_name||m.user_email));
-        return membersCache;
-      }
-    }
-    // Fallback to supabase client
-    const{data,error}=await supabaseClient.from('company_members')
-      .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id);
-    if(!error){membersCache=data||[];membersCacheLoaded=true;}
-    console.log('Members (fallback):',membersCache.length);
-    return membersCache;
-  }catch(e){
-    console.error('getCompanyMembers error:',e.message);
-    return membersCache||[];
-  }
+  const{data,error}=await supabaseClient.from('company_members')
+    .select('id,user_id,user_email,role,display_name').eq('company_id',COMPANY.id).order('display_name');
+  if(error){console.error('getCompanyMembers error:',error);return membersCache;}
+  membersCache=data||[];
+  membersCacheLoaded=true;
+  console.log('Members loaded:',membersCache.length,membersCache.map(m=>m.display_name||m.user_email));
+  return membersCache;
 }
 
 function getMemberName(email){
@@ -1015,7 +1088,6 @@ async function initApp(u){
   if(roleEl) roleEl.textContent=MY_ROLE;
   hideAuth();
   showApp();
-  sv('log');
   await loadWk(wkDates(logOff));
   await loadLocKeys();
   // Pre-load company members for key picker (all roles need this)
@@ -1204,6 +1276,7 @@ function sv(name){
   const vEl=document.getElementById('v-'+name);
   if(vEl) vEl.classList.add('on');
   const nb=document.getElementById('nb-'+name);if(nb)nb.classList.add('on');
+  updateDesktopNav(name);
   // Update more-badge if any more-menu item is active
   const inMore=['rep','req','set'].includes(name);
   const moreBadge=document.getElementById('more-badge');
