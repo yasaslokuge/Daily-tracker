@@ -1656,6 +1656,10 @@ function syncThemeToggle(){
 function setAccent(color,dim){
   localStorage.setItem('wt_accent',color);
   localStorage.setItem('wt_accent_dim',dim);
+  // Mark active swatch
+  document.querySelectorAll('.acc-swatch').forEach(b=>{
+    b.classList.toggle('active',b.dataset.color===color);
+  });
   document.documentElement.style.setProperty('--teal',color);
   document.documentElement.style.setProperty('--teal2',dim);
   document.documentElement.style.setProperty('--teal-bg',color+'18');
@@ -1665,9 +1669,15 @@ function setAccent(color,dim){
 function loadSavedPrefs(){
   const t=localStorage.getItem('wt_theme')||'dark';
   document.body.classList.toggle('light',t==='light');
-  const acc=localStorage.getItem('wt_accent');
-  const dim=localStorage.getItem('wt_accent_dim');
-  if(acc&&dim)setAccent(acc,dim);
+  const acc=localStorage.getItem('wt_accent')||'#05D9B4';
+  const dim=localStorage.getItem('wt_accent_dim')||'#03A88C';
+  setAccent(acc,dim);
+  // Sync switch state
+  const isLight=document.body.classList.contains('light');
+  const track=document.getElementById('themeSwitchTrack');
+  const icon=document.getElementById('themeSwitchIcon');
+  if(track) track.classList.toggle('on',isLight);
+  if(icon) icon.textContent=isLight?'☀️':'🌙';
 }
 loadSavedPrefs();
 

@@ -348,26 +348,39 @@
       <div class="set-section">
         <div class="set-sec-title">Appearance</div>
         <div class="set-card">
-          <div class="tog-row">
+          <!-- Theme Switch -->
+          <div class="tog-row" style="align-items:center;justify-content:space-between;padding:4px 0">
             <div>
-              <div class="tog-label">Light mode</div>
-              <div class="tog-sub">Switch between dark and light</div>
+              <div class="tog-label">Theme</div>
+              <div class="tog-sub">Switch between dark and light mode</div>
             </div>
-            <label class="toggle">
-              <input type="checkbox" id="themeToggle" onchange="setThemeToggle(this.checked)"/>
-              <span class="tog-slider"></span>
-            </label>
+            <button class="theme-switch-btn" id="themeSwitchBtn" onclick="setThemeToggle(!document.body.classList.contains('light'))">
+              <span class="theme-switch-track" id="themeSwitchTrack">
+                <span class="theme-switch-thumb">
+                  <span class="theme-switch-icon" id="themeSwitchIcon">🌙</span>
+                </span>
+                <span class="theme-switch-label-on">LIGHT</span>
+                <span class="theme-switch-label-off">DARK</span>
+              </span>
+            </button>
           </div>
-          <div class="divl" style="margin:0 0"></div>
-          <div class="tog-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div class="divl" style="margin:0"></div>
+          <!-- Accent colour - 3 options only -->
+          <div class="tog-row" style="flex-direction:column;align-items:flex-start;gap:12px;padding:4px 0">
             <div class="tog-label">Accent colour</div>
-            <div class="accent-row" style="padding:0;flex-wrap:wrap">
-              <div class="acc-opt" data-color="#05D9B4" onclick="setAccent('#05D9B4','#03A88C')" title="Teal" style="background:#05D9B4"></div>
-              <div class="acc-opt" data-color="#4F8EF7" onclick="setAccent('#4F8EF7','#2B6FE0')" title="Blue" style="background:#4F8EF7"></div>
-              <div class="acc-opt" data-color="#A78BFA" onclick="setAccent('#A78BFA','#7C5CDB')" title="Purple" style="background:#A78BFA"></div>
-              <div class="acc-opt" data-color="#F5A623" onclick="setAccent('#F5A623','#D4891A')" title="Amber" style="background:#F5A623"></div>
-              <div class="acc-opt" data-color="#FF5757" onclick="setAccent('#FF5757','#D43B3B')" title="Red" style="background:#FF5757"></div>
-              <div class="acc-opt" data-color="#34D399" onclick="setAccent('#34D399','#1FAF72')" title="Green" style="background:#34D399"></div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <button class="acc-swatch" onclick="setAccent('#05D9B4','#03A88C')" title="Teal" data-color="#05D9B4" style="--c:#05D9B4">
+                <span class="acc-swatch-dot" style="background:#05D9B4"></span>
+                <span class="acc-swatch-name">Teal</span>
+              </button>
+              <button class="acc-swatch" onclick="setAccent('#4F8EF7','#2B6FE0')" title="Blue" data-color="#4F8EF7" style="--c:#4F8EF7">
+                <span class="acc-swatch-dot" style="background:#4F8EF7"></span>
+                <span class="acc-swatch-name">Blue</span>
+              </button>
+              <button class="acc-swatch" onclick="setAccent('#A78BFA','#7C5CDB')" title="Purple" data-color="#A78BFA" style="--c:#A78BFA">
+                <span class="acc-swatch-dot" style="background:#A78BFA"></span>
+                <span class="acc-swatch-name">Purple</span>
+              </button>
             </div>
           </div>
         </div>
