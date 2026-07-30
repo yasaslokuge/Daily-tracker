@@ -1256,3 +1256,30 @@ body.light .stats-banner-inner::before{
 }
 /* stats-g now holds the banner - just remove grid layout */
 .stats-g{display:block;margin-bottom:0}
+
+/* ── STATS BANNER MOBILE FIX ── */
+@media(max-width:600px){
+  .stats-banner{padding:0}
+  .stats-banner-inner{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+  }
+  .stats-banner-div{display:none}
+  .stats-banner-item{
+    padding:14px 14px;
+    border-bottom:1px solid var(--border);
+  }
+  /* Last row items - no bottom border */
+  .stats-banner-item:nth-child(9),
+  .stats-banner-item:nth-child(10){
+    border-bottom:none;
+  }
+  /* Right column items get left border */
+  .stats-banner-item:nth-child(even){
+    border-left:1px solid var(--border);
+  }
+  .stats-banner-val{font-size:20px}
+  .stats-banner-ico{width:32px;height:32px;border-radius:8px}
+  .stats-banner::before,.stats-banner::after{display:none}
+}
