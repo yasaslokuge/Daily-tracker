@@ -372,8 +372,8 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .acc-opt.active-acc{border-color:var(--text);box-shadow:0 0 0 2px var(--bg),0 0 0 4px currentColor}
 
 /* -- LIGHT THEME -- */
-body.light{background:#F0F4F8;
-  --bg:#F0F4F8;--surface:#E8EDF3;--card:#FFFFFF;--card2:#EDF1F7;
+body.light{background:#E8EAED;
+  --bg:#E8EAED;--surface:#F2F3F5;--card:#F8F9FA;--card2:#EDEEF0;
   --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
   --text:#1A2535;--text2:#4A5A72;--text3:#8A9BB0;
 }
