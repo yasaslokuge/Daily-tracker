@@ -106,7 +106,11 @@ function showApp(){
   const app=document.getElementById('app');
   if(app) app.style.cssText=isDesktop?'display:flex;flex-direction:row':'display:flex;flex-direction:column';
   if(!isDesktop){const bn=document.getElementById('bnav');if(bn)bn.style.display='flex';}
-  if(isDesktop) setTimeout(buildDesktopSidebar,80);
+  if(isDesktop){
+    buildDesktopSidebar(); // build immediately with whatever members we have
+    // Rebuild after members load
+    getCompanyMembers(true).then(()=>{ destroyDesktopSidebar(); buildDesktopSidebar(); });
+  }
 }
 function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none';destroyDesktopSidebar();}
 
@@ -1268,9 +1272,15 @@ async function loadDayUI(date){
   tempL=new Set(d.locations||[]);
   tempS=new Set(Object.keys(d.supplies||{}).filter(k=>d.supplies[k]));
   locCheckIn={};
-  // Restore check-in status from cache if available
+  // Restore check-in status from cache
   const cinData=d.cin_status||{};
-  Object.keys(cinData).forEach(k=>{if(cinData[k])locCheckIn[k]=cinData[k];});
+  if(Object.keys(cinData).length>0){
+    Object.keys(cinData).forEach(k=>{if(cinData[k])locCheckIn[k]=cinData[k];});
+  } else {
+    // No cin_status saved - default saved locations to "checked out" (status 2)
+    // so they show as selected visually
+    (d.locations||[]).forEach(locId=>{locCheckIn[locId]=2;});
+  }
   document.getElementById('notesTA').value=d.note||'';
   shiftStart=d.start_time||'';
   shiftEnd=d.end_time||'';
