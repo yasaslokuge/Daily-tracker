@@ -295,10 +295,11 @@ function buildDesktopSidebar(){
     ${members.length>0?`<div class="dt-online-card">
       <div class="dt-online-header">
         <div class="dt-online-dot"></div>
-        <span class="dt-online-label">Team</span>
-        <span class="dt-online-count">${members.length} members</span>
+        <span class="dt-online-label">Team Members</span>
+        <span class="dt-online-count">${members.length}</span>
       </div>
-      <div class="dt-online-avatars">${avatarsHtml}${extra>0?'<div class="dt-online-more">+'+extra+'</div>':''}</div>
+      <div class="dt-online-avatars" style="margin-top:4px">${avatarsHtml}${extra>0?'<div class="dt-online-more">+'+extra+'</div>':''}</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:6px">Tap Settings → Team to manage</div>
     </div>`:''}
     <div class="dt-user-info">
       <div class="dt-user-avatar-wrap">
@@ -1210,11 +1211,6 @@ async function renderLocGrid(){
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
     </button>`;
 
-    // Status indicator - dot only, no checkmark
-    const dotColor=status===0?'rgba(255,255,255,0.18)':status===1?'#4CAF50':'#fff';
-    const dotGlow=status===1?'box-shadow:0 0 6px rgba(76,175,80,0.7)':status===2?'box-shadow:0 0 6px rgba(255,255,255,0.4)':'';
-    const statusDot=`<div class="loc-status-dot" style="background:${dotColor};${dotGlow}"></div>`;
-
     const badges=`<div class="loc-badges">
       <span class="loc-badge-name">${loc.name}</span>
       ${keyHolder?`<span class="loc-badge-key">Key: ${keyHolder}</span>`:''}
@@ -1228,7 +1224,7 @@ async function renderLocGrid(){
       :`<div class="loc-status-label out"><span class="loc-sout-dot"></span>Checked Out <span class="loc-hint">· tap to reset</span></div>`;
 
     el.innerHTML=`
-      <div class="loc2-top">${statusDot}${keyIcon}</div>
+      <div class="loc2-top">${keyIcon}</div>
       <div class="loc2-abbr">${loc.abbr||loc.name.substring(0,2).toUpperCase()}</div>
       ${badges}
       ${statusLabel}`;
