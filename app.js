@@ -84,7 +84,7 @@ const DFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sund
 
 
 /* --- 3. STATE VARIABLES ------------------------------ */
-let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null;
+let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null,locCheckIn={},locCheckOut={};
 
 
 /* --- 4. DATE UTILITIES ------------------------------- */
@@ -1191,26 +1191,78 @@ async function selDay(date){selDate=date;renderWS();await loadDayUI(date);}
 
 
 /* --- 10. LOCATION & SUPPLY GRID ---------------------- */
+// Card colours matching reference design
+const LOC_COLORS=['#0D2B1F','#0D2B1F','#1A1A3A','#0D2B1F','#0D2B1F','#1A1A2E','#1A2A1A','#0D2B1F','#1A1A3A','#1A2A1A','#0D2B1F'];
+
 async function renderLocGrid(){
   await loadLocKeys();
   const c=document.getElementById('locGrid');c.innerHTML='';
-  LOCS.forEach(loc=>{
+  LOCS.forEach((loc,idx)=>{
     const el=document.createElement('div');
-    el.className=`loc-card${tempL.has(loc.id)?' sel':''}`;
-    const imgHTML=loc.img
-      ?`<div class="loc-img-wrap"><img class="loc-img" src="${loc.img}" alt="${loc.name}"/><div class="loc-img-overlay"></div></div>`
-      :`<div class="loc-img-wrap loc-img-placeholder"><div class="loc-placeholder-bg" style="background:${loc.color||'var(--card2)'}"></div><div class="loc-placeholder-abbr" style="color:rgba(255,255,255,0.7)">${loc.abbr||'?'}</div><div class="loc-img-overlay"></div></div>`;
+    const isSel=tempL.has(loc.id);
+    const hasIn=!!locCheckIn[loc.id];
+    const hasOut=!!locCheckOut[loc.id];
+    const cardColor=loc.color||LOC_COLORS[idx%LOC_COLORS.length]||'#0D2B1F';
+    el.className='loc-card2'+(isSel?' sel':'');
+    el.style.background=cardColor;
+
     const keyHolder=getLocKeyName(loc.id);
-    const keyTitle=keyHolder?'Key: '+keyHolder:'No key assigned';
-    const keyIcon=`<button class="loc-key-btn${keyHolder?' has-key':''}" onclick="event.stopPropagation();openKeyModal('${loc.id}','${loc.name}')" title="${keyTitle}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg></button>`;
-    const nameEl=`<div class="loc-name-bar"><span class="loc-name-highlight">${loc.name}</span>${keyHolder?`<span class="loc-key-holder">${keyHolder}</span>`:''}</div>`;
-    el.innerHTML=`${imgHTML}${keyIcon}<div class="loc-chk"><svg fill="none" stroke="#04100D" stroke-width="3" viewBox="0 0 12 12"><path stroke-linecap="round" stroke-linejoin="round" d="M2 6l3 3 5-5"/></svg></div>${nameEl}`;
+    const keyIcon=`<button class="loc-key-btn2${keyHolder?' has-key':''}" onclick="event.stopPropagation();openKeyModal('${loc.id}','${loc.name}')" title="${keyHolder?'Key: '+keyHolder:'No key'}">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+    </button>`;
+
+    const checkCircle=`<div class="loc-sel-circle${isSel?' checked':''}">
+      ${isSel?'<svg fill="none" stroke="#04100D" stroke-width="3" viewBox="0 0 12 12"><path stroke-linecap="round" stroke-linejoin="round" d="M2 6l3 3 5-5"/></svg>':''}
+    </div>`;
+
+    const badges=`<div class="loc-badges">
+      <span class="loc-badge-name">${loc.name}</span>
+      ${keyHolder?`<span class="loc-badge-key">Key With ${keyHolder}</span>`:''}
+    </div>`;
+
+    const checkinRow=`<div class="loc-checkin-row">
+      <button class="loc-cin-btn${hasIn?' active':''}" onclick="event.stopPropagation();toggleLocCheckIn('${loc.id}')">
+        <span class="loc-cin-dot ${hasIn?'in':''}"></span>Checked In
+      </button>
+      ${hasIn?`<span class="loc-cin-sep">·</span>
+      <button class="loc-cout-btn${hasOut?' active':''}" onclick="event.stopPropagation();toggleLocCheckOut('${loc.id}')">
+        <span style="color:${hasOut?'#E07070':'rgba(255,255,255,0.4)'}">Checked Out</span>
+      </button>`:'<span class="loc-not-in">Not checked in</span>'}
+    </div>`;
+
+    el.innerHTML=`
+      <div class="loc2-top">${checkCircle}${keyIcon}</div>
+      <div class="loc2-abbr">${loc.abbr||loc.name.substring(0,2).toUpperCase()}</div>
+      ${badges}
+      ${checkinRow}`;
+
     el.onclick=()=>{
-      if(tempL.has(loc.id)){tempL.delete(loc.id);el.classList.remove('sel')}
-      else{tempL.add(loc.id);el.classList.add('sel')}
+      if(tempL.has(loc.id)){tempL.delete(loc.id);el.classList.remove('sel');}
+      else{tempL.add(loc.id);el.classList.add('sel');}
+      // Re-render just this card
+      renderLocGrid();
     };
     c.appendChild(el);
   });
+}
+
+function toggleLocCheckIn(locId){
+  if(locCheckIn[locId]){
+    delete locCheckIn[locId];
+    delete locCheckOut[locId];
+  } else {
+    locCheckIn[locId]=new Date().toISOString();
+  }
+  renderLocGrid();
+}
+
+function toggleLocCheckOut(locId){
+  if(locCheckOut[locId]){
+    delete locCheckOut[locId];
+  } else {
+    locCheckOut[locId]=new Date().toISOString();
+  }
+  renderLocGrid();
 }
 
 function renderSupGrid(){
@@ -1231,6 +1283,7 @@ async function loadDayUI(date){
   const d=gd(date);
   tempL=new Set(d.locations||[]);
   tempS=new Set(Object.keys(d.supplies||{}).filter(k=>d.supplies[k]));
+  locCheckIn={};locCheckOut={};
   document.getElementById('notesTA').value=d.note||'';
   shiftStart=d.start_time||'';
   shiftEnd=d.end_time||'';
