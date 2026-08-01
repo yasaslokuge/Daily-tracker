@@ -1496,40 +1496,37 @@ body.light .hero-band{
   border-radius:12px;
   padding:14px 14px 12px;
   cursor:pointer;
-  transition:all var(--t);
+  transition:all 0.2s ease;
   position:relative;
   overflow:hidden;
   -webkit-tap-highlight-color:transparent;
   user-select:none;
-  min-height:130px;
+  min-height:128px;
   display:flex;flex-direction:column;gap:6px;
-  border:1.5px solid rgba(255,255,255,0.06);
+  border:1.5px solid rgba(255,255,255,0.07);
 }
 .loc-card2::before{
   content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 70% 20%,rgba(255,255,255,0.06) 0%,transparent 60%);
+  background:radial-gradient(ellipse at 75% 15%,rgba(255,255,255,0.07) 0%,transparent 55%);
   pointer-events:none;
 }
+/* Checked-in: green border */
 .loc-card2.sel{
-  border-color:rgba(5,217,180,0.6);
-  box-shadow:0 0 0 1px rgba(5,217,180,0.3),0 4px 16px rgba(5,217,180,0.15);
+  border-color:rgba(76,175,80,0.6);
+  box-shadow:0 0 0 1px rgba(76,175,80,0.2),0 4px 16px rgba(76,175,80,0.12);
 }
-.loc-card2.sel::before{
-  background:radial-gradient(ellipse at 70% 20%,rgba(5,217,180,0.15) 0%,transparent 60%);
+/* Checked-out: white border */
+.loc-card2.cout{
+  border-color:rgba(255,255,255,0.35);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.1);
 }
 .loc2-top{
   display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:2px;
 }
-/* Selection circle */
-.loc-sel-circle{
-  width:22px;height:22px;border-radius:50%;
-  border:2px solid rgba(255,255,255,0.3);
-  display:flex;align-items:center;justify-content:center;
-  transition:all var(--t);flex-shrink:0;
-}
-.loc-sel-circle.checked{
-  background:var(--teal);border-color:var(--teal);
+/* Status dot - replaces checkmark circle */
+.loc-status-dot{
+  width:10px;height:10px;border-radius:50%;
+  transition:all 0.2s ease;flex-shrink:0;
 }
 /* Key button */
 .loc-key-btn2{
@@ -1545,65 +1542,46 @@ body.light .hero-band{
   font-size:28px;font-weight:700;color:#fff;
   letter-spacing:-0.5px;line-height:1;
   text-shadow:0 1px 4px rgba(0,0,0,0.3);
+  margin-top:2px;
 }
-/* Badges row */
+/* Badges */
 .loc-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .loc-badge-name{
   font-size:11px;font-weight:600;
-  background:rgba(255,255,255,0.12);
-  color:rgba(255,255,255,0.85);
+  background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85);
   border-radius:5px;padding:2px 8px;
 }
 .loc-badge-key{
   font-size:11px;font-weight:600;
-  background:rgba(245,166,35,0.2);
-  color:#F5A623;
+  background:rgba(245,166,35,0.2);color:#F5A623;
   border-radius:5px;padding:2px 8px;
 }
-/* Check-in row */
-.loc-checkin-row{
-  display:flex;align-items:center;gap:6px;
-  margin-top:auto;padding-top:6px;
+/* Status label at bottom */
+.loc-status-label{
+  margin-top:auto;padding-top:8px;
   border-top:1px solid rgba(255,255,255,0.07);
-  flex-wrap:wrap;
-}
-.loc-cin-btn{
+  font-size:11px;font-weight:600;
   display:flex;align-items:center;gap:5px;
-  background:none;border:none;cursor:pointer;
-  font-size:11px;font-weight:600;
-  color:rgba(255,255,255,0.5);
-  font-family:'Inter',sans-serif;
-  padding:0;transition:color var(--t);
 }
-.loc-cin-btn.active{color:rgba(255,255,255,0.9)}
-.loc-cin-dot{
-  width:7px;height:7px;border-radius:50%;
-  background:rgba(255,255,255,0.2);
-  transition:background var(--t);flex-shrink:0;
+.loc-status-label.muted{color:rgba(255,255,255,0.28);font-style:italic;font-weight:400}
+.loc-status-label.in{color:#4CAF50}
+.loc-status-label.out{color:rgba(255,255,255,0.85)}
+.loc-hint{font-weight:400;opacity:0.55;font-size:10px}
+/* Small dot inside label */
+.loc-sin-dot{
+  width:7px;height:7px;border-radius:50%;background:#4CAF50;
+  flex-shrink:0;box-shadow:0 0 5px rgba(76,175,80,0.6);
 }
-.loc-cin-dot.in{background:#4CAF50;box-shadow:0 0 5px rgba(76,175,80,0.5)}
-.loc-cout-btn{
-  background:none;border:none;cursor:pointer;
-  font-size:11px;font-weight:600;
-  font-family:'Inter',sans-serif;padding:0;
+.loc-sout-dot{
+  width:7px;height:7px;border-radius:50%;background:#fff;
+  flex-shrink:0;box-shadow:0 0 5px rgba(255,255,255,0.4);
 }
-.loc-not-in{
-  font-size:11px;color:rgba(255,255,255,0.3);
-  font-style:italic;
-}
-.loc-cin-sep{color:rgba(255,255,255,0.2)}
 
-/* Light mode card overrides */
-body.light .loc-card2{
-  border-color:rgba(0,0,0,0.08);
-  box-shadow:0 1px 6px rgba(0,0,0,0.08);
-}
-body.light .loc-card2.sel{
-  border-color:rgba(0,163,137,0.6);
-  box-shadow:0 0 0 1px rgba(0,163,137,0.25),0 4px 16px rgba(0,163,137,0.12);
-}
-body.light .loc-cin-dot{background:rgba(0,0,0,0.15)}
-body.light .loc-not-in{color:rgba(0,0,0,0.3)}
-body.light .loc-cin-sep{color:rgba(0,0,0,0.2)}
+/* Light mode */
+body.light .loc-card2{border-color:rgba(0,0,0,0.09)}
+body.light .loc-card2.sel{border-color:rgba(76,175,80,0.5);box-shadow:0 0 0 1px rgba(76,175,80,0.15),0 2px 10px rgba(76,175,80,0.08)}
+body.light .loc-card2.cout{border-color:rgba(0,0,0,0.25)}
+body.light .loc-status-label{border-top-color:rgba(0,0,0,0.07)}
+body.light .loc-status-label.muted{color:rgba(0,0,0,0.25)}
 body.light .loc-key-btn2{color:rgba(0,0,0,0.3)}
 body.light .loc-key-btn2.has-key{color:#D97706}

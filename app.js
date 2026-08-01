@@ -339,7 +339,7 @@ async function loadWk(dates){
   dates.forEach(d=>{if(!cache[d])cache[d]={locations:[],note:'',supplies:{},start_time:'',end_time:''}});
   (data||[]).forEach(r=>{cache[r.log_date]={locations:r.locations||[],note:r.note||'',supplies:r.supplies||{},start_time:r.start_time||'',end_time:r.end_time||''}});
 }
-async function saveLog(date,locs,note,sups,startTime,endTime){
+async function saveLog(date,locs,note,sups,startTime,endTime,cinStatus){
   if(!ME)return false;
   const existing=cache[date];
   const action=existing&&existing.locations&&existing.locations.length>0?'update':'save';
@@ -358,12 +358,12 @@ async function saveLog(date,locs,note,sups,startTime,endTime){
         {onConflict:'user_id,log_date'}
       );
       if(e2){console.error('Fallback save error:',e2.message);return false;}
-      cache[date]={locations:locs,note,supplies:sups,start_time:startTime||'',end_time:endTime||''};
+      cache[date]={locations:locs,note,supplies:sups,start_time:startTime||'',end_time:endTime||'',cin_status:cinStatus||{}};
       return true;
     }
     return false;
   }
-  cache[date]={locations:locs,note,supplies:sups,start_time:startTime||'',end_time:endTime||''};
+  cache[date]={locations:locs,note,supplies:sups,start_time:startTime||'',end_time:endTime||'',cin_status:cinStatus||{}};
   // Write backup to history table (non-blocking)
   sb.from('work_logs_history').insert({
     user_id:ME.id,
@@ -1191,19 +1191,18 @@ async function selDay(date){selDate=date;renderWS();await loadDayUI(date);}
 
 
 /* --- 10. LOCATION & SUPPLY GRID ---------------------- */
-// Card colours matching reference design
+// Card colours
 const LOC_COLORS=['#0D2B1F','#0D2B1F','#1A1A3A','#0D2B1F','#0D2B1F','#1A1A2E','#1A2A1A','#0D2B1F','#1A1A3A','#1A2A1A','#0D2B1F'];
 
+// locStatus: 0=none, 1=checked-in, 2=checked-out
 async function renderLocGrid(){
   await loadLocKeys();
   const c=document.getElementById('locGrid');c.innerHTML='';
   LOCS.forEach((loc,idx)=>{
     const el=document.createElement('div');
-    const isSel=tempL.has(loc.id);
-    const hasIn=!!locCheckIn[loc.id];
-    const hasOut=!!locCheckOut[loc.id];
+    const status=locCheckIn[loc.id]||0; // 0,1,2
     const cardColor=loc.color||LOC_COLORS[idx%LOC_COLORS.length]||'#0D2B1F';
-    el.className='loc-card2'+(isSel?' sel':'');
+    el.className='loc-card2'+(status>0?' sel':'')+(status===2?' cout':'');
     el.style.background=cardColor;
 
     const keyHolder=getLocKeyName(loc.id);
@@ -1211,56 +1210,45 @@ async function renderLocGrid(){
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
     </button>`;
 
-    const checkCircle=`<div class="loc-sel-circle${isSel?' checked':''}">
-      ${isSel?'<svg fill="none" stroke="#04100D" stroke-width="3" viewBox="0 0 12 12"><path stroke-linecap="round" stroke-linejoin="round" d="M2 6l3 3 5-5"/></svg>':''}
-    </div>`;
+    // Status indicator - dot only, no checkmark
+    const dotColor=status===0?'rgba(255,255,255,0.18)':status===1?'#4CAF50':'#fff';
+    const dotGlow=status===1?'box-shadow:0 0 6px rgba(76,175,80,0.7)':status===2?'box-shadow:0 0 6px rgba(255,255,255,0.4)':'';
+    const statusDot=`<div class="loc-status-dot" style="background:${dotColor};${dotGlow}"></div>`;
 
     const badges=`<div class="loc-badges">
       <span class="loc-badge-name">${loc.name}</span>
-      ${keyHolder?`<span class="loc-badge-key">Key With ${keyHolder}</span>`:''}
+      ${keyHolder?`<span class="loc-badge-key">Key: ${keyHolder}</span>`:''}
     </div>`;
 
-    const checkinRow=`<div class="loc-checkin-row">
-      <button class="loc-cin-btn${hasIn?' active':''}" onclick="event.stopPropagation();toggleLocCheckIn('${loc.id}')">
-        <span class="loc-cin-dot ${hasIn?'in':''}"></span>Checked In
-      </button>
-      ${hasIn?`<span class="loc-cin-sep">·</span>
-      <button class="loc-cout-btn${hasOut?' active':''}" onclick="event.stopPropagation();toggleLocCheckOut('${loc.id}')">
-        <span style="color:${hasOut?'#E07070':'rgba(255,255,255,0.4)'}">Checked Out</span>
-      </button>`:'<span class="loc-not-in">Not checked in</span>'}
-    </div>`;
+    // Status label at bottom
+    const statusLabel=status===0
+      ?`<div class="loc-status-label muted">Tap to check in</div>`
+      :status===1
+      ?`<div class="loc-status-label in"><span class="loc-sin-dot"></span>Checked In <span class="loc-hint">· tap to check out</span></div>`
+      :`<div class="loc-status-label out"><span class="loc-sout-dot"></span>Checked Out <span class="loc-hint">· tap to reset</span></div>`;
 
     el.innerHTML=`
-      <div class="loc2-top">${checkCircle}${keyIcon}</div>
+      <div class="loc2-top">${statusDot}${keyIcon}</div>
       <div class="loc2-abbr">${loc.abbr||loc.name.substring(0,2).toUpperCase()}</div>
       ${badges}
-      ${checkinRow}`;
+      ${statusLabel}`;
 
-    el.onclick=()=>{
-      if(tempL.has(loc.id)){tempL.delete(loc.id);el.classList.remove('sel');}
-      else{tempL.add(loc.id);el.classList.add('sel');}
-      // Re-render just this card
-      renderLocGrid();
-    };
+    el.onclick=()=>cycleLocStatus(loc.id);
     c.appendChild(el);
   });
 }
 
-function toggleLocCheckIn(locId){
-  if(locCheckIn[locId]){
-    delete locCheckIn[locId];
-    delete locCheckOut[locId];
+function cycleLocStatus(locId){
+  const cur=locCheckIn[locId]||0;
+  if(cur===0){
+    locCheckIn[locId]=1; // checked in
+    tempL.add(locId);    // add to saved locations
+  } else if(cur===1){
+    locCheckIn[locId]=2; // checked out
+    // keep in tempL - checked out means they worked there
   } else {
-    locCheckIn[locId]=new Date().toISOString();
-  }
-  renderLocGrid();
-}
-
-function toggleLocCheckOut(locId){
-  if(locCheckOut[locId]){
-    delete locCheckOut[locId];
-  } else {
-    locCheckOut[locId]=new Date().toISOString();
+    locCheckIn[locId]=0; // reset
+    tempL.delete(locId);
   }
   renderLocGrid();
 }
@@ -1283,7 +1271,10 @@ async function loadDayUI(date){
   const d=gd(date);
   tempL=new Set(d.locations||[]);
   tempS=new Set(Object.keys(d.supplies||{}).filter(k=>d.supplies[k]));
-  locCheckIn={};locCheckOut={};
+  locCheckIn={};
+  // Restore check-in status from cache if available
+  const cinData=d.cin_status||{};
+  Object.keys(cinData).forEach(k=>{if(cinData[k])locCheckIn[k]=cinData[k];});
   document.getElementById('notesTA').value=d.note||'';
   shiftStart=d.start_time||'';
   shiftEnd=d.end_time||'';
