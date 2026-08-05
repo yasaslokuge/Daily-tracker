@@ -84,7 +84,7 @@ const DFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sund
 
 
 /* --- 3. STATE VARIABLES ------------------------------ */
-let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null,locCheckIn={},locCheckOut={};
+let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null,locCheckIn={},locCheckOut={},locNotes={};
 
 
 /* --- 4. DATE UTILITIES ------------------------------- */
@@ -449,6 +449,19 @@ async function confirmReturn(id){await supabaseClient.from('borrow_requests').up
 async function markItemReturned(id,toEmail,toName,item){
   await supabaseClient.from('borrow_requests').update({status:'returned_pending',returned_at:new Date().toISOString()}).eq('id',id);
   showToast(item+' — waiting for '+toName+' to confirm');renderBorrowLog();
+}
+
+/* --- LOCATION NOTES ---------------------------------- */
+function openLocNote(locId, locName){
+  const existing=locNotes[locId]||'';
+  const note=prompt('Note for '+locName+':', existing);
+  if(note===null) return; // cancelled
+  if(note.trim()){
+    locNotes[locId]=note.trim();
+  } else {
+    delete locNotes[locId];
+  }
+  renderLocGrid();
 }
 
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
@@ -1345,10 +1358,16 @@ async function renderLocGrid(){
       ?`<div class="loc-status-label in"><span class="loc-sin-dot"></span>Checked In <span class="loc-hint">· tap to check out</span></div>`
       :`<div class="loc-status-label out"><span class="loc-sout-dot"></span>Checked Out <span class="loc-hint">· tap to reset</span></div>`;
 
+    const hasNote=!!locNotes[loc.id];
+    const noteIcon=`<button class="loc-note-btn${hasNote?' has-note':''}" onclick="event.stopPropagation();openLocNote('${loc.id}','${loc.name}')" title="${hasNote?locNotes[loc.id]:'Add note'}">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    </button>`;
+
     el.innerHTML=`
-      <div class="loc2-top">${keyIcon}</div>
+      <div class="loc2-top">${keyIcon}${noteIcon}</div>
       <div class="loc2-abbr">${loc.abbr||loc.name.substring(0,2).toUpperCase()}</div>
       ${badges}
+      ${hasNote?`<div class="loc-note-preview">"${locNotes[loc.id].substring(0,40)}${locNotes[loc.id].length>40?'…':''}"</div>`:''}
       ${statusLabel}`;
 
     el.onclick=()=>cycleLocStatus(loc.id);
@@ -1390,6 +1409,7 @@ async function loadDayUI(date){
   tempL=new Set(d.locations||[]);
   tempS=new Set(Object.keys(d.supplies||{}).filter(k=>d.supplies[k]));
   locCheckIn={};
+  locNotes={};
   // Restore check-in status from cache
   const cinData=d.cin_status||{};
   if(Object.keys(cinData).length>0){
