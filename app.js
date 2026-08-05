@@ -1452,8 +1452,13 @@ async function saveDay(){
   const note=document.getElementById('notesTA').value.trim();
   const locs=[...tempL];
   const sups={};tempS.forEach(s=>sups[s]=true);
+  // Build full note including per-location notes
+  const locNoteLines=Object.entries(locNotes)
+    .filter(([id,n])=>n&&n.trim())
+    .map(([id,n])=>{const loc=LOCS.find(l=>l.id===id);return (loc?loc.name:id)+': '+n.trim();});
+  const fullNote=note+(locNoteLines.length?'\n---\n'+locNoteLines.join('\n'):'');
   const b=document.getElementById('btnSave');b.disabled=true;setSaved('saving');
-  const ok=await saveLog(selDate,locs,note,sups,shiftStart,shiftEnd);
+  const ok=await saveLog(selDate,locs,fullNote,sups,shiftStart,shiftEnd);
   b.disabled=false;
   if(ok){
     setSaved('saved');
