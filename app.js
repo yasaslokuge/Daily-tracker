@@ -314,6 +314,7 @@ function buildDesktopSidebar(){
         <div class="dt-user-name">${myName||ME?.email?.split('@')[0]||'User'}</div>
         <div class="dt-user-role">${MY_ROLE}</div>
       </div>
+      ${IS_SUPER_ADMIN?`<button onclick="showSuperAdmin()" title="Super Admin Portal" style="background:linear-gradient(135deg,var(--purple),#5B21B6);border:none;border-radius:6px;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:0.5px;margin-right:2px">SA</button>`:''}
       <button onclick="doSignOut()" class="dt-signout" title="Sign out">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
       </button>
@@ -1421,12 +1422,19 @@ async function saveCoLocations(){
 async function initApp(u){
   ME=u;
   document.getElementById('tbUser').textContent=u.email;
+  // Show SA button in topbar if super admin
+  const saTopBtn=document.getElementById('saTopBtn');
+  if(saTopBtn) saTopBtn.style.display=IS_SUPER_ADMIN?'flex':'none';
   hideLoader();
   // Check if super admin
   try{
     const{data:sa}=await supabaseClient.from('super_admins').select('id').eq('user_id',u.id).limit(1);
     IS_SUPER_ADMIN=!!(sa&&sa.length>0);
-    if(IS_SUPER_ADMIN) console.log('Super admin detected');
+    if(IS_SUPER_ADMIN){
+      console.log('Super admin detected');
+      const saTopBtn=document.getElementById('saTopBtn');
+      if(saTopBtn) saTopBtn.style.display='flex';
+    }
   }catch(e){IS_SUPER_ADMIN=false;}
   // Load company first - retry once on failure
   let company=await loadMyCompany();
