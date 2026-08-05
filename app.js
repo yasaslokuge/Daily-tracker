@@ -464,6 +464,18 @@ function openLocNote(locId, locName){
   renderLocGrid();
 }
 
+function parseLocNotes(noteStr){
+  if(!noteStr||noteStr.indexOf('\n---\n')===-1) return {general:noteStr||'',locNotes:{}};
+  const parts=noteStr.split('\n---\n');
+  const general=parts[0].trim();
+  const locNotes={};
+  (parts[1]||'').split('\n').forEach(function(line){
+    const idx=line.indexOf(': ');
+    if(idx>0){locNotes[line.substring(0,idx)]=line.substring(idx+2);}
+  });
+  return {general:general,locNotes:locNotes};
+}
+
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
 
 
@@ -1419,7 +1431,13 @@ async function loadDayUI(date){
     // so they show as selected visually
     (d.locations||[]).forEach(locId=>{locCheckIn[locId]=2;});
   }
-  document.getElementById('notesTA').value=d.note||'';
+  const _pn=parseLocNotes(d.note||'');
+  document.getElementById('notesTA').value=_pn.general;
+  locNotes={};
+  Object.entries(_pn.locNotes).forEach(function(e){
+    const loc=LOCS.find(function(l){return l.name===e[0];});
+    if(loc) locNotes[loc.id]=e[1];
+  });
   shiftStart=d.start_time||'';
   shiftEnd=d.end_time||'';
   renderTimePicker();
@@ -1639,7 +1657,11 @@ async function renderWeekView(){
     ${(dd.start_time||dd.end_time)?`<div class="wde-time" style="color:${calcDurationMins(dd.start_time||'',dd.end_time||'')>600?'var(--red)':calcDurationMins(dd.start_time||'',dd.end_time||'')>480?'var(--amber)':'var(--teal)'}">${formatTime12(dd.start_time||'')}${dd.end_time?' - '+formatTime12(dd.end_time):''}${dd.start_time&&dd.end_time?' - '+calcDuration(dd.start_time,dd.end_time):''}</div>`:''}
     ${has?`<div class="wde-locs">${locNames.map(n=>`<span class="wde-lt">${n}</span>`).join('')}</div>`:'<div class="wde-empty">Nothing logged</div>'}
     ${supNames.length?`<div class="wde-sups">${supNames.map(n=>`<span class="wde-st">! ${n}</span>`).join('')}</div>`:''}
-    ${dd.note?`<div class="wde-note">"${dd.note}"</div>`:''}`;
+    ${(function(){
+      var p=parseLocNotes(dd.note||'');
+      var lh=Object.entries(p.locNotes).map(function(e){return '<span class="wde-loc-note"><b>'+e[0]+':</b> '+e[1]+'</span>';}).join('');
+      return (p.general?'<div class="wde-note">"'+p.general+'"</div>':'')+(lh?'<div class="wde-loc-notes">'+lh+'</div>':'');
+    })()}` ;
     c.appendChild(el);
   });
 }
@@ -1669,7 +1691,11 @@ async function renderReport(){
       :'';
     lines.push(repDayLabel+repTimeStr);
     if(locs.length){dw++;tl+=locs.length;locNames.forEach(n=>lines.push(`  * ${n}`));
-      if(dd.note)lines.push(`  Note: ${dd.note}`);
+      if(dd.note){
+        const p=parseLocNotes(dd.note);
+        if(p.general) lines.push('  Note: '+p.general);
+        Object.entries(p.locNotes).forEach(function(e){lines.push('  ['+e[0]+'] '+e[1]);});
+      }
       if(supNames.length){sc+=supNames.length;lines.push(`  ! Supplies needed: ${supNames.join(', ')}`)}}
     else lines.push('  - No locations logged');
   });
