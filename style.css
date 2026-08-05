@@ -1631,3 +1631,84 @@ body.light .loc-key-btn2.has-key{color:#D97706}
   .sup-grid{grid-template-columns:repeat(6,1fr)}
   .time-block-val{font-size:20px}
 }
+
+/* ════════════════════════════════════════
+   RESPONSIVE — All device sizes
+════════════════════════════════════════ */
+
+/* Base: tiny phones (< 360px) */
+@media(max-width:359px){
+  .loc-grid{grid-template-columns:repeat(2,1fr)!important;gap:6px}
+  .sup-grid{grid-template-columns:repeat(3,1fr)!important}
+  .loc2-abbr{font-size:20px}
+  .ws-chip{min-width:30px}
+  .ws-num{width:28px;height:28px;font-size:11px}
+  .time-block-val{font-size:15px}
+  .stats-banner-val{font-size:18px}
+  .stats-banner-item{padding:12px 10px}
+}
+
+/* Small phones (360-480px) - most Android phones */
+@media(min-width:360px) and (max-width:480px){
+  .loc-grid{grid-template-columns:repeat(3,1fr);gap:7px}
+  .sup-grid{grid-template-columns:repeat(3,1fr)}
+  @media(min-width:420px){.sup-grid{grid-template-columns:repeat(6,1fr)}}
+}
+
+/* Medium phones (481-600px) - Samsung Galaxy, Pixel */
+@media(min-width:481px) and (max-width:600px){
+  .loc-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+  .sup-grid{grid-template-columns:repeat(6,1fr)}
+}
+
+/* Large phones / small foldables (601-767px) */
+@media(min-width:601px) and (max-width:767px){
+  .loc-grid{grid-template-columns:repeat(4,1fr)!important;gap:8px}
+  #app{max-width:680px}
+}
+
+/* Samsung Z Fold - folded (< 400px wide) */
+@media(max-width:400px){
+  .loc-grid{grid-template-columns:repeat(2,1fr)!important;gap:6px}
+  .time-picker-row{gap:6px}
+  .stats-banner-inner{grid-template-columns:1fr 1fr}
+  .stats-banner-item{padding:12px 10px}
+  .stats-banner-ico{width:28px;height:28px}
+  .stats-banner-val{font-size:18px}
+}
+
+/* Samsung Z Fold - unfolded (~900px tablet) */
+@media(min-width:768px) and (max-width:900px){
+  #app{max-width:100%!important}
+  .loc-grid{grid-template-columns:repeat(4,1fr)!important}
+  .sup-grid{grid-template-columns:repeat(6,1fr)!important}
+  .bnav{display:none!important}
+  .topbar{display:none!important}
+}
+
+/* Tablet landscape (768px+) without sidebar */
+@media(min-width:768px) and (max-width:899px){
+  .loc-grid{grid-template-columns:repeat(4,1fr)!important}
+  .stats-banner-inner{display:flex!important}
+  .stats-banner-div{display:block!important}
+}
+
+/* Wide desktop (1400px+) - wider content */
+@media(min-width:1400px){
+  .dt-sidebar{width:260px;min-width:260px}
+  .loc-grid{grid-template-columns:repeat(5,1fr)!important}
+}
+
+/* Fix #app max-width for all mobile */
+@media(max-width:899px){
+  #app{
+    max-width:600px!important;
+    width:100%!important;
+    margin:0 auto!important;
+  }
+}
+
+/* Ensure body fills screen edge to edge on mobile */
+@media(max-width:600px){
+  #app{max-width:100%!important}
+}

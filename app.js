@@ -333,6 +333,124 @@ function destroyDesktopSidebar(){
   if(s) s.remove();
 }
 
+/* --- BORROW SYSTEM ----------------------------------- */
+async function openBorrowModal(){
+  const m=document.getElementById('borrowModal');
+  if(!m) return;
+  m.style.display='flex';
+  await buildBorrowPersonPicker();
+  renderBorrowLog();
+  loadBorrowRequests();
+}
+function closeBorrowModal(){
+  const m=document.getElementById('borrowModal');
+  if(m) m.style.display='none';
+}
+async function buildBorrowPersonPicker(){
+  const picker=document.getElementById('borrowPersonPicker');
+  if(!picker) return;
+  const members=await getCompanyMembers(true);
+  picker.innerHTML='';
+  members.filter(m=>m.user_email!==ME?.email).forEach(m=>{
+    const name=getMemberName(m.user_email);
+    const btn=document.createElement('button');
+    btn.className='key-member-btn';
+    btn.dataset.email=m.user_email;
+    btn.innerHTML='<span class="key-member-avatar">'+name.charAt(0).toUpperCase()+'</span>'
+      +'<span style="display:flex;flex-direction:column;gap:1px">'
+      +'<span style="font-size:13px;font-weight:700;color:var(--text)">'+name+'</span>'
+      +'<span style="font-size:9px;color:var(--text3)">'+m.user_email.split('@')[0]+'</span>'
+      +'</span>';
+    btn.onclick=()=>{
+      picker.querySelectorAll('.key-member-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      const sel=document.getElementById('borrowToEmail');
+      if(sel){sel.dataset.email=m.user_email;sel.dataset.name=name;sel.textContent='To: '+name;}
+    };
+    picker.appendChild(btn);
+  });
+}
+async function sendBorrowRequest(){
+  const item=document.getElementById('borrowItem')?.value.trim();
+  const toEl=document.getElementById('borrowToEmail');
+  const manualEl=document.getElementById('borrowManualName');
+  let to=toEl?.dataset.email||'';
+  let toName=toEl?.dataset.name||'';
+  const manual=manualEl?.value.trim()||'';
+  if(!to&&manual){to='external';toName=manual;}
+  const note=document.getElementById('borrowNote')?.value.trim()||'';
+  if(!item){showToast('Enter item name','warn');return;}
+  if(!toName){showToast('Select a person or enter a name','warn');return;}
+  const btn=document.querySelector('.borrow-send-btn');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+  const myName=getMemberName(ME.email);
+  const{error}=await supabaseClient.from('borrow_requests').insert({
+    from_email:ME.email,from_name:myName,
+    to_email:to,to_name:toName,
+    item,note,status:to==='external'?'approved':'pending',
+    company_id:COMPANY?.id||null,
+    created_at:new Date().toISOString()
+  });
+  if(btn){btn.disabled=false;btn.textContent='Send Request';}
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast(to==='external'?'Logged borrow to '+toName:'Request sent to '+toName);
+  if(document.getElementById('borrowItem')) document.getElementById('borrowItem').value='';
+  if(manualEl) manualEl.value='';
+  if(toEl){toEl.dataset.email='';toEl.dataset.name='';toEl.textContent='';}
+  document.querySelectorAll('#borrowPersonPicker .key-member-btn').forEach(b=>b.classList.remove('sel'));
+  renderBorrowLog();
+}
+async function loadBorrowRequests(){
+  const list=document.getElementById('borrowRequestList');
+  const badge=document.getElementById('borrowBadge');
+  if(!list) return;
+  const{data:inc}=await supabaseClient.from('borrow_requests')
+    .select('*').eq('to_email',ME.email).eq('status','pending').order('created_at',{ascending:false});
+  const{data:ret}=await supabaseClient.from('borrow_requests')
+    .select('*').eq('from_email',ME.email).eq('status','returned_pending').order('created_at',{ascending:false});
+  const all=[...(inc||[]),...(ret||[])];
+  if(badge){badge.style.display=all.length?'flex':'none';badge.textContent=all.length;}
+  if(!all.length){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px;text-align:center">No pending requests</div>';return;}
+  list.innerHTML=all.map(r=>{
+    const isRet=r.status==='returned_pending';
+    const dt=new Date(r.created_at).toLocaleDateString('en-NZ',{day:'numeric',month:'short'});
+    const actions=isRet
+      ?`<button onclick="confirmReturn('${r.id}')" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:Inter,sans-serif">Confirm Return</button>`
+      :`<button onclick="approveBorrow('${r.id}')" style="flex:1;background:var(--teal);color:#04100D;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:Inter,sans-serif">Approve</button>
+       <button onclick="declineBorrow('${r.id}')" style="flex:1;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;color:var(--text2);font-size:12px;cursor:pointer;font-family:Inter,sans-serif">Decline</button>`;
+    return `<div style="background:var(--card2);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${isRet?r.from_name+' returned: ':r.from_name+' wants: '}<strong style="color:var(--text)">${r.item}</strong></div>
+      ${r.note?`<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-style:italic">"${r.note}"</div>`:''}
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px">${dt}</div>
+      <div style="display:flex;gap:6px">${actions}</div>
+    </div>`;
+  }).join('');
+}
+async function renderBorrowLog(){
+  const el=document.getElementById('borrowLog');
+  if(!el||!COMPANY) return;
+  const{data}=await supabaseClient.from('borrow_requests')
+    .select('*').eq('company_id',COMPANY.id).eq('from_email',ME.email)
+    .order('created_at',{ascending:false}).limit(15);
+  if(!data?.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">No borrow history</div>';return;}
+  const sc={pending:'var(--amber)',approved:'var(--teal)',declined:'var(--red)',returned_pending:'var(--amber)',returned:'var(--text3)'};
+  const sl={pending:'Pending',approved:'Active',declined:'Declined',returned_pending:'Return pending',returned:'Returned'};
+  el.innerHTML=data.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+    <div><div style="font-size:12px;font-weight:700;color:var(--text)">${r.item}</div><div style="font-size:10px;color:var(--text3)">to ${r.to_name}</div></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+      <span style="font-size:10px;font-weight:700;color:${sc[r.status]||'var(--text3)'}">${sl[r.status]||r.status}</span>
+      ${r.status==='approved'?`<button onclick="markItemReturned('${r.id}','${r.to_email}','${r.to_name}','${r.item}')" style="font-size:10px;background:var(--amber-bg);color:var(--amber);border:1px solid rgba(232,168,76,0.3);border-radius:5px;padding:2px 8px;cursor:pointer;font-family:Inter,sans-serif">Mark Returned</button>`:''}
+    </div>
+  </div>`).join('');
+}
+async function approveBorrow(id){await supabaseClient.from('borrow_requests').update({status:'approved'}).eq('id',id);showToast('Approved');loadBorrowRequests();}
+async function declineBorrow(id){await supabaseClient.from('borrow_requests').update({status:'declined'}).eq('id',id);showToast('Declined');loadBorrowRequests();}
+async function confirmReturn(id){await supabaseClient.from('borrow_requests').update({status:'returned'}).eq('id',id);showToast('Return confirmed');loadBorrowRequests();renderBorrowLog();}
+async function markItemReturned(id,toEmail,toName,item){
+  await supabaseClient.from('borrow_requests').update({status:'returned_pending',returned_at:new Date().toISOString()}).eq('id',id);
+  showToast(item+' — waiting for '+toName+' to confirm');renderBorrowLog();
+}
+
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
 
 
