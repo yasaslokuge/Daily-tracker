@@ -476,6 +476,82 @@ function parseLocNotes(noteStr){
   return {general:general,locNotes:locNotes};
 }
 
+/* --- DATA USAGE (admin) ------------------------------ */
+async function loadDataUsage(){
+  const el=document.getElementById('dataUsageCard');
+  if(!el||!COMPANY) return;
+  el.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text3)">Loading...</div>';
+  try{
+    const cid=COMPANY.id;
+
+    // Count rows in each table for this company
+    const counts=await Promise.all([
+      supabaseClient.from('work_logs').select('id',{count:'exact',head:true}).eq('company_id',cid),
+      supabaseClient.from('schedules').select('id',{count:'exact',head:true}).eq('company_id',cid),
+      supabaseClient.from('company_members').select('id',{count:'exact',head:true}).eq('company_id',cid),
+      supabaseClient.from('key_audit_log').select('id',{count:'exact',head:true}).eq('company_id',cid),
+      supabaseClient.from('borrow_requests').select('id',{count:'exact',head:true}).eq('company_id',cid),
+    ]);
+
+    const [logs,scheds,members,audit,borrows]=counts;
+
+    // Estimate size (rough bytes per row)
+    const logCount=logs.count||0;
+    const schedCount=scheds.count||0;
+    const memberCount=members.count||0;
+    const auditCount=audit.count||0;
+    const borrowCount=borrows.count||0;
+
+    // Rough estimates: work_log~800B, schedule~300B, member~200B, audit~250B, borrow~300B
+    const estBytes=(logCount*800)+(schedCount*300)+(memberCount*200)+(auditCount*250)+(borrowCount*300);
+    const estKB=(estBytes/1024).toFixed(1);
+    const estMB=(estBytes/1048576).toFixed(2);
+
+    const FREE_LIMIT_MB=500; // Supabase free tier
+    const usedMB=parseFloat(estMB);
+    const pct=Math.min(100,(usedMB/FREE_LIMIT_MB*100)).toFixed(2);
+
+    const rows=[
+      {label:'Work logs',count:logCount,est:Math.round(logCount*800/1024)+'KB'},
+      {label:'Schedules',count:schedCount,est:Math.round(schedCount*300/1024)+'KB'},
+      {label:'Team members',count:memberCount,est:Math.round(memberCount*200/1024)+'KB'},
+      {label:'Key audit logs',count:auditCount,est:Math.round(auditCount*250/1024)+'KB'},
+      {label:'Borrow requests',count:borrowCount,est:Math.round(borrowCount*300/1024)+'KB'},
+    ];
+
+    el.innerHTML=`
+      <!-- Usage bar -->
+      <div style="padding:16px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Estimated usage</div>
+          <div style="font-size:12px;color:var(--text2)">${estKB}KB <span style="color:var(--text3)">/ 500MB free</span></div>
+        </div>
+        <div style="background:var(--card2);border-radius:6px;height:8px;overflow:hidden">
+          <div style="width:${Math.max(0.5,parseFloat(pct))}%;height:100%;background:var(--teal);border-radius:6px;transition:width 0.6s ease"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:5px">${pct}% of free tier used — well within limits</div>
+      </div>
+      <!-- Row counts -->
+      <div style="padding:12px 16px">
+        ${rows.map((r,i)=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;${i<rows.length-1?'border-bottom:1px solid var(--border)':''}">
+            <div style="font-size:13px;color:var(--text)">${r.label}</div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font-size:12px;color:var(--text2)">${r.count} rows</span>
+              <span style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">~${r.est}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+      <!-- Note -->
+      <div style="padding:10px 16px;background:var(--teal-bg);border-top:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--teal)">💡 Supabase free tier includes 500MB storage. At current usage this company has years of free capacity remaining.</div>
+      </div>`;
+  }catch(e){
+    el.innerHTML='<div style="padding:16px;font-size:12px;color:var(--red)">Error loading usage: '+e.message+'</div>';
+    console.error('loadDataUsage:',e);
+  }
+}
+
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
 
 

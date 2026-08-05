@@ -506,6 +506,17 @@
         </div>
       </div>
 
+      <!-- DATA USAGE (admin only) -->
+      <div class="set-section" id="dataUsageSection" style="display:none">
+        <div class="set-sec-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Database Usage</span>
+          <button onclick="loadDataUsage()" class="set-action-btn">Refresh</button>
+        </div>
+        <div class="set-card" style="padding:0;overflow:hidden" id="dataUsageCard">
+          <div style="padding:16px;text-align:center;font-size:12px;color:var(--text3)">Tap refresh to load</div>
+        </div>
+      </div>
+
       <div class="set-section">
         <div class="set-sec-title">About</div>
         <div class="set-card">
