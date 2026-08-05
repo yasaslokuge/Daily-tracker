@@ -729,5 +729,33 @@
   </div>
 </div>
 
+
+<!-- SUPER ADMIN PORTAL -->
+<div id="superAdminPortal" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:300;flex-direction:column;overflow:hidden">
+  <!-- Header -->
+  <div class="sa-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="sa-logo">SA</div>
+      <div>
+        <div class="sa-title">Super Admin</div>
+        <div class="sa-subtitle">WorkTrace Platform Control</div>
+      </div>
+    </div>
+    <button onclick="doSignOut()" class="sa-btn sa-btn-ghost">Sign Out</button>
+  </div>
+  <!-- Content -->
+  <div id="saContent" style="flex:1;overflow-y:auto;padding:20px"></div>
+</div>
+
+<!-- SUPER ADMIN BANNER (shown when viewing a company) -->
+<div id="saBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--purple);padding:8px 16px;align-items:center;justify-content:space-between">
+  <div style="display:flex;align-items:center;gap:8px">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16" style="color:#fff"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+    <span style="font-size:12px;font-weight:700;color:#fff" id="saBannerName">Viewing company</span>
+    <span style="font-size:11px;color:rgba(255,255,255,0.6)">— Super Admin Mode</span>
+  </div>
+  <button onclick="saExitCompany()" style="background:rgba(255,255,255,0.2);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;cursor:pointer;font-family:Inter,sans-serif">← Exit to Portal</button>
+</div>
+
 </body>
 </html>

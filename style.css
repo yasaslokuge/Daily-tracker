@@ -1739,3 +1739,73 @@ body.light .loc-note-preview{color:rgba(0,0,0,0.45)}
 .wde-loc-notes{display:flex;flex-direction:column;gap:3px;margin-top:4px}
 .wde-loc-note{font-size:11px;color:var(--text2);background:var(--card2);border-radius:6px;padding:3px 8px;line-height:1.3}
 .wde-loc-note b{color:var(--teal);font-weight:600}
+
+/* ════════════════════════════════════════
+   SUPER ADMIN PORTAL
+════════════════════════════════════════ */
+.sa-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.sa-logo{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--purple),#5B21B6);
+  color:#fff;font-size:13px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  letter-spacing:-0.5px;
+}
+.sa-title{font-size:17px;font-weight:700;color:var(--text)}
+.sa-subtitle{font-size:11px;color:var(--text3);margin-top:1px}
+
+/* Stats */
+.sa-stats{
+  display:flex;align-items:center;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:0 4px;margin-bottom:20px;overflow:hidden;
+}
+.sa-stat{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 8px}
+.sa-stat-val{font-size:24px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px}
+.sa-stat-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.sa-stat-div{width:1px;height:40px;background:linear-gradient(to bottom,transparent,var(--border),transparent)}
+
+/* Section */
+.sa-section-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+
+/* Company cards */
+.sa-companies{display:flex;flex-direction:column;gap:10px}
+.sa-company-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:16px;
+  transition:border-color var(--t);
+}
+.sa-company-card:hover{border-color:var(--border2)}
+.sa-co-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:12px}
+.sa-co-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px}
+.sa-co-id{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.sa-co-actions{display:flex;gap:6px;flex-shrink:0}
+.sa-co-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sa-co-stat{background:var(--card2);border-radius:8px;padding:8px;text-align:center}
+.sa-co-stat-val{display:block;font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.sa-co-stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+
+/* Buttons */
+.sa-btn{border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;padding:7px 14px;transition:all var(--t)}
+.sa-btn-teal{background:var(--teal);color:#04100D}
+.sa-btn-teal:hover{opacity:0.9}
+.sa-btn-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(224,112,112,0.3)}
+.sa-btn-red:hover{background:var(--red);color:#fff}
+.sa-btn-ghost{background:var(--card2);color:var(--text2);border:1px solid var(--border2)}
+.sa-btn-ghost:hover{color:var(--red)}
+
+.sa-loading{text-align:center;padding:40px;font-size:13px;color:var(--text3)}
+.sa-error{text-align:center;padding:20px;font-size:13px;color:var(--red)}
+
+/* Desktop super admin - wider cards */
+@media(min-width:768px){
+  #saContent{max-width:860px;margin:0 auto;padding:28px}
+  .sa-companies{display:grid;grid-template-columns:repeat(2,1fr)}
+  .sa-co-stats{grid-template-columns:repeat(4,1fr)}
+}

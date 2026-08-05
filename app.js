@@ -84,7 +84,7 @@ const DFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sund
 
 
 /* --- 3. STATE VARIABLES ------------------------------ */
-let ME=null,COMPANY=null,MY_ROLE='employee',selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null,locCheckIn={},locCheckOut={},locNotes={};
+let ME=null,COMPANY=null,MY_ROLE='employee',IS_SUPER_ADMIN=false,selDate=td(),weekOff=0,repOff=0,logOff=0,cache={},tempL=new Set(),tempS=new Set(),shiftStart='',shiftEnd='',activeTimePicker=null,locCheckIn={},locCheckOut={},locNotes={};
 
 
 /* --- 4. DATE UTILITIES ------------------------------- */
@@ -552,7 +552,143 @@ async function loadDataUsage(){
   }
 }
 
-async function doSignOut(){await sb.auth.signOut();ME=null;cache={};hideApp();showAuth()}
+/* ════════════════════════════════════════
+   SUPER ADMIN PORTAL
+════════════════════════════════════════ */
+function showSuperAdmin(){
+  const el=document.getElementById('superAdminPortal');
+  if(el){el.style.display='flex';loadSuperAdminDash();}
+}
+function hideSuperAdmin(){
+  const el=document.getElementById('superAdminPortal');
+  if(el) el.style.display='none';
+}
+
+async function loadSuperAdminDash(){
+  const content=document.getElementById('saContent');
+  if(!content) return;
+  content.innerHTML='<div class="sa-loading">Loading all companies...</div>';
+  try{
+    // Fetch all companies
+    const{data:companies,error:ce}=await supabaseClient
+      .from('companies').select('*').order('name');
+    if(ce) throw ce;
+
+    // Fetch member counts per company
+    const{data:members}=await supabaseClient
+      .from('company_members').select('company_id,role');
+
+    // Fetch work log counts per company
+    const{data:logs}=await supabaseClient
+      .from('work_logs').select('company_id');
+
+    // Build stats per company
+    const companyStats=(companies||[]).map(co=>{
+      const mems=(members||[]).filter(m=>m.company_id===co.id);
+      const logCount=(logs||[]).filter(l=>l.company_id===co.id).length;
+      const admins=mems.filter(m=>m.role==='admin').length;
+      const locCount=(co.locations||[]).length;
+      return {...co,memberCount:mems.length,logCount,admins,locCount};
+    });
+
+    const totalCompanies=companyStats.length;
+    const totalMembers=(members||[]).length;
+    const totalLogs=(logs||[]).length;
+
+    content.innerHTML=`
+      <!-- Stats banner -->
+      <div class="sa-stats">
+        <div class="sa-stat"><div class="sa-stat-val">${totalCompanies}</div><div class="sa-stat-lbl">Companies</div></div>
+        <div class="sa-stat-div"></div>
+        <div class="sa-stat"><div class="sa-stat-val">${totalMembers}</div><div class="sa-stat-lbl">Total Users</div></div>
+        <div class="sa-stat-div"></div>
+        <div class="sa-stat"><div class="sa-stat-val">${totalLogs}</div><div class="sa-stat-lbl">Work Logs</div></div>
+        <div class="sa-stat-div"></div>
+        <div class="sa-stat"><div class="sa-stat-val" style="color:var(--teal)">Free</div><div class="sa-stat-lbl">Plan</div></div>
+      </div>
+
+      <!-- Company list -->
+      <div class="sa-section-title">All Companies</div>
+      <div class="sa-companies">
+        ${companyStats.map(co=>`
+          <div class="sa-company-card">
+            <div class="sa-co-header">
+              <div>
+                <div class="sa-co-name">${co.name}</div>
+                <div class="sa-co-id">ID: ${co.id.slice(-8)}</div>
+              </div>
+              <div class="sa-co-actions">
+                <button onclick="saViewCompany('${co.id}','${co.name.replace(/'/g,"\'")}')" class="sa-btn sa-btn-teal">View</button>
+                <button onclick="saDeleteCompany('${co.id}','${co.name.replace(/'/g,"\'")}')" class="sa-btn sa-btn-red">Delete</button>
+              </div>
+            </div>
+            <div class="sa-co-stats">
+              <div class="sa-co-stat"><span class="sa-co-stat-val">${co.memberCount}</span><span class="sa-co-stat-lbl">Members</span></div>
+              <div class="sa-co-stat"><span class="sa-co-stat-val">${co.locCount}</span><span class="sa-co-stat-lbl">Locations</span></div>
+              <div class="sa-co-stat"><span class="sa-co-stat-val">${co.logCount}</span><span class="sa-co-stat-lbl">Logs</span></div>
+              <div class="sa-co-stat"><span class="sa-co-stat-val" style="font-family:monospace;font-size:13px;letter-spacing:2px">${co.invite_code||'—'}</span><span class="sa-co-stat-lbl">Invite Code</span></div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }catch(e){
+    content.innerHTML='<div class="sa-error">Error: '+e.message+'</div>';
+    console.error('Super admin load error:',e);
+  }
+}
+
+async function saViewCompany(coId, coName){
+  // Switch into this company's context as super admin
+  const{data:co}=await supabaseClient.from('companies').select('*').eq('id',coId).single();
+  if(!co){showToast('Company not found','warn');return;}
+  COMPANY=co;
+  LOCS=(co.locations||[]).map(l=>({...l,keys:[]}));
+  MY_ROLE='admin';
+  hideSuperAdmin();
+  hideAuth();
+  showApp();
+  sv('log');
+  // Show banner
+  const banner=document.getElementById('saBanner');
+  if(banner){
+    banner.style.display='flex';
+    document.getElementById('saBannerName').textContent='Viewing: '+coName;
+  }
+  showToast('Switched to '+coName);
+  await loadWk(wkDates(0));
+  await loadLocKeys();
+  await getCompanyMembers(true);
+  renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
+}
+
+function saExitCompany(){
+  const banner=document.getElementById('saBanner');
+  if(banner) banner.style.display='none';
+  hideApp();
+  COMPANY=null;LOCS=[];MY_ROLE='employee';membersCacheLoaded=false;
+  showSuperAdmin();
+}
+
+async function saDeleteCompany(coId, coName){
+  if(!confirm('DELETE "'+coName+'"?\nThis removes ALL data including members, logs and schedules.\nThis cannot be undone!')) return;
+  if(!confirm('Are you absolutely sure? Type confirm in next prompt.')) return;
+  const conf=prompt('Type DELETE to confirm:');
+  if(conf!=='DELETE'){showToast('Cancelled');return;}
+  try{
+    // Delete in order
+    await supabaseClient.from('work_logs').delete().eq('company_id',coId);
+    await supabaseClient.from('schedules').delete().eq('company_id',coId);
+    await supabaseClient.from('key_audit_log').delete().eq('company_id',coId);
+    await supabaseClient.from('borrow_requests').delete().eq('company_id',coId);
+    await supabaseClient.from('company_members').delete().eq('company_id',coId);
+    await supabaseClient.from('companies').delete().eq('id',coId);
+    showToast(coName+' deleted');
+    loadSuperAdminDash();
+  }catch(e){
+    showToast('Error: '+e.message,'warn');
+  }
+}
+
+async function doSignOut(){await sb.auth.signOut();ME=null;cache={};IS_SUPER_ADMIN=false;hideApp();hideSuperAdmin();const b=document.getElementById('saBanner');if(b)b.style.display='none';showAuth();}
 
 
 /* --- 7. DATABASE ------------------------------------- */
@@ -1286,6 +1422,12 @@ async function initApp(u){
   ME=u;
   document.getElementById('tbUser').textContent=u.email;
   hideLoader();
+  // Check if super admin
+  try{
+    const{data:sa}=await supabaseClient.from('super_admins').select('id').eq('user_id',u.id).limit(1);
+    IS_SUPER_ADMIN=!!(sa&&sa.length>0);
+    if(IS_SUPER_ADMIN) console.log('Super admin detected');
+  }catch(e){IS_SUPER_ADMIN=false;}
   // Load company first - retry once on failure
   let company=await loadMyCompany();
   if(!company){
