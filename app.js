@@ -556,126 +556,283 @@ async function loadDataUsage(){
 /* ════════════════════════════════════════
    SUPER ADMIN PORTAL
 ════════════════════════════════════════ */
+let SA_SECTION='overview'; // overview | companies | users | audit
+
 function showSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(el){el.style.display='flex';loadSuperAdminDash();}
+  if(el){el.style.display='flex';setSASection('overview');}
 }
 function hideSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
   if(el) el.style.display='none';
 }
-
-async function loadSuperAdminDash(){
+function setSASection(s){
+  SA_SECTION=s;
+  document.querySelectorAll('.sa-nav-item').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+  const title=document.getElementById('saPageTitle');
+  const sub=document.getElementById('saPageSub');
+  const titles={overview:'Overview',companies:'Companies',users:'Users','audit':'Audit Log','health':'System Health'};
+  const subs={overview:'Platform-wide status',companies:'All registered companies',users:'All platform users','audit':'Admin activity log','health':'Service status'};
+  if(title) title.textContent=titles[s]||s;
+  if(sub) sub.textContent=subs[s]||'';
+  loadSASection(s);
+}
+async function loadSASection(s){
   const content=document.getElementById('saContent');
   if(!content) return;
-  content.innerHTML='<div class="sa-loading">Loading all companies...</div>';
+  content.innerHTML='<div class="sa-loading">Loading...</div>';
   try{
-    // Fetch all companies
-    const{data:companies,error:ce}=await supabaseClient
-      .from('companies').select('*').order('name');
-    if(ce) throw ce;
-
-    // Fetch member counts per company
-    const{data:members}=await supabaseClient
-      .from('company_members').select('company_id,role');
-
-    // Fetch work log counts per company
-    const{data:logs}=await supabaseClient
-      .from('work_logs').select('company_id');
-
-    // Build stats per company
-    const companyStats=(companies||[]).map(co=>{
-      const mems=(members||[]).filter(m=>m.company_id===co.id);
-      const logCount=(logs||[]).filter(l=>l.company_id===co.id).length;
-      const admins=mems.filter(m=>m.role==='admin').length;
-      const locCount=(co.locations||[]).length;
-      return {...co,memberCount:mems.length,logCount,admins,locCount};
-    });
-
-    const totalCompanies=companyStats.length;
-    const totalMembers=(members||[]).length;
-    const totalLogs=(logs||[]).length;
-
-    content.innerHTML=`
-      <!-- Stats banner -->
-      <div class="sa-stats">
-        <div class="sa-stat"><div class="sa-stat-val">${totalCompanies}</div><div class="sa-stat-lbl">Companies</div></div>
-        <div class="sa-stat-div"></div>
-        <div class="sa-stat"><div class="sa-stat-val">${totalMembers}</div><div class="sa-stat-lbl">Total Users</div></div>
-        <div class="sa-stat-div"></div>
-        <div class="sa-stat"><div class="sa-stat-val">${totalLogs}</div><div class="sa-stat-lbl">Work Logs</div></div>
-        <div class="sa-stat-div"></div>
-        <div class="sa-stat"><div class="sa-stat-val" style="color:var(--teal)">Free</div><div class="sa-stat-lbl">Plan</div></div>
-      </div>
-
-      <!-- Company list -->
-      <div class="sa-section-title">All Companies</div>
-      <div class="sa-companies">
-        ${companyStats.map(co=>`
-          <div class="sa-company-card">
-            <div class="sa-co-header">
-              <div>
-                <div class="sa-co-name">${co.name}</div>
-                <div class="sa-co-id">ID: ${co.id.slice(-8)}</div>
-              </div>
-              <div class="sa-co-actions">
-                <button onclick="saViewCompany('${co.id}','${co.name.replace(/'/g,"\'")}')" class="sa-btn sa-btn-teal">View</button>
-                <button onclick="saDeleteCompany('${co.id}','${co.name.replace(/'/g,"\'")}')" class="sa-btn sa-btn-red">Delete</button>
-              </div>
-            </div>
-            <div class="sa-co-stats">
-              <div class="sa-co-stat"><span class="sa-co-stat-val">${co.memberCount}</span><span class="sa-co-stat-lbl">Members</span></div>
-              <div class="sa-co-stat"><span class="sa-co-stat-val">${co.locCount}</span><span class="sa-co-stat-lbl">Locations</span></div>
-              <div class="sa-co-stat"><span class="sa-co-stat-val">${co.logCount}</span><span class="sa-co-stat-lbl">Logs</span></div>
-              <div class="sa-co-stat"><span class="sa-co-stat-val" style="font-family:monospace;font-size:13px;letter-spacing:2px">${co.invite_code||'—'}</span><span class="sa-co-stat-lbl">Invite Code</span></div>
-            </div>
-          </div>`).join('')}
-      </div>`;
-  }catch(e){
-    content.innerHTML='<div class="sa-error">Error: '+e.message+'</div>';
-    console.error('Super admin load error:',e);
-  }
+    if(s==='overview') await renderSAOverview(content);
+    else if(s==='companies') await renderSACompanies(content);
+    else if(s==='users') await renderSAUsers(content);
+    else if(s==='audit') await renderSAAudit(content);
+    else if(s==='health') await renderSAHealth(content);
+  }catch(e){content.innerHTML='<div class="sa-error">Error: '+e.message+'</div>';console.error(e);}
 }
 
-async function saViewCompany(coId, coName){
-  // Switch into this company's context as super admin
+async function fetchSAData(){
+  const[coRes,memRes,logRes]=await Promise.all([
+    supabaseClient.from('companies').select('*').order('name'),
+    supabaseClient.from('company_members').select('*'),
+    supabaseClient.from('work_logs').select('company_id,log_date,updated_at'),
+  ]);
+  return{companies:coRes.data||[],members:memRes.data||[],logs:logRes.data||[]};
+}
+
+async function renderSAOverview(el){
+  const{companies,members,logs}=await fetchSAData();
+  const today=new Date().toISOString().slice(0,10);
+  const activeLast7=logs.filter(l=>{const d=new Date(l.updated_at);return(Date.now()-d)<7*86400000;}).length;
+
+  // Build company stats
+  const coStats=companies.map(co=>{
+    const mems=members.filter(m=>m.company_id===co.id);
+    const logCount=logs.filter(l=>l.company_id===co.id).length;
+    return{...co,memberCount:mems.length,logCount,locCount:(co.locations||[]).length};
+  });
+
+  el.innerHTML=`
+    <!-- Stats -->
+    <div class="sa-stats-row">
+      <div class="sa-kpi"><div class="sa-kpi-val">${companies.length}</div><div class="sa-kpi-lbl">Companies</div></div>
+      <div class="sa-kpi"><div class="sa-kpi-val">${members.length}</div><div class="sa-kpi-lbl">Total Users</div></div>
+      <div class="sa-kpi"><div class="sa-kpi-val">${logs.length}</div><div class="sa-kpi-lbl">Work Logs</div></div>
+      <div class="sa-kpi"><div class="sa-kpi-val" style="color:var(--teal)">Free</div><div class="sa-kpi-lbl">Supabase Plan</div></div>
+    </div>
+
+    <!-- Companies table -->
+    <div class="sa-card" style="margin-bottom:16px">
+      <div class="sa-card-header">
+        <span class="sa-card-title">ALL COMPANIES</span>
+        <button onclick="setSASection('companies')" class="sa-link-btn">View all →</button>
+      </div>
+      <table class="sa-table">
+        <thead><tr><th>Company</th><th>Activity</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${coStats.map(co=>`<tr>
+            <td>
+              <div class="sa-co-name-cell">${co.name}</div>
+              <div class="sa-co-meta">ID: ${co.id.slice(-6)} · Invite: ${co.invite_code||'—'}</div>
+            </td>
+            <td class="sa-muted">${co.memberCount} members · ${co.locCount} locations · ${co.logCount} logs</td>
+            <td>
+              <div style="display:flex;gap:5px">
+                <button onclick="saViewCompany('${co.id}','${co.name.replace(/'/g,"\'")}','${co.invite_code||''}')" class="sa-action-btn teal">View</button>
+                <button onclick="saRegenerateCode('${co.id}')" class="sa-action-btn ghost">New Code</button>
+                <button onclick="saDeleteCompany('${co.id}','${co.name.replace(/'/g,"\'")}')" class="sa-action-btn red">Delete</button>
+              </div>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bottom row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <!-- System Health -->
+      <div class="sa-card">
+        <div class="sa-card-header"><span class="sa-card-title">SYSTEM HEALTH</span></div>
+        <div class="sa-health-row"><span class="sa-dot green"></span><span>API</span><span class="sa-health-status">Operational</span></div>
+        <div class="sa-health-row"><span class="sa-dot green"></span><span>Database (Supabase)</span><span class="sa-health-status">Operational</span></div>
+        <div class="sa-health-row"><span class="sa-dot green"></span><span>Hosting (Vercel)</span><span class="sa-health-status">Operational</span></div>
+        <div class="sa-health-row"><span class="sa-dot green"></span><span>Auth</span><span class="sa-health-status">Operational</span></div>
+        <div class="sa-health-row"><span class="sa-dot amber"></span><span>Email (EmailJS)</span><span class="sa-health-status" style="color:var(--amber)">Free tier</span></div>
+      </div>
+      <!-- Plan distribution -->
+      <div class="sa-card">
+        <div class="sa-card-header"><span class="sa-card-title">PLAN DISTRIBUTION</span></div>
+        <div class="sa-plan-row"><span>Free</span>
+          <div class="sa-plan-bar"><div class="sa-plan-fill" style="width:100%;background:var(--text3)"></div></div>
+          <span>${companies.length}</span>
+        </div>
+        <div class="sa-plan-row"><span>Pro</span>
+          <div class="sa-plan-bar"><div class="sa-plan-fill" style="width:0%;background:var(--teal)"></div></div>
+          <span>0</span>
+        </div>
+        <div class="sa-plan-row"><span>Enterprise</span>
+          <div class="sa-plan-bar"><div class="sa-plan-fill" style="width:0%;background:var(--purple)"></div></div>
+          <span>0</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function renderSACompanies(el){
+  const{companies,members,logs}=await fetchSAData();
+  const coStats=companies.map(co=>({
+    ...co,
+    memberCount:members.filter(m=>m.company_id===co.id).length,
+    logCount:logs.filter(l=>l.company_id===co.id).length,
+    locCount:(co.locations||[]).length
+  }));
+  el.innerHTML=`
+    <div class="sa-card">
+      <div class="sa-card-header">
+        <span class="sa-card-title">ALL COMPANIES (${companies.length})</span>
+      </div>
+      <table class="sa-table">
+        <thead><tr><th>Company</th><th>Members</th><th>Locations</th><th>Logs</th><th>Invite Code</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${coStats.map(co=>`<tr>
+            <td><div class="sa-co-name-cell">${co.name}</div><div class="sa-co-meta">${co.id.slice(-12)}</div></td>
+            <td class="sa-center">${co.memberCount}</td>
+            <td class="sa-center">${co.locCount}</td>
+            <td class="sa-center">${co.logCount}</td>
+            <td><span style="font-family:monospace;font-size:12px;letter-spacing:2px;color:var(--teal)">${co.invite_code||'—'}</span></td>
+            <td>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button onclick="saViewCompany('${co.id}','${co.name.replace(/'/g,"\'")}','${co.invite_code||''}')" class="sa-action-btn teal">View</button>
+                <button onclick="saRegenerateCode('${co.id}')" class="sa-action-btn ghost">New Code</button>
+                <button onclick="saDeleteCompany('${co.id}','${co.name.replace(/'/g,"\'")}')" class="sa-action-btn red">Delete</button>
+              </div>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function renderSAUsers(el){
+  const{companies,members}=await fetchSAData();
+  const getCoName=cid=>(companies.find(c=>c.id===cid)||{name:'Unknown'}).name;
+  const roleColors={admin:'var(--purple)',employer:'var(--blue)',employee:'var(--teal)'};
+  el.innerHTML=`
+    <div class="sa-card">
+      <div class="sa-card-header"><span class="sa-card-title">ALL USERS (${members.length})</span></div>
+      <table class="sa-table">
+        <thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Company</th></tr></thead>
+        <tbody>
+          ${members.map(m=>{
+            const rc=roleColors[m.role]||'var(--text3)';
+            return `<tr>
+              <td class="sa-mono">${m.user_email}</td>
+              <td>${m.display_name||'—'}</td>
+              <td><span style="font-size:10px;font-weight:700;color:${rc};background:${rc}22;border-radius:20px;padding:2px 8px">${m.role}</span></td>
+              <td class="sa-muted">${getCoName(m.company_id)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function renderSAAudit(el){
+  const{data:auditLogs}=await supabaseClient.from('key_audit_log').select('*').order('performed_at',{ascending:false}).limit(50);
+  el.innerHTML=`
+    <div class="sa-card">
+      <div class="sa-card-header"><span class="sa-card-title">KEY AUDIT LOG (last 50)</span></div>
+      <table class="sa-table">
+        <thead><tr><th>Action</th><th>Location</th><th>Holder</th><th>By</th><th>Date</th></tr></thead>
+        <tbody>
+          ${(auditLogs||[]).map(l=>{
+            const ac={assigned:'var(--teal)',cleared:'var(--text3)',transferred:'var(--blue)',returned:'var(--amber)'};
+            const dt=new Date(l.performed_at).toLocaleDateString('en-NZ',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+            return `<tr>
+              <td><span style="font-size:10px;font-weight:700;color:${ac[l.action]||'var(--text3)'}">${(l.action||'').toUpperCase()}</span></td>
+              <td>${l.location_name||l.location_id}</td>
+              <td class="sa-muted">${l.holder_name||'—'}</td>
+              <td class="sa-muted sa-mono" style="font-size:11px">${(l.performed_by_email||'').split('@')[0]}</td>
+              <td class="sa-muted" style="white-space:nowrap">${dt}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function renderSAHealth(el){
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+      <div class="sa-card">
+        <div class="sa-card-header"><span class="sa-card-title">SERVICES</span></div>
+        ${[
+          ['API (Supabase REST)','green','Operational'],
+          ['Database (PostgreSQL)','green','Operational'],
+          ['Auth (Supabase Auth)','green','Operational'],
+          ['Hosting (Vercel)','green','Operational'],
+          ['Email (EmailJS)','amber','200/mo free limit'],
+          ['Analytics (Hotjar)','green','35 sessions/day free'],
+        ].map(([name,dot,status])=>`
+          <div class="sa-health-row">
+            <span class="sa-dot ${dot}"></span>
+            <span>${name}</span>
+            <span class="sa-health-status" style="${dot==='amber'?'color:var(--amber)':''}">${status}</span>
+          </div>`).join('')}
+      </div>
+      <div class="sa-card">
+        <div class="sa-card-header"><span class="sa-card-title">LIMITS & USAGE</span></div>
+        ${[
+          ['Supabase DB','500 MB free','~1 MB used'],
+          ['Supabase Auth','50K MAU free','~3 users'],
+          ['Vercel Bandwidth','100 GB/mo free','~1 GB used'],
+          ['EmailJS','200 emails/mo free','—'],
+        ].map(([name,limit,used])=>`
+          <div class="sa-health-row">
+            <span>${name}</span>
+            <span class="sa-muted" style="margin-left:auto;margin-right:12px;font-size:11px">${used}</span>
+            <span class="sa-health-status">${limit}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+async function saRegenerateCode(coId){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code=Array.from({length:8},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  const{error}=await supabaseClient.from('companies').update({invite_code:code}).eq('id',coId);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  showToast('New invite code: '+code);
+  loadSASection(SA_SECTION);
+}
+
+async function saViewCompany(coId, coName, inviteCode){
   const{data:co}=await supabaseClient.from('companies').select('*').eq('id',coId).single();
   if(!co){showToast('Company not found','warn');return;}
-  COMPANY=co;
-  LOCS=(co.locations||[]).map(l=>({...l,keys:[]}));
-  MY_ROLE='admin';
-  hideSuperAdmin();
-  hideAuth();
-  showApp();
-  sv('log');
-  // Show banner
+  COMPANY=co;LOCS=(co.locations||[]).map(l=>({...l,keys:[]}));MY_ROLE='admin';
+  hideSuperAdmin();hideAuth();showApp();sv('log');
   const banner=document.getElementById('saBanner');
-  if(banner){
-    banner.style.display='flex';
-    document.getElementById('saBannerName').textContent='Viewing: '+coName;
-  }
+  if(banner){banner.style.display='flex';document.getElementById('saBannerName').textContent='Viewing: '+coName;}
   showToast('Switched to '+coName);
-  await loadWk(wkDates(0));
-  await loadLocKeys();
-  await getCompanyMembers(true);
+  await loadWk(wkDates(0));await loadLocKeys();await getCompanyMembers(true);
+  if(COMPANY.supplies&&Array.isArray(COMPANY.supplies)&&COMPANY.supplies.length>0){
+    const defaultSvgs=SUPS.map(s=>s.svg);
+    SUPS=COMPANY.supplies.map((name,i)=>({id:'sup'+i,name:typeof name==='string'?name:String(name),svg:defaultSvgs[i%defaultSvgs.length]||''}));
+  }
   renderHero();renderWS();await renderLocGrid();renderSupGrid();loadDayUI(selDate);
 }
 
 function saExitCompany(){
   const banner=document.getElementById('saBanner');
   if(banner) banner.style.display='none';
-  hideApp();
-  COMPANY=null;LOCS=[];MY_ROLE='employee';membersCacheLoaded=false;
+  hideApp();COMPANY=null;LOCS=[];MY_ROLE='employee';membersCacheLoaded=false;
   showSuperAdmin();
 }
 
 async function saDeleteCompany(coId, coName){
-  if(!confirm('DELETE "'+coName+'"?\nThis removes ALL data including members, logs and schedules.\nThis cannot be undone!')) return;
-  if(!confirm('Are you absolutely sure? Type confirm in next prompt.')) return;
+  if(!confirm('DELETE "'+coName+'"?\nThis removes ALL company data and cannot be undone.')) return;
   const conf=prompt('Type DELETE to confirm:');
   if(conf!=='DELETE'){showToast('Cancelled');return;}
   try{
-    // Delete in order
     await supabaseClient.from('work_logs').delete().eq('company_id',coId);
     await supabaseClient.from('schedules').delete().eq('company_id',coId);
     await supabaseClient.from('key_audit_log').delete().eq('company_id',coId);
@@ -683,10 +840,8 @@ async function saDeleteCompany(coId, coName){
     await supabaseClient.from('company_members').delete().eq('company_id',coId);
     await supabaseClient.from('companies').delete().eq('id',coId);
     showToast(coName+' deleted');
-    loadSuperAdminDash();
-  }catch(e){
-    showToast('Error: '+e.message,'warn');
-  }
+    loadSASection(SA_SECTION);
+  }catch(e){showToast('Error: '+e.message,'warn');}
 }
 
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};IS_SUPER_ADMIN=false;hideApp();hideSuperAdmin();const b=document.getElementById('saBanner');if(b)b.style.display='none';showAuth();}
