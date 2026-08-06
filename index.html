@@ -741,115 +741,59 @@
 
 
 <!-- SUPER ADMIN PORTAL -->
-<div id="superAdminPortal" style="display:none;position:fixed;inset:0;background:#0D1117;z-index:1000;flex-direction:row;overflow:hidden;font-family:Inter,system-ui,sans-serif;color:#CDD9E5">
-
-  <!-- Injected styles for portal only -->
-  <style>
-    #superAdminPortal .sa-sidebar{width:200px;min-width:200px;height:100vh;background:#161B22;border-right:1px solid #30363D;display:flex;flex-direction:column;flex-shrink:0}
-    #superAdminPortal .sa-brand{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid #30363D}
-    #superAdminPortal .sa-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    #superAdminPortal .sa-title{font-size:14px;font-weight:700;color:#E6EDF3}
-    #superAdminPortal .sa-subtitle{font-size:10px;color:#8B949E;margin-top:1px}
-    #superAdminPortal .sa-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
-    #superAdminPortal .sa-nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:#8B949E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left;width:100%;transition:all 0.15s}
-    #superAdminPortal .sa-nav-item:hover{background:#21262D;color:#CDD9E5}
-    #superAdminPortal .sa-nav-item.on{background:rgba(124,58,237,0.15);color:#A78BFA;font-weight:600}
-    #superAdminPortal .sa-nav-item svg{flex-shrink:0}
-    #superAdminPortal .sa-signout-btn{display:flex;align-items:center;gap:8px;margin:0 8px 12px;padding:9px 12px;border:1px solid #30363D;border-radius:8px;background:none;color:#8B949E;font-family:inherit;font-size:12px;cursor:pointer}
-    #superAdminPortal .sa-signout-btn:hover{color:#F85149;border-color:rgba(248,81,73,0.3)}
-    #superAdminPortal .sa-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-    #superAdminPortal .sa-page-header{padding:20px 24px 16px;flex-shrink:0;border-bottom:1px solid #21262D}
-    #superAdminPortal .sa-page-title{font-size:22px;font-weight:700;color:#E6EDF3;margin-bottom:3px}
-    #superAdminPortal .sa-page-sub{font-size:12px;color:#8B949E}
-    #superAdminPortal .sa-content{flex:1;overflow-y:auto;padding:20px 24px}
-    #superAdminPortal .sa-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-    #superAdminPortal .sa-kpi{background:#161B22;border:1px solid #30363D;border-radius:10px;padding:16px 18px}
-    #superAdminPortal .sa-kpi-val{font-size:26px;font-weight:700;color:#E6EDF3;line-height:1;margin-bottom:4px}
-    #superAdminPortal .sa-kpi-lbl{font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:0.8px;font-weight:600}
-    #superAdminPortal .sa-card{background:#161B22;border:1px solid #30363D;border-radius:10px;margin-bottom:16px;overflow:hidden}
-    #superAdminPortal .sa-card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #21262D}
-    #superAdminPortal .sa-card-title{font-size:10px;font-weight:700;color:#8B949E;letter-spacing:1px;text-transform:uppercase}
-    #superAdminPortal .sa-link-btn{background:none;border:none;color:#A78BFA;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600}
-    #superAdminPortal .sa-table{width:100%;border-collapse:collapse}
-    #superAdminPortal .sa-table th{font-size:10px;font-weight:700;color:#8B949E;text-transform:uppercase;letter-spacing:0.8px;padding:10px 16px;text-align:left;border-bottom:1px solid #21262D}
-    #superAdminPortal .sa-table td{padding:12px 16px;border-bottom:1px solid #21262D;font-size:13px;color:#CDD9E5;vertical-align:middle}
-    #superAdminPortal .sa-table tr:last-child td{border-bottom:none}
-    #superAdminPortal .sa-table tr:hover td{background:#1C2128}
-    #superAdminPortal .sa-co-name-cell{font-weight:600;color:#E6EDF3;margin-bottom:2px}
-    #superAdminPortal .sa-co-meta{font-size:10px;color:#8B949E;font-family:monospace}
-    #superAdminPortal .sa-muted{color:#8B949E}
-    #superAdminPortal .sa-center{text-align:center}
-    #superAdminPortal .sa-action-btn{border:none;border-radius:6px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;padding:5px 11px;transition:all 0.15s}
-    #superAdminPortal .sa-action-btn.teal{background:#05D9B4;color:#04100D}
-    #superAdminPortal .sa-action-btn.red{background:rgba(248,81,73,0.15);color:#F85149;border:1px solid rgba(248,81,73,0.3)}
-    #superAdminPortal .sa-action-btn.ghost{background:#21262D;color:#8B949E;border:1px solid #30363D}
-    #superAdminPortal .sa-health-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #21262D;font-size:13px}
-    #superAdminPortal .sa-health-row:last-child{border-bottom:none}
-    #superAdminPortal .sa-health-status{margin-left:auto;font-size:12px;color:#3FB950;font-weight:600}
-    #superAdminPortal .sa-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    #superAdminPortal .sa-dot.green{background:#3FB950}
-    #superAdminPortal .sa-dot.amber{background:#D29922}
-    #superAdminPortal .sa-plan-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #21262D;font-size:13px;color:#CDD9E5}
-    #superAdminPortal .sa-plan-row:last-child{border-bottom:none}
-    #superAdminPortal .sa-plan-bar{flex:1;height:6px;background:#21262D;border-radius:3px;overflow:hidden}
-    #superAdminPortal .sa-plan-fill{height:100%;border-radius:3px}
-    #superAdminPortal .sa-loading{text-align:center;padding:60px;font-size:13px;color:#8B949E}
-    #superAdminPortal .sa-error{text-align:center;padding:20px;font-size:13px;color:#F85149}
-    @media(max-width:767px){
-      #superAdminPortal{flex-direction:column!important}
-      #superAdminPortal .sa-sidebar{width:100%;height:auto;min-width:0;border-right:none;border-bottom:1px solid #30363D}
-      #superAdminPortal .sa-nav{flex-direction:row;overflow-x:auto;padding:8px}
-      #superAdminPortal .sa-stats-row{grid-template-columns:repeat(2,1fr)}
-    }
-  </style>
+<div id="superAdminPortal" style="display:none;position:fixed;inset:0;background:#0D1117;z-index:1000;flex-direction:row;font-family:Inter,system-ui,sans-serif;color:#CDD9E5;overflow:hidden">
 
   <!-- Sidebar -->
-  <div class="sa-sidebar">
-    <div class="sa-brand">
-      <div class="sa-logo">SA</div>
+  <div style="width:200px;min-width:200px;height:100vh;background:#161B22;border-right:1px solid #30363D;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden">
+    <!-- Brand -->
+    <div style="display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid #30363D;flex-shrink:0">
+      <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">SA</div>
       <div>
-        <div class="sa-title">Super Admin</div>
-        <div class="sa-subtitle">WorkTrace Control</div>
+        <div style="font-size:14px;font-weight:700;color:#E6EDF3">Super Admin</div>
+        <div style="font-size:10px;color:#8B949E;margin-top:1px">WorkTrace Control</div>
       </div>
     </div>
-    <nav class="sa-nav">
-      <button class="sa-nav-item on" data-s="overview" onclick="setSASection('overview')">
-        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+    <!-- Nav -->
+    <nav style="flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto" id="saNavItems">
+      <button class="sa-nav-item on" data-s="overview" onclick="setSASection('overview')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:rgba(124,58,237,0.15);color:#A78BFA;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;width:100%">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Overview
       </button>
-      <button class="sa-nav-item" data-s="companies" onclick="setSASection('companies')">
+      <button class="sa-nav-item" data-s="companies" onclick="setSASection('companies')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:#8B949E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left;width:100%">
         <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
         Companies
       </button>
-      <button class="sa-nav-item" data-s="users" onclick="setSASection('users')">
+      <button class="sa-nav-item" data-s="users" onclick="setSASection('users')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:#8B949E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left;width:100%">
         <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         Users
       </button>
-      <button class="sa-nav-item" data-s="audit" onclick="setSASection('audit')">
+      <button class="sa-nav-item" data-s="audit" onclick="setSASection('audit')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:#8B949E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left;width:100%">
         <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
         Audit Log
       </button>
-      <button class="sa-nav-item" data-s="health" onclick="setSASection('health')">
+      <button class="sa-nav-item" data-s="health" onclick="setSASection('health')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:#8B949E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left;width:100%">
         <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
         System Health
       </button>
     </nav>
-    <button onclick="doSignOut()" class="sa-signout-btn">
+    <!-- Sign out -->
+    <button onclick="doSignOut()" style="display:flex;align-items:center;gap:8px;margin:0 8px 12px;padding:9px 12px;border:1px solid #30363D;border-radius:8px;background:none;color:#8B949E;font-family:inherit;font-size:12px;cursor:pointer;flex-shrink:0">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
       Sign Out
     </button>
   </div>
 
-  <!-- Main area -->
-  <div class="sa-main">
-    <div class="sa-page-header">
-      <div>
-        <div class="sa-page-title" id="saPageTitle">Overview</div>
-        <div class="sa-page-sub" id="saPageSub">Platform-wide status</div>
-      </div>
+  <!-- Main content -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0">
+    <!-- Page header -->
+    <div style="padding:20px 24px 16px;flex-shrink:0;border-bottom:1px solid #21262D">
+      <div id="saPageTitle" style="font-size:22px;font-weight:700;color:#E6EDF3;margin-bottom:3px">Overview</div>
+      <div id="saPageSub" style="font-size:12px;color:#8B949E">Platform-wide status</div>
     </div>
-    <div id="saContent" class="sa-content"></div>
+    <!-- Content area -->
+    <div id="saContent" style="flex:1;overflow-y:auto;padding:20px 24px;background:#0D1117"></div>
   </div>
+
 </div>
 
 <!-- SUPER ADMIN BANNER (shown when viewing a company) -->

@@ -582,11 +582,18 @@ window.hideSuperAdmin=function hideSuperAdmin(){
 }
 function setSASection(s){
   SA_SECTION=s;
-  document.querySelectorAll('.sa-nav-item').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
-  const title=document.getElementById('saPageTitle');
-  const sub=document.getElementById('saPageSub');
+  // Update nav button styles inline
+  document.querySelectorAll('.sa-nav-item').forEach(b=>{
+    const isOn=b.dataset.s===s;
+    b.style.background=isOn?'rgba(124,58,237,0.15)':'none';
+    b.style.color=isOn?'#A78BFA':'#8B949E';
+    b.style.fontWeight=isOn?'600':'500';
+    b.classList.toggle('on',isOn);
+  });
   const titles={overview:'Overview',companies:'Companies',users:'Users','audit':'Audit Log','health':'System Health'};
   const subs={overview:'Platform-wide status',companies:'All registered companies',users:'All platform users','audit':'Admin activity log','health':'Service status'};
+  const title=document.getElementById('saPageTitle');
+  const sub=document.getElementById('saPageSub');
   if(title) title.textContent=titles[s]||s;
   if(sub) sub.textContent=subs[s]||'';
   loadSASection(s);
@@ -627,79 +634,73 @@ async function fetchSAData(){
 
 async function renderSAOverview(el){
   const{companies,members,logs}=await fetchSAData();
-  const today=new Date().toISOString().slice(0,10);
-
-  // Build company stats
-  const coStats=companies.map(co=>{
-    const mems=members.filter(m=>m.company_id===co.id);
-    const logCount=logs.filter(l=>l.company_id===co.id).length;
-    return{...co,memberCount:mems.length,logCount,locCount:(co.locations||[]).length};
-  });
-
-  el.innerHTML=`
-    <!-- Stats -->
-    <div class="sa-stats-row">
-      <div class="sa-kpi"><div class="sa-kpi-val">${companies.length}</div><div class="sa-kpi-lbl">Companies</div></div>
-      <div class="sa-kpi"><div class="sa-kpi-val">${members.length}</div><div class="sa-kpi-lbl">Total Users</div></div>
-      <div class="sa-kpi"><div class="sa-kpi-val">${logs.length}</div><div class="sa-kpi-lbl">Work Logs</div></div>
-      <div class="sa-kpi"><div class="sa-kpi-val" style="color:var(--teal)">Free</div><div class="sa-kpi-lbl">Supabase Plan</div></div>
-    </div>
-
-    <!-- Companies table -->
-    <div class="sa-card" style="margin-bottom:16px">
-      <div class="sa-card-header">
-        <span class="sa-card-title">ALL COMPANIES</span>
-        <button onclick="setSASection('companies')" class="sa-link-btn">View all →</button>
+  
+  // Simple stat cards
+  const statsHtml=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:#161B22;border:1px solid #30363D;border-radius:10px;padding:16px">
+        <div style="font-size:26px;font-weight:700;color:#E6EDF3">${companies.length}</div>
+        <div style="font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:1px">Companies</div>
       </div>
-      <table class="sa-table">
-        <thead><tr><th>Company</th><th>Activity</th><th>Actions</th></tr></thead>
-        <tbody>
-          ${coStats.map(co=>`<tr>
-            <td>
-              <div class="sa-co-name-cell">${co.name}</div>
-              <div class="sa-co-meta">ID: ${co.id.slice(-6)} · Invite: ${co.invite_code||'—'}</div>
-            </td>
-            <td class="sa-muted">${co.memberCount} members · ${co.locCount} locations · ${co.logCount} logs</td>
-            <td>
-              <div style="display:flex;gap:5px">
-                <button onclick="saViewCompany('${co.id}','${co.name.replace(/'/g,"\'")}','${co.invite_code||''}')" class="sa-action-btn teal">View</button>
-                <button onclick="saRegenerateCode('${co.id}')" class="sa-action-btn ghost">New Code</button>
-                <button onclick="saDeleteCompany('${co.id}','${co.name.replace(/'/g,"\'")}')" class="sa-action-btn red">Delete</button>
-              </div>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Bottom row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <!-- System Health -->
-      <div class="sa-card">
-        <div class="sa-card-header"><span class="sa-card-title">SYSTEM HEALTH</span></div>
-        <div class="sa-health-row"><span class="sa-dot green"></span><span>API</span><span class="sa-health-status">Operational</span></div>
-        <div class="sa-health-row"><span class="sa-dot green"></span><span>Database (Supabase)</span><span class="sa-health-status">Operational</span></div>
-        <div class="sa-health-row"><span class="sa-dot green"></span><span>Hosting (Vercel)</span><span class="sa-health-status">Operational</span></div>
-        <div class="sa-health-row"><span class="sa-dot green"></span><span>Auth</span><span class="sa-health-status">Operational</span></div>
-        <div class="sa-health-row"><span class="sa-dot amber"></span><span>Email (EmailJS)</span><span class="sa-health-status" style="color:var(--amber)">Free tier</span></div>
+      <div style="background:#161B22;border:1px solid #30363D;border-radius:10px;padding:16px">
+        <div style="font-size:26px;font-weight:700;color:#E6EDF3">${members.length}</div>
+        <div style="font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:1px">Total Users</div>
       </div>
-      <!-- Plan distribution -->
-      <div class="sa-card">
-        <div class="sa-card-header"><span class="sa-card-title">PLAN DISTRIBUTION</span></div>
-        <div class="sa-plan-row"><span>Free</span>
-          <div class="sa-plan-bar"><div class="sa-plan-fill" style="width:100%;background:var(--text3)"></div></div>
-          <span>${companies.length}</span>
-        </div>
-        <div class="sa-plan-row"><span>Pro</span>
-          <div class="sa-plan-bar"><div class="sa-plan-fill" style="width:0%;background:var(--teal)"></div></div>
-          <span>0</span>
-        </div>
-        <div class="sa-plan-row"><span>Enterprise</span>
-          <div class="sa-plan-bar"><div class="sa-plan-fill" style="width:0%;background:var(--purple)"></div></div>
-          <span>0</span>
-        </div>
+      <div style="background:#161B22;border:1px solid #30363D;border-radius:10px;padding:16px">
+        <div style="font-size:26px;font-weight:700;color:#E6EDF3">${logs.length}</div>
+        <div style="font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:1px">Work Logs</div>
+      </div>
+      <div style="background:#161B22;border:1px solid #30363D;border-radius:10px;padding:16px">
+        <div style="font-size:26px;font-weight:700;color:#05D9B4">Free</div>
+        <div style="font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:1px">Plan</div>
       </div>
     </div>`;
+
+  // Companies table
+  const tableHtml=`
+    <div style="background:#161B22;border:1px solid #30363D;border-radius:10px;overflow:hidden;margin-bottom:16px">
+      <div style="padding:12px 16px;border-bottom:1px solid #21262D;font-size:10px;font-weight:700;color:#8B949E;text-transform:uppercase;letter-spacing:1px">All Companies (${companies.length})</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;color:#8B949E;text-transform:uppercase;border-bottom:1px solid #21262D">Company</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;color:#8B949E;text-transform:uppercase;border-bottom:1px solid #21262D">Stats</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;color:#8B949E;text-transform:uppercase;border-bottom:1px solid #21262D">Invite Code</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;color:#8B949E;text-transform:uppercase;border-bottom:1px solid #21262D">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${companies.map(co=>{
+            const mems=members.filter(m=>m.company_id===co.id).length;
+            const locs=(co.locations||[]).length;
+            const logCount=logs.filter(l=>l.company_id===co.id).length;
+            return '<tr style="border-bottom:1px solid #21262D">'+
+              '<td style="padding:12px 16px"><div style="font-weight:600;color:#E6EDF3">'+co.name+'</div><div style="font-size:10px;color:#8B949E;font-family:monospace">'+co.id.slice(-8)+'</div></td>'+
+              '<td style="padding:12px 16px;color:#8B949E;font-size:12px">'+mems+' members · '+locs+' locations · '+logCount+' logs</td>'+
+              '<td style="padding:12px 16px"><span style="font-family:monospace;color:#05D9B4;letter-spacing:2px;font-size:12px">'+(co.invite_code||'—')+'</span></td>'+
+              '<td style="padding:12px 16px"><div style="display:flex;gap:6px">'+
+              '<button onclick="saViewCompany(\"'+co.id+'\",\"'+co.name+'\")" style="background:#05D9B4;color:#04100D;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">View</button>'+
+              '<button onclick="saRegenerateCode(\"'+co.id+'\")" style="background:#21262D;color:#8B949E;border:1px solid #30363D;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer">New Code</button>'+
+              '<button onclick="saDeleteCompany(\"'+co.id+'\",\"'+co.name+'\")" style="background:rgba(248,81,73,0.15);color:#F85149;border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer">Delete</button>'+
+              '</div></td>'+
+              '</tr>';
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  // System health
+  const healthHtml=`
+    <div style="background:#161B22;border:1px solid #30363D;border-radius:10px;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid #21262D;font-size:10px;font-weight:700;color:#8B949E;text-transform:uppercase;letter-spacing:1px">System Health</div>
+      ${[['API','Operational'],['Database','Operational'],['Auth','Operational'],['Hosting (Vercel)','Operational']].map(([s,v])=>
+        '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #21262D;font-size:13px">'+
+        '<span style="width:8px;height:8px;border-radius:50%;background:#3FB950;display:inline-block;flex-shrink:0"></span>'+
+        '<span>'+s+'</span><span style="margin-left:auto;color:#3FB950;font-size:12px;font-weight:600">'+v+'</span></div>'
+      ).join('')}
+    </div>`;
+
+  el.innerHTML = statsHtml + tableHtml + healthHtml;
 }
 
 async function renderSACompanies(el){
