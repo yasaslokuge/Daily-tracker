@@ -563,11 +563,14 @@ let SA_SECTION='overview'; // overview | companies | users | audit
 
 function showSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(el){el.classList.remove('hidden');el.style.display='flex';setSASection('overview');}
+  if(!el) return;
+  el.classList.remove('hidden');
+  el.style.cssText='display:flex;flex-direction:row';
+  setSASection('overview');
 }
 function hideSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(el){el.style.display='none';}
+  if(el){el.style.display='none';el.classList.add('hidden');}
 }
 function setSASection(s){
   SA_SECTION=s;
@@ -814,7 +817,7 @@ async function saViewCompany(coId, coName, inviteCode){
   COMPANY=co;LOCS=(co.locations||[]).map(l=>({...l,keys:[]}));MY_ROLE='admin';
   hideSuperAdmin();hideAuth();showApp();sv('log');
   const banner=document.getElementById('saBanner');
-  if(banner){banner.classList.add('active');banner.style.display='flex';document.getElementById('saBannerName').textContent='Viewing: '+coName;}
+  if(banner){banner.style.display='flex';document.getElementById('saBannerName').textContent='Viewing: '+coName;}
   showToast('Switched to '+coName);
   await loadWk(wkDates(0));await loadLocKeys();await getCompanyMembers(true);
   if(COMPANY.supplies&&Array.isArray(COMPANY.supplies)&&COMPANY.supplies.length>0){
@@ -826,7 +829,7 @@ async function saViewCompany(coId, coName, inviteCode){
 
 function saExitCompany(){
   const banner=document.getElementById('saBanner');
-  if(banner){banner.classList.remove('active');banner.style.display='none';}
+  if(banner) banner.style.display='none';
   hideApp();COMPANY=null;LOCS=[];MY_ROLE='employee';membersCacheLoaded=false;
   showSuperAdmin();
 }
@@ -1639,14 +1642,15 @@ async function initApp(u){
   hideLoader();
   // Check if super admin
   try{
-    const{data:sa}=await supabaseClient.from('super_admins').select('id').eq('user_id',u.id).limit(1);
+    const{data:sa,error:saErr}=await supabaseClient.from('super_admins').select('id').eq('user_id',u.id).limit(1);
+    if(saErr) console.warn('SA check error:',saErr.message);
     IS_SUPER_ADMIN=!!(sa&&sa.length>0);
+    console.log('IS_SUPER_ADMIN:',IS_SUPER_ADMIN,'for',u.email);
     if(IS_SUPER_ADMIN){
-      console.log('Super admin detected');
       const saTopBtn=document.getElementById('saTopBtn');
       if(saTopBtn) saTopBtn.style.display='flex';
     }
-  }catch(e){IS_SUPER_ADMIN=false;}
+  }catch(e){console.warn('SA check exception:',e.message);IS_SUPER_ADMIN=false;}
   // Load company first - retry once on failure
   let company=await loadMyCompany();
   if(!company){

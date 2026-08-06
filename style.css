@@ -1894,8 +1894,8 @@ body.light .loc-note-preview{color:rgba(0,0,0,0.45)}
 .theme-mode-label{font-size:11px;color:var(--text3);margin-left:10px}
 
 /* SA banner */
-.sa-banner{position:fixed;top:0;left:0;right:0;z-index:500;background:var(--purple);padding:8px 16px;align-items:center;justify-content:space-between}
-.sa-banner.active{display:flex}
+.sa-banner{position:fixed;top:0;left:0;right:0;z-index:500;background:var(--purple);padding:8px 16px;align-items:center;justify-content:space-between;display:none}
+
 .sa-exit-btn{background:rgba(255,255,255,0.2);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;cursor:pointer;font-family:'Inter',sans-serif}
-.sa-portal{position:fixed;inset:0;background:#0D1117;z-index:300;flex-direction:row;overflow:hidden;display:none}
-.sa-portal.active{display:flex}
+.sa-portal{position:fixed;inset:0;background:#0D1117;z-index:300;flex-direction:row;overflow:hidden}
+
