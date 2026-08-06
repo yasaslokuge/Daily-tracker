@@ -1860,3 +1860,42 @@ body.light .loc-note-preview{color:rgba(0,0,0,0.45)}
   .sa-table th:nth-child(3),.sa-table td:nth-child(3),
   .sa-table th:nth-child(4),.sa-table td:nth-child(4){display:none}
 }
+
+/* ── EXTRACTED FROM INLINE STYLES ── */
+.hidden{display:none!important}
+.app-container{display:none;flex-direction:column}
+.company-setup{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:20px;background:var(--bg);position:relative;overflow:hidden}
+.row-center-gap{display:flex;align-items:center;gap:8px}
+.mb-14{margin-bottom:14px}
+.text-teal{color:var(--teal)}
+.text-red{color:var(--red)}
+.text-white{color:#fff}
+
+/* Modal system */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;align-items:flex-end;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:20px}
+.modal-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-section{background:var(--card2);border-radius:12px;padding:14px;margin-bottom:14px}
+.modal-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.modal-input{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;outline:none;margin-bottom:10px;transition:border-color var(--t)}
+.modal-input:focus{border-color:var(--teal)}
+.modal-input::placeholder{color:var(--text3)}
+.btn-primary{background:var(--teal);color:#04100D;border:none;border-radius:10px;padding:12px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--t)}
+.btn-primary:hover{opacity:0.9}
+.btn-primary:disabled{background:var(--card2);color:var(--text3);cursor:default}
+.btn-primary.full-width{width:100%}
+.btn-close{background:var(--card2);border:1px solid var(--border2);border-radius:8px;color:var(--text2);padding:5px 12px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all var(--t)}
+.btn-close:hover{border-color:var(--border);color:var(--text)}
+.selected-person-label{font-size:11px;color:var(--teal);font-weight:600;margin-bottom:8px;min-height:16px}
+.badge-dot{background:var(--amber);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;flex-shrink:0}
+.badge-dot.active{display:flex}
+.borrow-btn-wrap{padding:8px 16px 0}
+.theme-mode-label{font-size:11px;color:var(--text3);margin-left:10px}
+
+/* SA banner */
+.sa-banner{position:fixed;top:0;left:0;right:0;z-index:500;background:var(--purple);padding:8px 16px;align-items:center;justify-content:space-between}
+.sa-banner.active{display:flex}
+.sa-exit-btn{background:rgba(255,255,255,0.2);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;cursor:pointer;font-family:'Inter',sans-serif}
+.sa-portal{position:fixed;inset:0;background:#0D1117;z-index:300;flex-direction:row;overflow:hidden}
+.sa-portal.active{display:flex}

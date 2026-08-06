@@ -104,15 +104,18 @@ function hideAuth(){document.getElementById('authWrap').style.display='none'}
 function showApp(){
   const isDesktop=window.innerWidth>=900;
   const app=document.getElementById('app');
-  if(app) app.style.cssText=isDesktop?'display:flex;flex-direction:row':'display:flex;flex-direction:column';
+  if(app){
+    app.classList.remove('hidden');
+    app.style.flexDirection=isDesktop?'row':'column';
+    app.style.display='flex';
+  }
   if(!isDesktop){const bn=document.getElementById('bnav');if(bn)bn.style.display='flex';}
   if(isDesktop){
-    buildDesktopSidebar(); // build immediately with whatever members we have
-    // Rebuild after members load
-    getCompanyMembers(true).then(()=>{ destroyDesktopSidebar(); buildDesktopSidebar(); });
+    buildDesktopSidebar();
+    getCompanyMembers(true).then(()=>{destroyDesktopSidebar();buildDesktopSidebar();});
   }
 }
-function hideApp(){document.getElementById('app').style.display='none';document.getElementById('bnav').style.display='none';destroyDesktopSidebar();}
+function hideApp(){const app=document.getElementById('app');if(app){app.style.display='none';}const bn=document.getElementById('bnav');if(bn)bn.style.display='none';destroyDesktopSidebar();}
 
 
 /* --- 6. AUTH FUNCTIONS ------------------------------- */
@@ -560,11 +563,11 @@ let SA_SECTION='overview'; // overview | companies | users | audit
 
 function showSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(el){el.style.display='flex';setSASection('overview');}
+  if(el){el.style.display='flex';el.classList.remove('hidden');setSASection('overview');}
 }
 function hideSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(el) el.style.display='none';
+  if(el){el.style.display='none';}
 }
 function setSASection(s){
   SA_SECTION=s;
@@ -811,7 +814,7 @@ async function saViewCompany(coId, coName, inviteCode){
   COMPANY=co;LOCS=(co.locations||[]).map(l=>({...l,keys:[]}));MY_ROLE='admin';
   hideSuperAdmin();hideAuth();showApp();sv('log');
   const banner=document.getElementById('saBanner');
-  if(banner){banner.style.display='flex';document.getElementById('saBannerName').textContent='Viewing: '+coName;}
+  if(banner){banner.classList.add('active');banner.style.display='flex';document.getElementById('saBannerName').textContent='Viewing: '+coName;}
   showToast('Switched to '+coName);
   await loadWk(wkDates(0));await loadLocKeys();await getCompanyMembers(true);
   if(COMPANY.supplies&&Array.isArray(COMPANY.supplies)&&COMPANY.supplies.length>0){
@@ -823,7 +826,7 @@ async function saViewCompany(coId, coName, inviteCode){
 
 function saExitCompany(){
   const banner=document.getElementById('saBanner');
-  if(banner) banner.style.display='none';
+  if(banner){banner.classList.remove('active');banner.style.display='none';}
   hideApp();COMPANY=null;LOCS=[];MY_ROLE='employee';membersCacheLoaded=false;
   showSuperAdmin();
 }
