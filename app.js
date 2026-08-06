@@ -847,6 +847,59 @@ async function saDeleteCompany(coId, coName){
   }catch(e){showToast('Error: '+e.message,'warn');}
 }
 
+/* --- GOOGLE SIGN IN ---------------------------------- */
+async function doGoogleSignIn(){
+  try{
+    const{error}=await sb.auth.signInWithOAuth({
+      provider:'google',
+      options:{
+        redirectTo:window.location.origin+window.location.pathname,
+        queryParams:{access_type:'offline',prompt:'consent'}
+      }
+    });
+    if(error){showToast('Google sign in error: '+error.message,'warn');console.error(error);}
+  }catch(e){
+    console.error('Google sign in exception:',e);
+    showToast('Google sign in failed','warn');
+  }
+}
+
+/* --- KEY AUDIT LOG ----------------------------------- */
+async function loadKeyAuditLog(){
+  const el=document.getElementById('keyAuditList');
+  if(!el) return;
+  el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Loading...</div>';
+  try{
+    let query=supabaseClient.from('key_audit_log').select('*').order('performed_at',{ascending:false}).limit(50);
+    if(COMPANY?.id) query=query.eq('company_id',COMPANY.id);
+    const{data,error}=await query;
+    if(error){el.innerHTML='<div style="font-size:12px;color:var(--red);text-align:center;padding:12px">Error: '+error.message+'</div>';return;}
+    if(!data||!data.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">No key activity yet</div>';return;}
+    const actionColors={assigned:'var(--teal)',cleared:'var(--text3)',transferred:'var(--blue)',returned:'var(--amber)'};
+    const actionIcons={assigned:'🔑',cleared:'🗑️',transferred:'↔️',returned:'↩️'};
+    el.innerHTML=data.map((r,i)=>{
+      const dt=new Date(r.performed_at);
+      const dateStr=dt.toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'});
+      const timeStr=dt.toLocaleTimeString('en-NZ',{hour:'2-digit',minute:'2-digit'});
+      const color=actionColors[r.action]||'var(--text2)';
+      const icon=actionIcons[r.action]||'🔑';
+      return '<div style="padding:10px 0;border-bottom:'+(i<data.length-1?'1px solid var(--border)':'none')+'">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'+
+        '<span style="font-size:14px">'+icon+'</span>'+
+        '<span style="font-size:12px;font-weight:700;color:'+color+';text-transform:capitalize">'+r.action+'</span>'+
+        '<span style="font-size:12px;font-weight:600;color:var(--text)">'+( r.location_name||r.location_id)+'</span>'+
+        '</div>'+
+        (r.holder_name?'<div style="font-size:11px;color:var(--text2);margin-left:22px">Holder: '+r.holder_name+'</div>':'')+
+        '<div style="font-size:10px;color:var(--text3);margin-left:22px;margin-top:2px">'+
+        'By '+(r.performed_by_email||'').split('@')[0]+' · '+dateStr+' '+timeStr+'</div>'+
+        '</div>';
+    }).join('');
+  }catch(e){
+    console.error('loadKeyAuditLog:',e);
+    el.innerHTML='<div style="font-size:12px;color:var(--red);text-align:center;padding:12px">Failed to load</div>';
+  }
+}
+
 async function doSignOut(){await sb.auth.signOut();ME=null;cache={};IS_SUPER_ADMIN=false;hideApp();hideSuperAdmin();const b=document.getElementById('saBanner');if(b)b.style.display='none';showAuth();}
 
 
