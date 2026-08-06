@@ -566,6 +566,9 @@ window.showSuperAdmin=function showSuperAdmin(){
   if(!el){console.error('superAdminPortal not found');return;}
   hideApp();
   hideAuth();
+  // Remove body overflow:hidden which can clip fixed elements in some browsers
+  document.body.style.overflow='visible';
+  document.documentElement.style.overflow='visible';
   el.style.display='flex';
   console.log('SA portal opened');
   setSASection('overview');
@@ -573,6 +576,9 @@ window.showSuperAdmin=function showSuperAdmin(){
 window.hideSuperAdmin=function hideSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
   if(el) el.style.display='none';
+  // Restore body overflow
+  document.body.style.overflow='';
+  document.documentElement.style.overflow='';
 }
 function setSASection(s){
   SA_SECTION=s;
