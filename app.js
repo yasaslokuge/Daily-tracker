@@ -563,14 +563,15 @@ let SA_SECTION='overview'; // overview | companies | users | audit
 
 window.showSuperAdmin=function showSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(!el) return;
-  el.classList.remove('hidden');
-  el.style.cssText='display:flex;flex-direction:row';
+  if(!el){console.error('superAdminPortal element not found');return;}
+  el.style.display='flex';
+  el.style.flexDirection='row';
+  console.log('Super admin portal opened');
   setSASection('overview');
 }
 window.hideSuperAdmin=function hideSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(el){el.style.display='none';el.classList.add('hidden');}
+  if(el) el.style.display='none';
 }
 function setSASection(s){
   SA_SECTION=s;
@@ -1636,21 +1637,17 @@ async function saveCoLocations(){
 async function initApp(u){
   ME=u;
   document.getElementById('tbUser').textContent=u.email;
-  // Show SA button in topbar if super admin
-  const saTopBtn=document.getElementById('saTopBtn');
-  if(saTopBtn) saTopBtn.style.display=IS_SUPER_ADMIN?'flex':'none';
   hideLoader();
-  // Check if super admin
+  // Check super admin FIRST before anything else
   try{
     const{data:sa,error:saErr}=await supabaseClient.from('super_admins').select('id').eq('user_id',u.id).limit(1);
     if(saErr) console.warn('SA check error:',saErr.message);
     IS_SUPER_ADMIN=!!(sa&&sa.length>0);
     console.log('IS_SUPER_ADMIN:',IS_SUPER_ADMIN,'for',u.email);
-    if(IS_SUPER_ADMIN){
-      const saTopBtn=document.getElementById('saTopBtn');
-      if(saTopBtn){saTopBtn.classList.remove('hidden');}
-    }
   }catch(e){console.warn('SA check exception:',e.message);IS_SUPER_ADMIN=false;}
+  // Show SA button if super admin
+  const saTopBtn=document.getElementById('saTopBtn');
+  if(saTopBtn) saTopBtn.style.display=IS_SUPER_ADMIN?'flex':'none';
   // Load company first - retry once on failure
   let company=await loadMyCompany();
   if(!company){
