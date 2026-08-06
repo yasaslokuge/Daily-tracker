@@ -563,15 +563,18 @@ let SA_SECTION='overview'; // overview | companies | users | audit
 
 window.showSuperAdmin=function showSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(!el){console.error('superAdminPortal element not found');return;}
-  el.style.display='flex';
-  el.style.flexDirection='row';
-  console.log('Super admin portal opened');
+  if(!el){console.error('superAdminPortal not found');return;}
+  // Hide main app first
+  hideApp();
+  hideAuth();
+  // Show portal
+  el.style.cssText='display:flex!important;flex-direction:row;position:fixed;inset:0;background:#0D1117;z-index:1000';
+  console.log('SA portal opened, display='+el.style.display);
   setSASection('overview');
 }
 window.hideSuperAdmin=function hideSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(el) el.style.display='none';
+  if(el) el.style.cssText='display:none';
 }
 function setSASection(s){
   SA_SECTION=s;
