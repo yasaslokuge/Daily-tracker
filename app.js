@@ -106,8 +106,8 @@ function showApp(){
   const app=document.getElementById('app');
   if(app){
     app.classList.remove('hidden');
-    app.style.flexDirection=isDesktop?'row':'column';
     app.style.display='flex';
+    app.style.flexDirection=isDesktop?'row':'column';
   }
   if(!isDesktop){const bn=document.getElementById('bnav');if(bn)bn.style.display='flex';}
   if(isDesktop){
@@ -563,7 +563,7 @@ let SA_SECTION='overview'; // overview | companies | users | audit
 
 function showSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(el){el.style.display='flex';el.classList.remove('hidden');setSASection('overview');}
+  if(el){el.classList.remove('hidden');el.style.display='flex';setSASection('overview');}
 }
 function hideSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
