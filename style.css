@@ -1899,3 +1899,14 @@ body.light .loc-note-preview{color:rgba(0,0,0,0.45)}
 .sa-exit-btn{background:rgba(255,255,255,0.2);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;cursor:pointer;font-family:'Inter',sans-serif}
 .sa-portal{position:fixed;inset:0;background:#0D1117;z-index:300;flex-direction:row;overflow:hidden}
 
+
+/* SA top button */
+.sa-top-btn{
+  background:linear-gradient(135deg,#7C3AED,#5B21B6);
+  border:none;border-radius:7px;color:#fff;
+  font-size:10px;font-weight:800;padding:5px 9px;
+  cursor:pointer;font-family:'Inter',sans-serif;
+  margin-right:6px;letter-spacing:0.3px;
+  display:flex;align-items:center;gap:4px;
+}
+.sa-top-btn.hidden{display:none!important}

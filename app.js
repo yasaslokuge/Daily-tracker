@@ -561,14 +561,14 @@ async function loadDataUsage(){
 ════════════════════════════════════════ */
 let SA_SECTION='overview'; // overview | companies | users | audit
 
-function showSuperAdmin(){
+window.showSuperAdmin=function showSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
   if(!el) return;
   el.classList.remove('hidden');
   el.style.cssText='display:flex;flex-direction:row';
   setSASection('overview');
 }
-function hideSuperAdmin(){
+window.hideSuperAdmin=function hideSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
   if(el){el.style.display='none';el.classList.add('hidden');}
 }
@@ -1648,7 +1648,7 @@ async function initApp(u){
     console.log('IS_SUPER_ADMIN:',IS_SUPER_ADMIN,'for',u.email);
     if(IS_SUPER_ADMIN){
       const saTopBtn=document.getElementById('saTopBtn');
-      if(saTopBtn) saTopBtn.style.display='flex';
+      if(saTopBtn){saTopBtn.classList.remove('hidden');}
     }
   }catch(e){console.warn('SA check exception:',e.message);IS_SUPER_ADMIN=false;}
   // Load company first - retry once on failure
