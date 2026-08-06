@@ -589,30 +589,41 @@ function setSASection(s){
 }
 async function loadSASection(s){
   const content=document.getElementById('saContent');
-  if(!content) return;
-  content.innerHTML='<div class="sa-loading">Loading...</div>';
+  if(!content){console.error('saContent not found');return;}
+  content.innerHTML='<div class="sa-loading">Loading '+s+'...</div>';
   try{
+    console.log('Loading SA section:',s);
     if(s==='overview') await renderSAOverview(content);
     else if(s==='companies') await renderSACompanies(content);
     else if(s==='users') await renderSAUsers(content);
     else if(s==='audit') await renderSAAudit(content);
     else if(s==='health') await renderSAHealth(content);
-  }catch(e){content.innerHTML='<div class="sa-error">Error: '+e.message+'</div>';console.error(e);}
+    console.log('SA section loaded:',s);
+  }catch(e){
+    console.error('SA section error:',e);
+    content.innerHTML='<div class="sa-error" style="padding:20px;color:#F85149;font-size:13px">Error loading '+s+':<br>'+e.message+'</div>';
+  }
 }
 
 async function fetchSAData(){
   const[coRes,memRes,logRes]=await Promise.all([
     supabaseClient.from('companies').select('*').order('name'),
     supabaseClient.from('company_members').select('*'),
-    supabaseClient.from('work_logs').select('company_id,log_date,updated_at'),
+    supabaseClient.from('work_logs').select('company_id,log_date'),
   ]);
-  return{companies:coRes.data||[],members:memRes.data||[],logs:logRes.data||[]};
+  if(coRes.error) console.error('SA companies error:',coRes.error.message);
+  if(memRes.error) console.error('SA members error:',memRes.error.message);
+  if(logRes.error) console.error('SA logs error:',logRes.error.message);
+  return{
+    companies:coRes.data||[],
+    members:memRes.data||[],
+    logs:logRes.data||[]
+  };
 }
 
 async function renderSAOverview(el){
   const{companies,members,logs}=await fetchSAData();
   const today=new Date().toISOString().slice(0,10);
-  const activeLast7=logs.filter(l=>{const d=new Date(l.updated_at);return(Date.now()-d)<7*86400000;}).length;
 
   // Build company stats
   const coStats=companies.map(co=>{
