@@ -341,6 +341,7 @@ function destroyDesktopSidebar(){
 async function openBorrowModal(){
   const m=document.getElementById('borrowModal');
   if(!m) return;
+  m.classList.remove('hidden');
   m.style.display='flex';
   await buildBorrowPersonPicker();
   renderBorrowLog();
@@ -1209,7 +1210,7 @@ async function loadKeyRequests(){
 
 function openKeyRequestPanel(){
   const panel=document.getElementById('keyRequestPanel');
-  if(panel) panel.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
+  if(panel){panel.classList.remove('hidden');panel.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';}
   loadKeyRequests();
 }
 function closeKeyRequestPanel(){
@@ -1300,6 +1301,7 @@ async function openKeyModal(locId,locName){
     }
   }
 
+  sheet.classList.remove('hidden');
   sheet.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-end;justify-content:center';
 }
 
