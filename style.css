@@ -1743,7 +1743,14 @@ body.light .loc-note-preview{color:rgba(0,0,0,0.45)}
 /* ════════════════════════════════════════
    SUPER ADMIN PORTAL — Dark Minimalist
 ════════════════════════════════════════ */
-#superAdminPortal{color:#CDD9E5;font-family:'Inter',sans-serif}
+#superAdminPortal{
+  color:#CDD9E5;font-family:'Inter',sans-serif;
+  position:fixed !important;inset:0 !important;z-index:10000 !important;
+  width:100vw !important;height:100vh !important;min-height:100dvh !important;
+  background:#0D1117 !important;
+}
+#superAdminPortal.sa-portal{display:none}
+#superAdminPortal[style*="display: flex"]{display:flex !important}
 
 /* Sidebar */
 .sa-sidebar{
