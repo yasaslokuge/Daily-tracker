@@ -564,14 +564,30 @@ let SA_SECTION='overview'; // overview | companies | users | audit
 
 window.showSuperAdmin=function showSuperAdmin(){
   const el=document.getElementById('superAdminPortal');
-  if(!el){console.error('superAdminPortal not found');return;}
+
+  if(!el){
+    console.error('superAdminPortal not found');
+    return;
+  }
+
+  // Hide the normal application
   hideApp();
   hideAuth();
-  // Remove body overflow:hidden which can clip fixed elements in some browsers
-  document.body.style.overflow='visible';
-  document.documentElement.style.overflow='visible';
-  el.style.display='flex';
+
+  // Prevent the main app from interfering
+  document.body.style.overflow='hidden';
+  document.documentElement.style.overflow='hidden';
+
+  // Force Super Admin portal to appear above everything
+  el.style.setProperty('display','flex','important');
+  el.style.setProperty('visibility','visible','important');
+  el.style.setProperty('opacity','1','important');
+  el.style.setProperty('position','fixed','important');
+  el.style.setProperty('inset','0','important');
+  el.style.setProperty('z-index','99999','important');
+
   console.log('SA portal opened');
+
   setSASection('overview');
 }
 window.hideSuperAdmin=function hideSuperAdmin(){
